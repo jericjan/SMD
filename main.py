@@ -31,29 +31,35 @@ def request_code(manifest_id):
         
 
 
-client = SteamClient()
-cdn = CDNClient(client)
+def main():
+    client = SteamClient()
+    cdn = CDNClient(client)
 
-client.cli_login()
+    client.cli_login()
 
-app_id = 2653790
-depot_id = 2653791
-manifest_id = 	4401022976514973949
-dec_key = "057987e441949d496886cc38feefea453a2863c2ee7f4afbf010230d6bd89372".encode()
+    app_id = 2653790
+    depot_id = 2653791
+    manifest_id = 	4401022976514973949
+    dec_key = bytes.fromhex("057987e441949d496886cc38feefea453a2863c2ee7f4afbf010230d6bd89372")
 
-#a = cdn.get_depot_key(app_id, depot_id)
-#print(a)
+    #a = cdn.get_depot_key(app_id, depot_id)
+    #print(a)
 
-# req_code = cdn.get_manifest_request_code(app_id, depot_id, manifest_id)
-req_code = request_code(4401022976514973949)
-print(f"req code is: {req_code}")
+    # req_code = cdn.get_manifest_request_code(app_id, depot_id, manifest_id)
+    print(f"Getting request code...")
+    req_code = request_code(manifest_id)
+    print(f"req code is: {req_code}")
 
-print("Getting manifest....................")
-manifest = cdn.get_manifest(app_id, depot_id, manifest_id, False, req_code)
-print("Decrypting filenames....................")
-manifest.decrypt_filenames(dec_key)
-print("Saving to file....................")
-with open(f"{depot_id}_{manifest_id}.manifest", "wb") as f:
-    f.write(manifest.serialize(False))
+    print("Getting manifest....................")
+    manifest = cdn.get_manifest(app_id, depot_id, manifest_id, False, req_code)
+    print(f"Encrypted: {manifest.filenames_encrypted}")
+    print("Decrypting filenames....................")
+    manifest.decrypt_filenames(dec_key)
+    print("Saving to file....................")
+    with open(f"{depot_id}_{manifest_id}.manifest", "wb") as f:
+        f.write(manifest.serialize(False))
 
-client.logout()
+    client.logout()
+    
+if __name__ == "__main__":
+    main()
