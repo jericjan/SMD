@@ -1,0 +1,9 @@
+[project]
+name = "steam-manifest-decrypt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "steam[client]>=1.4.4",
+]
