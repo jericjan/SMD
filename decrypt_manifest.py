@@ -3,6 +3,7 @@ import io
 import struct
 import zipfile
 import zlib
+from pathlib import Path
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -41,7 +42,7 @@ def decrypt_filename(b64_encrypted_name: str, key_bytes: bytes):
         return b64_encrypted_name
 
 
-def decrypt_manifest(encrypted_file: io.BytesIO, output_filepath: str, dec_key: str):
+def decrypt_manifest(encrypted_file: io.BytesIO, output_filepath: Path, dec_key: str):
 
     data = encrypted_file.read()
     try:

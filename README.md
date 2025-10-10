@@ -1,5 +1,5 @@
 # Steam Manifest Decryptor
-Decrypt Steam manifest files... as long as you have the decryption key.
+Download and decrypt Steam manifest files 
 
 # Building
 It's best if you have `uv` installed.

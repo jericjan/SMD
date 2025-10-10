@@ -1,19 +1,39 @@
 import io
 import re
 import time
+import winreg
 import zipfile
 from pathlib import Path
+import shutil
 from typing import Literal, Union, cast
 from urllib.parse import urljoin
 
 import requests
+import vdf
 
 from decrypt_manifest import decrypt_manifest
 
 
+def get_steam_path():
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam") as key:
+            return Path(winreg.QueryValueEx(key, "SteamPath")[0])
+    except FileNotFoundError:
+        pass
+
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\WOW6432Node\Valve\Steam"
+        ) as key:
+            return Path(winreg.QueryValueEx(key, "InstallPath")[0])
+    except FileNotFoundError:
+        return None
+
+
 def get_request(url: str, type: Literal['text', 'json'] = "text"):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
 
         if response.status_code == 200:
             try:
@@ -34,6 +54,15 @@ def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
 
+    steam_path = get_steam_path()
+    if steam_path is None:
+        steam_path = Path(input("Couldn't find your Steam path. Paste the path here (The folder that has steam.exe)"))
+    else:
+        print(f"Your steam path is {steam_path}")
+
+    vdf_file = (steam_path / "config/config.vdf")
+    shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
+
     while True:
         while True:
             lua_path = Path(input("Drag a lua file into here then press Enter."))
@@ -52,8 +81,18 @@ def main():
             print("App ID not found. Try again.")
 
         if depot_dec_key := depot_dec_key_regex.findall(lua_contents):
+            with vdf_file.open(encoding="utf-8") as f:
+                vdf_data = vdf.load(f, mapper=vdf.VDFDict)            
             for depot_id, dec_key in depot_dec_key:
-                print(f"Depot {depot_id} has decryption key {dec_key}")            
+                print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
+                if depot_id not in vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']:
+                    vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots'][depot_id] = {'DecryptionKey': dec_key}
+                    print("Added to config.vdf succesfully.")
+                else:
+                    print("Already in config.vdf.")
+            with vdf_file.open("w", encoding="utf-8") as f:
+                vdf.dump(vdf_data, f, pretty=True)
+            
         else:
             success = False
             print("Decryption keys not found. Try again.")
@@ -92,11 +131,13 @@ def main():
 
         r = requests.get(manifest_url)
         r.raise_for_status()
-
+        
         with zipfile.ZipFile(io.BytesIO(r.content)) as f:
             encrypted = io.BytesIO(f.read("z"))
 
-        decrypt_manifest(encrypted, f"{depot_id}_{manifest_id}.manifest", dec_key)
+        output_file = (steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest")
+
+        decrypt_manifest(encrypted, output_file, dec_key)
 
 
 if __name__ == "__main__":

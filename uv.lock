@@ -353,6 +353,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "pycryptodome" },
     { name = "requests" },
+    { name = "vdf" },
 ]
 
 [package.metadata]
@@ -362,6 +363,7 @@ requires-dist = [
     { name = "protobuf", specifier = ">=3.20.3" },
     { name = "pycryptodome", specifier = ">=3.23.0" },
     { name = "requests", specifier = ">=2.32.5" },
+    { name = "vdf", specifier = ">=3.4" },
 ]
 
 [[package]]
@@ -380,6 +382,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795 },
+]
+
+[[package]]
+name = "vdf"
+version = "3.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/7f/74192f47d67c8bf3c47bf0d8487b3457614c2c98d58b6617721d217f3f79/vdf-3.4.tar.gz", hash = "sha256:fd5419f41e07a1009e5ffd027c7dcbe43d1f7e8ef453aeaa90d9d04b807de2af", size = 11132 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/60/6456b687cf55cf60020dcd01f9bc51561c3cc84f05fd8e0feb71ce60f894/vdf-3.4-py2.py3-none-any.whl", hash = "sha256:68c1a125cc49e343d535af2dd25074e9cb0908c6607f073947c4a04bbe234534", size = 10357 },
 ]
 
 [[package]]
