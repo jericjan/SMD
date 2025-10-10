@@ -41,11 +41,9 @@ def decrypt_filename(b64_encrypted_name: str, key_bytes: bytes):
         return b64_encrypted_name
 
 
-def decrypt_manifest(input_filepath: str, output_filepath: str, dec_key: str):
-    print(f"--- Reading and parsing '{input_filepath}' ---")
+def decrypt_manifest(encrypted_file: io.BytesIO, output_filepath: str, dec_key: str):
 
-    with open(input_filepath, 'rb') as f:
-        data = f.read()
+    data = encrypted_file.read()
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             data = zf.read(zf.filelist[0].filename)
