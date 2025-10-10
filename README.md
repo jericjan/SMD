@@ -1,5 +1,5 @@
 # Steam Manifest Decryptor
-Download and decrypt Steam manifest files 
+Download and decrypt Steam manifest files. Basically imitates what steamtools does and greenluma couldn't.
 
 # Building
 It's best if you have `uv` installed.

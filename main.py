@@ -1,15 +1,17 @@
+import asyncio
 import io
+import msvcrt
 import re
+import shutil
 import time
 import winreg
 import zipfile
 from pathlib import Path
-import shutil
 from typing import Literal, Union, cast
 from urllib.parse import urljoin
 
-import requests
-import vdf
+import httpx
+import vdf  # type: ignore
 
 from decrypt_manifest import decrypt_manifest
 
@@ -31,24 +33,64 @@ def get_steam_path():
         return None
 
 
-def get_request(url: str, type: Literal['text', 'json'] = "text"):
+async def get_request(url: str, type: Literal['text', 'json'] = "text"):
     try:
-        response = requests.get(url, timeout=60)
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(url)
 
         if response.status_code == 200:
             try:
                 return response.text if type == "text" else response.json()
-            except requests.exceptions.JSONDecodeError:
+            except ValueError:
                 return
         else:
             print(f"❌ Request failed with status code: {response.status_code}")
             print(f"Response: {response.text}")
 
-    except requests.exceptions.RequestException as e:
+    except httpx.RequestError as e:
         print(f"An error occurred: {e}")
 
-def get_gmrc(manifest_id: Union[str, int]):
-    get_request(f"http://gmrc.openst.top/manifest/{manifest_id}")
+
+async def wait_for_enter():
+    print("Press Enter to cancel the request and input manually...")
+    while True:
+        if msvcrt.kbhit() and msvcrt.getch() == b'\r':
+            return
+        await asyncio.sleep(0.05)
+
+
+async def get_gmrc(manifest_id: Union[str, int]):
+    url = f"http://gmrc.openst.top/manifest/{manifest_id}"
+    print(f"Requesting from URL: {url}")
+
+    request_task = asyncio.create_task(get_request(url))
+    cancel_task = asyncio.create_task(wait_for_enter())
+
+    done, pending = await asyncio.wait(
+        {request_task, cancel_task},
+        return_when=asyncio.FIRST_COMPLETED
+    )
+
+    result = None
+    if request_task in done:
+        result = request_task.result()
+
+    if cancel_task in done:
+        if not request_task.done():
+            print("Cancelling request...", end="")
+            request_task.cancel()
+
+    for t in pending:
+        t.cancel()
+
+    try:
+        if result is None:
+            result = await request_task
+    except asyncio.CancelledError:
+        print("✅")
+        result = input("Please provide the manifest request code: ")
+        
+    return result
 
 def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
@@ -65,7 +107,7 @@ def main():
 
     while True:
         while True:
-            lua_path = Path(input("Drag a lua file into here then press Enter."))
+            lua_path = Path(input("Drag a lua file into here then press Enter:\n"))
             if lua_path.exists():
                 break
 
@@ -73,16 +115,16 @@ def main():
             lua_contents = f.read()
 
         success = True
-        if app_id := app_id_regex.search(lua_contents):            
+        if app_id := app_id_regex.search(lua_contents):
             app_id = app_id.group()
-            print(f"App ID is {app_id}")            
+            print(f"App ID is {app_id}")
         else:
             success = False
             print("App ID not found. Try again.")
 
         if depot_dec_key := depot_dec_key_regex.findall(lua_contents):
             with vdf_file.open(encoding="utf-8") as f:
-                vdf_data = vdf.load(f, mapper=vdf.VDFDict)            
+                vdf_data = vdf.load(f, mapper=vdf.VDFDict)
             for depot_id, dec_key in depot_dec_key:
                 print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
                 if depot_id not in vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']:
@@ -92,7 +134,7 @@ def main():
                     print("Already in config.vdf.")
             with vdf_file.open("w", encoding="utf-8") as f:
                 vdf.dump(vdf_data, f, pretty=True)
-            
+
         else:
             success = False
             print("Decryption keys not found. Try again.")
@@ -102,7 +144,7 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    app_info: Union[dict[str, str], None] = get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json")
+    app_info: Union[dict[str, str], None] = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
     if app_info is None:
         print("Steamcmd api failed. Please supply latest manifest IDs for the following depots:")
         for depot_id, _ in depot_dec_key:
@@ -113,13 +155,13 @@ def main():
             latest = depots_dict.get(depot_id, {}).get("manifests", {}).get("public", {}).get("gid")
             print(f"Depot {depot_id} has manifest {latest}")
             manifest_ids[depot_id] = cast(str, latest)
-    
+
     for depot_id, dec_key in depot_dec_key:
         manifest_id = manifest_ids[depot_id]
 
         while True:
             print("Getting request code...")
-            req_code = get_gmrc(manifest_id)
+            req_code = asyncio.run(get_gmrc(manifest_id))
             print(f"Request code is: {req_code}")
             if req_code is not None:
                 break
@@ -129,9 +171,9 @@ def main():
         cdn = "https://cache1-man-rise.steamcontent.com/"  # You can get cdn urls by running download_sources in steam console
         manifest_url = urljoin(cdn, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}")
 
-        r = requests.get(manifest_url)
+        r = httpx.get(manifest_url)
         r.raise_for_status()
-        
+
         with zipfile.ZipFile(io.BytesIO(r.content)) as f:
             encrypted = io.BytesIO(f.read("z"))
 
