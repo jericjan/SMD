@@ -1,4 +1,4 @@
-# Steam Manifest Decryptor
+# Steam Manifest Decryptor (SMD)
 Download and decrypt Steam manifest files. Basically imitates what steamtools does and greenluma couldn't.
 
 # Building
