@@ -1,7 +1,11 @@
-from steam.client import SteamClient
-from steam.client.cdn import CDNClient
-from steam.enums.emsg import EMsg
+import io
+import zipfile
+from urllib.parse import urljoin
+
 import requests
+
+from decrypt_manifest import decrypt_manifest
+
 
 def request_code(manifest_id):
     # The URL we want to make a GET request to.
@@ -32,34 +36,28 @@ def request_code(manifest_id):
 
 
 def main():
-    client = SteamClient()
-    cdn = CDNClient(client)
 
-    client.cli_login()
+    app_id = 2475490
+    depot_id = 2475491
+    manifest_id = 2537253174922439408
+    dec_key = "397ceaf971a43c7d35d5eade1443d05df02019c433895547be26e88b177d948d"
 
-    app_id = 2653790
-    depot_id = 2653791
-    manifest_id = 	4401022976514973949
-    dec_key = bytes.fromhex("057987e441949d496886cc38feefea453a2863c2ee7f4afbf010230d6bd89372")
-
-    #a = cdn.get_depot_key(app_id, depot_id)
-    #print(a)
-
-    # req_code = cdn.get_manifest_request_code(app_id, depot_id, manifest_id)
-    print(f"Getting request code...")
+    print("Getting request code...")
     req_code = request_code(manifest_id)
     print(f"req code is: {req_code}")
 
-    print("Getting manifest....................")
-    manifest = cdn.get_manifest(app_id, depot_id, manifest_id, False, req_code)
-    print(f"Encrypted: {manifest.filenames_encrypted}")
-    print("Decrypting filenames....................")
-    manifest.decrypt_filenames(dec_key)
-    print("Saving to file....................")
-    with open(f"{depot_id}_{manifest_id}.manifest", "wb") as f:
-        f.write(manifest.serialize(False))
+    cdn = "https://cache1-man-rise.steamcontent.com/"
+    manifest_url = urljoin(cdn, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}")
 
-    client.logout()
+    # Download the file into memory
+    r = requests.get(manifest_url)
+    r.raise_for_status()  # if it fails, fail loudly
+
+    # Extract it to the current directory
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+        z.extractall(".")
+
+    decrypt_manifest("z", f"{depot_id}_{manifest_id}.manifest", dec_key)
     
 if __name__ == "__main__":
     main()
