@@ -7,9 +7,10 @@ import zlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
-from content_manifest_pb2 import ContentManifestPayload, ContentManifestMetadata
+from content_manifest_pb2 import (ContentManifestMetadata,
+                                  ContentManifestPayload)
 
-# --- CONFIGURATION ---
+# Magic numbers
 PROTOBUF_PAYLOAD_MAGIC = 0x71F617D0
 PROTOBUF_METADATA_MAGIC = 0x1F4812BE
 PROTOBUF_SIGNATURE_MAGIC = 0x1B81B817
@@ -83,10 +84,6 @@ def decrypt_manifest(input_filepath: str, output_filepath: str, dec_key: str):
 
         new_mappings.append(new_mapping)
     print("✅ Decrypted all filenames.")
-
-    # 2. Sort the new list of mappings by filename (case-insensitive)
-    new_mappings.sort(key=lambda m: m.filename.lower())
-    print("✅ Sorted all file mappings alphabetically.")
 
     # 3. Create the new payload object with the sorted, decrypted data
     fixed_payload = ContentManifestPayload()

@@ -1,6 +1,7 @@
 import io
-from typing import Union
 import zipfile
+from pathlib import Path
+from typing import Union
 from urllib.parse import urljoin
 
 import requests
@@ -51,9 +52,10 @@ def main():
     r.raise_for_status()
 
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-        z.extractall(".")
+        z.extractall(".")  # The zip usually contains a single "z" file
 
     decrypt_manifest("z", f"{depot_id}_{manifest_id}.manifest", dec_key)
+    Path("z").unlink()
 
 
 if __name__ == "__main__":
