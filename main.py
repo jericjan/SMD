@@ -117,6 +117,37 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     return result
 
 
+class AppListManager:
+    def __init__(self, steam_path: Path):
+        self.max_id_limit = 168
+        self.steam_path = steam_path
+        self.applist_folder = steam_path / "AppList"
+        self.last_idx = 0
+        if not self.applist_folder.exists():
+            self.applist_folder = Path(input("Could not find AppList folder. Please specify the full path here:\n"))
+            # TODO: save this path in a settings.json or smth
+
+    def get_local_ids(self):
+        ids: list[str] = []
+        for file in self.applist_folder.glob("*.txt"):
+            if file.stem.isdigit():
+                if int(file.stem) > self.last_idx:
+                    self.last_idx = int(file.stem)
+            ids.append(file.read_text(encoding="utf-8").strip())
+        return ids
+
+    def add_id(self, id: str):
+        ids = self.get_local_ids()
+        if id not in ids:
+            new_idx = self.last_idx + 1
+            with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
+                f.write(id)
+            self.last_idx = new_idx
+            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")            
+        else:
+            print(f"{id} already in AppList")
+
+
 def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
@@ -126,6 +157,8 @@ def main():
         steam_path = Path(input("Couldn't find your Steam path. Paste the path here (The folder that has steam.exe)"))
     else:
         print(f"Your steam path is {steam_path}")
+
+    app_list_man = AppListManager(steam_path)
 
     vdf_file = (steam_path / "config/config.vdf")
     shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
@@ -143,6 +176,7 @@ def main():
         if app_id := app_id_regex.search(lua_contents):
             app_id = app_id.group()
             print(f"App ID is {app_id}")
+            app_list_man.add_id(app_id)
         else:
             success = False
             print("App ID not found. Try again.")
@@ -151,6 +185,7 @@ def main():
             with vdf_file.open(encoding="utf-8") as f:
                 vdf_data = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
             for depot_id, dec_key in depot_dec_key:
+                app_list_man.add_id(depot_id)
                 print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
                 if depot_id not in vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']:
                     vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots'][depot_id] = {'DecryptionKey': dec_key}
