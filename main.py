@@ -235,7 +235,7 @@ def main():
     shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
 
     steam_libs = get_steam_libs(steam_path)
-    steam_lib_path = prompt_select("Where do you want to download the game?:", steam_libs)
+    steam_lib_path: Path = prompt_select("Where do you want to download the game?:", steam_libs)
     print(f"The game will be download to: {steam_lib_path}")
 
     first_choice = prompt_select("Choose:", ["Add a lua file", "Choose from saved .lua files"], indexed=True)
@@ -270,12 +270,14 @@ def main():
                                     found_lua = True
                                     print(f".lua found: {file.filename}")
                                     lua_contents = zf.read(file).decode(encoding="utf-8")
-                                    break
+                                    break  # lua found in ZIP, stop searching
                             if not found_lua:
                                 print("Could not find .lua in ZIP file.")
                                 continue
+                            else:
+                                break  # ZIP has lua, break
                     else:
-                        break
+                        break  # User probably provided a lua, break
                 else:
                     print("That file does not exist. Try again.")
 
@@ -341,19 +343,25 @@ def main():
     manifest_ids: dict[str, str] = {}
 
     # The official API doesn't return manifest IDs so using this one instead
-    app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
-    if app_info is None:
-        print("Steamcmd api failed. Please supply latest manifest IDs for the following depots:")
-        for depot_id, _ in depot_dec_key:
-            manifest_ids[depot_id] = input(f"Depot {depot_id}: ")
-    else:
-        depots_dict: dict[str, Any] = app_info.get("data", {}).get(app_id, {}).get("depots", {})
-        for depot_id, _ in depot_dec_key:
-            latest = depots_dict.get(depot_id, {}).get("manifests", {}).get("public", {}).get("gid")
-            if latest is None:
-                latest = input(f"Steamcmd API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
-            print(f"Depot {depot_id} has manifest {latest}")
-            manifest_ids[depot_id] = latest
+    while True:
+        app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
+        if app_info is None:
+            print("Steamcmd api failed. Please supply latest manifest IDs for the following depots or blank to try the request again:")
+            for depot_id, _ in depot_dec_key:
+                if choice := input(f"Depot {depot_id}: "):
+                    manifest_ids[depot_id] = choice
+                    break
+                else:
+                    continue
+        else:
+            depots_dict: dict[str, Any] = app_info.get("data", {}).get(app_id, {}).get("depots", {})
+            for depot_id, _ in depot_dec_key:
+                latest = depots_dict.get(depot_id, {}).get("manifests", {}).get("public", {}).get("gid")
+                if latest is None:
+                    latest = input(f"Steamcmd API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
+                print(f"Depot {depot_id} has manifest {latest}")
+                manifest_ids[depot_id] = latest
+            break
 
     for depot_id, dec_key in depot_dec_key:
         manifest_id = manifest_ids[depot_id]
