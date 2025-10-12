@@ -146,7 +146,7 @@ class AppListManager:
             with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
                 f.write(id)
             self.last_idx = new_idx
-            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")            
+            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")
         else:
             print(f"{id} already in AppList")
 
@@ -183,9 +183,9 @@ def get_game_name(app_id: str):
     if official_info:
         app_name = official_info.get(app_id, {}).get("data", {}).get("name")
         if app_name is None:
-            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")    
+            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")
     else:
-        app_name = input("Request failed. Type the name of the game: ")    
+        app_name = input("Request failed. Type the name of the game: ")
     return app_name
 
 
@@ -247,7 +247,7 @@ def main():
                 if len(named_ids) == 0:
                     print("You don't have any saved .lua files. Try adding some first.")
                     first_choice = 0
-                    continue                
+                    continue
                 lua_path: Optional[Path] = prompt_select(
                     "Choose a game:",
                     [
@@ -262,12 +262,12 @@ def main():
                 else:
                     break
             else:
-                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n"))
+                lua_path = Path(input("Drag/paste a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n").strip("\"'"))
                 if lua_path.exists():
                     if lua_path.samefile(Path.cwd()):
                         # Switch to other option
                         first_choice = 1
-                        continue                    
+                        continue
                     if lua_path.suffix == ".zip":
                         with zipfile.ZipFile(lua_path) as zf:
                             files = zf.filelist
@@ -349,17 +349,24 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    # The official API doesn't return manifest IDs so using this one instead
+    # The official API doesn't return manifest IDs so using this one instead, can give outdated manifest IDs sometimes
     while True:
-        app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
-        if app_info is None:
-            print("Steamcmd api failed. Please supply latest manifest IDs for the following depots or blank to try the request again:")
+        manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
+        if manifest_mode == "Auto":
+            app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
+        else:
+            app_info = manifest_mode
+        if app_info is None or app_info == "Manual":
+            print(
+                f"{'Steamcmd api failed. ' if app_info is None else ''}"
+                "Please supply latest manifest IDs for the following depots or blank to try the request again:"
+            )
             for depot_id, _ in depot_dec_key:
                 if choice := input(f"Depot {depot_id}: "):
                     manifest_ids[depot_id] = choice
-                    break
                 else:
                     continue
+            break
         else:
             depots_dict: dict[str, Any] = app_info.get("data", {}).get(app_id, {}).get("depots", {})
             for depot_id, _ in depot_dec_key:
