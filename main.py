@@ -262,9 +262,12 @@ def main():
                 else:
                     break
             else:
-                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter:\n"))
-                
+                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n"))
                 if lua_path.exists():
+                    if lua_path.samefile(Path.cwd()):
+                        # Switch to other option
+                        first_choice = 1
+                        continue                    
                     if lua_path.suffix == ".zip":
                         with zipfile.ZipFile(lua_path) as zf:
                             files = zf.filelist
