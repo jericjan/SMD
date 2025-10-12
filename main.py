@@ -7,11 +7,13 @@ import time
 import winreg
 import zipfile
 from pathlib import Path
-from typing import Any, Literal, Union, overload
+from typing import Any, Literal, Optional, Union, overload
 from urllib.parse import urljoin
 
 import httpx
 import vdf  # type: ignore
+from InquirerPy import inquirer
+from pathvalidate import sanitize_filename
 
 from decrypt_manifest import decrypt_manifest
 
@@ -148,6 +150,28 @@ class AppListManager:
             print(f"{id} already in AppList")
 
 
+def get_steam_libs(steam_path: Path):
+    lib_folders = steam_path / "config/libraryfolders.vdf"
+
+    with lib_folders.open(encoding="utf-8") as f:
+        vdf_data: dict[Any, Any] = vdf.load(f)  # type: ignore
+
+    paths: list[str] = []
+    for library in vdf_data['libraryfolders'].values():
+        if Path(path := library['path']).exists():
+            paths.append(path)
+
+    return paths
+
+
+def prompt_select(msg: str, choices: list[str], default: Optional[Any] = None):
+    return inquirer.select(  # type: ignore
+        message=msg,
+        choices=choices,
+        default=default,
+    ).execute()
+
+
 def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
@@ -163,6 +187,10 @@ def main():
     vdf_file = (steam_path / "config/config.vdf")
     shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
 
+    steam_libs = get_steam_libs(steam_path)
+    steam_lib_path = prompt_select("Where do you want to download the game?:", steam_libs)
+    print(f"The game will be download to: {steam_lib_path}")
+        
     while True:
         while True:
             lua_path = Path(input("Drag a lua file into here then press Enter:\n"))
@@ -203,8 +231,33 @@ def main():
             assert app_id is not None
             break
 
+    official_info = asyncio.run(get_request(f"https://store.steampowered.com/api/appdetails/?appids={app_id}", "json"))
+    if official_info:
+        app_name = official_info.get(app_id, {}).get("data", {}).get("name")
+        if app_name is None:
+            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")    
+    else:
+        app_name = input("Request failed. Type the name of the game: ")
+
+    acf_contents: dict[str, dict[str, str]] = {
+        "AppState":
+        {
+            "AppID": app_id,
+            "Universe": "1",
+            "name": app_name,
+            "installdir": sanitize_filename(app_name),
+            "StateFlags": "4"
+        }
+    }
+    acf_file = steam_lib_path / f"steamapps/appmanifest_{app_id}.acf"
+
+    with acf_file.open("w", encoding="utf-8") as f:
+        vdf.dump(acf_contents, f, pretty=True)  # type: ignore
+    print(f"Wrote .acf file to {acf_file}")
+
     manifest_ids: dict[str, str] = {}
 
+    # The official API doesn't return manifest IDs so using this one instead
     app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
     if app_info is None:
         print("Steamcmd api failed. Please supply latest manifest IDs for the following depots:")
