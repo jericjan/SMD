@@ -13,8 +13,9 @@ from urllib.parse import urljoin
 import httpx
 import vdf  # type: ignore
 from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
 from pathvalidate import sanitize_filename
-
+import json
 from decrypt_manifest import decrypt_manifest
 
 
@@ -164,17 +165,63 @@ def get_steam_libs(steam_path: Path):
     return paths
 
 
-def prompt_select(msg: str, choices: list[str], default: Optional[Any] = None):
-    return inquirer.select(  # type: ignore
+def prompt_select(msg: str, choices: Union[list[str], list[Choice]], default: Optional[Any] = None, indexed: bool = False, fuzzy: bool = False):
+    new_choices = (
+        [Choice(value=idx, name=(x.name if isinstance(x, Choice) else x)) for idx, x in enumerate(choices)]
+        if indexed else choices
+    )
+    cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
+    return cmd(
         message=msg,
-        choices=choices,
+        choices=new_choices,
         default=default,
     ).execute()
+
+
+def get_game_name(app_id: str):
+    official_info = asyncio.run(get_request(f"https://store.steampowered.com/api/appdetails/?appids={app_id}", "json"))
+    if official_info:
+        app_name = official_info.get(app_id, {}).get("data", {}).get("name")
+        if app_name is None:
+            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")    
+    else:
+        app_name = input("Request failed. Type the name of the game: ")    
+    return app_name
+
+
+def get_named_ids(folder: Path):
+    saved_ids = [x.stem for x in folder.glob("*.lua")]
+    id_names_file = folder / "names.json"
+    named_ids: dict[str, str] = {}
+    if not id_names_file.exists():
+        with id_names_file.open("w", encoding="utf-8") as f:
+            json.dump({}, f)
+    else:
+        with id_names_file.open("r", encoding="utf-8") as f:
+            named_ids = json.load(f)
+    new_ids = 0
+    for saved_id in saved_ids:
+        if saved_id not in named_ids.keys():
+            new_ids += 1
+            name = get_game_name(saved_id)
+            named_ids[saved_id] = name
+
+    if new_ids > 0:
+        with id_names_file.open("w", encoding="utf-8") as f:
+            json.dump(named_ids, f, indent=2)
+    return named_ids
 
 
 def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
+
+    saved_lua = Path().cwd() / "saved_lua"
+    named_ids = {}
+    if not saved_lua.exists():
+        saved_lua.mkdir()
+    else:
+        named_ids = get_named_ids(saved_lua)
 
     steam_path = get_steam_path()
     if steam_path is None:
@@ -190,12 +237,31 @@ def main():
     steam_libs = get_steam_libs(steam_path)
     steam_lib_path = prompt_select("Where do you want to download the game?:", steam_libs)
     print(f"The game will be download to: {steam_lib_path}")
-        
+
+    first_choice = prompt_select("Choose:", ["Add a lua file", "Choose from saved .lua files"], indexed=True)
+
     while True:
         while True:
-            lua_path = Path(input("Drag a lua file into here then press Enter:\n"))
-            if lua_path.exists():
-                break
+            if first_choice == 1:
+                lua_path: Optional[Path] = prompt_select(
+                    "Choose a game:",
+                    [
+                        Choice(value=saved_lua / f"{app_id}.lua", name=name)
+                        for app_id, name in named_ids.items()
+                    ] + [Choice(value=None, name="(Add a lua file instead)")],
+                    fuzzy=True
+                )
+                if lua_path is None or not lua_path.exists():
+                    first_choice = 0
+                    continue
+                else:
+                    break
+            else:
+                lua_path = Path(input("Drag a lua file into here then press Enter:\n"))
+                if lua_path.exists():
+                    break
+                else:
+                    print("That file does not exist. Try again.")
 
         with lua_path.open(encoding="utf-8") as f:
             lua_contents = f.read()
@@ -231,13 +297,10 @@ def main():
             assert app_id is not None
             break
 
-    official_info = asyncio.run(get_request(f"https://store.steampowered.com/api/appdetails/?appids={app_id}", "json"))
-    if official_info:
-        app_name = official_info.get(app_id, {}).get("data", {}).get("name")
-        if app_name is None:
-            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")    
-    else:
-        app_name = input("Request failed. Type the name of the game: ")
+    if not (saved_lua / lua_path.name).exists():
+        shutil.copyfile(lua_path, saved_lua / lua_path.name)
+
+    app_name = get_game_name(app_id)
 
     acf_contents: dict[str, dict[str, str]] = {
         "AppState":
