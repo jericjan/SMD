@@ -242,6 +242,7 @@ def main():
 
     while True:
         while True:
+            lua_contents = ""
             if first_choice == 1:
                 lua_path: Optional[Path] = prompt_select(
                     "Choose a game:",
@@ -257,14 +258,30 @@ def main():
                 else:
                     break
             else:
-                lua_path = Path(input("Drag a lua file into here then press Enter:\n"))
+                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter:\n"))
+                
                 if lua_path.exists():
-                    break
+                    if lua_path.suffix == ".zip":
+                        with zipfile.ZipFile(lua_path) as zf:
+                            files = zf.filelist
+                            found_lua = False
+                            for file in files:
+                                if file.filename.endswith(".lua"):
+                                    found_lua = True
+                                    print(f".lua found: {file.filename}")
+                                    lua_contents = zf.read(file).decode(encoding="utf-8")
+                                    break
+                            if not found_lua:
+                                print("Could not find .lua in ZIP file.")
+                                continue
+                    else:
+                        break
                 else:
                     print("That file does not exist. Try again.")
 
-        with lua_path.open(encoding="utf-8") as f:
-            lua_contents = f.read()
+        if lua_contents == "":
+            with lua_path.open(encoding="utf-8") as f:
+                lua_contents = f.read()
 
         success = True
         if app_id := app_id_regex.search(lua_contents):
@@ -297,7 +314,10 @@ def main():
             assert app_id is not None
             break
 
-    if not (saved_lua / lua_path.name).exists():
+    if lua_path.suffix == ".zip":
+        with (saved_lua / f"{app_id}.lua").open("w", encoding="utf-8") as f:
+            f.write(lua_contents)
+    elif not (saved_lua / lua_path.name).exists():
         shutil.copyfile(lua_path, saved_lua / lua_path.name)
 
     app_name = get_game_name(app_id)
