@@ -244,6 +244,10 @@ def main():
         while True:
             lua_contents = ""
             if first_choice == 1:
+                if len(named_ids) == 0:
+                    print("You don't have any saved .lua files. Try adding some first.")
+                    first_choice = 0
+                    continue                
                 lua_path: Optional[Path] = prompt_select(
                     "Choose a game:",
                     [
