@@ -165,7 +165,7 @@ def get_steam_libs(steam_path: Path):
     return paths
 
 
-def prompt_select(msg: str, choices: Union[list[str], list[Choice]], default: Optional[Any] = None, indexed: bool = False, fuzzy: bool = False):
+def prompt_select(msg: str, choices: list[Any], default: Optional[Any] = None, indexed: bool = False, fuzzy: bool = False):
     new_choices = (
         [Choice(value=idx, name=(x.name if isinstance(x, Choice) else x)) for idx, x in enumerate(choices)]
         if indexed else choices
