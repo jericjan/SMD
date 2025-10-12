@@ -24,8 +24,16 @@ idna==3.10
     #   httpx
 importlib-metadata==8.7.0
     # via isort
+inquirerpy==0.3.4
+    # via steam-manifest-decrypt (pyproject.toml)
 isort==6.1.0
     # via steam-manifest-decrypt (pyproject.toml)
+pathvalidate==3.3.1
+    # via steam-manifest-decrypt (pyproject.toml)
+pfzy==0.3.4
+    # via inquirerpy
+prompt-toolkit==3.0.52
+    # via inquirerpy
 protobuf==6.32.1
     # via
     #   steam-manifest-decrypt (pyproject.toml)
@@ -43,5 +51,7 @@ typing-extensions==4.15.0
     #   grpcio
 vdf==3.4
     # via steam-manifest-decrypt (pyproject.toml)
+wcwidth==0.2.14
+    # via prompt-toolkit
 zipp==3.23.0
     # via importlib-metadata

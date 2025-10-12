@@ -19,3 +19,6 @@ Run this as well to generate a requirements.txt for non-uv users
 ```
 uv pip compile pyproject.toml -o requirements.txt
 ```
+
+# To-Do
+- [ ] database for quick app updates
