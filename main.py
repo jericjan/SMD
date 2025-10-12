@@ -157,9 +157,9 @@ def get_steam_libs(steam_path: Path):
     with lib_folders.open(encoding="utf-8") as f:
         vdf_data: dict[Any, Any] = vdf.load(f)  # type: ignore
 
-    paths: list[str] = []
+    paths: list[Path] = []
     for library in vdf_data['libraryfolders'].values():
-        if Path(path := library['path']).exists():
+        if (path := Path(library['path'])).exists():
             paths.append(path)
 
     return paths
