@@ -11,3 +11,4 @@ wheels/
 
 *.lua
 saved_lua/
+protoc.exe

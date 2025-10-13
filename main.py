@@ -1,5 +1,6 @@
 import asyncio
 import io
+import json
 import msvcrt
 import re
 import shutil
@@ -9,15 +10,16 @@ import zipfile
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, overload
 from urllib.parse import urljoin
-from steam.client import SteamClient
+
 import httpx
 import vdf  # type: ignore
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from pathvalidate import sanitize_filename
-import json
+from steam.client import SteamClient  # type: ignore
+
 from decrypt_manifest import decrypt_manifest
-import threading
+
 
 def get_steam_path():
     """Get the user's Steam location. Checks CurrentUser first, then LocalMachine"""
@@ -217,7 +219,8 @@ def main():
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
 
     client = SteamClient()
-    threading.Thread(target=client.anonymous_login).start()
+    print("Logging in to Steam anonymously...")
+    client.anonymous_login()
 
     saved_lua = Path().cwd() / "saved_lua"
     named_ids = {}
@@ -363,12 +366,7 @@ def main():
     while True:
         manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
         if manifest_mode == "Auto":
-            print("Logging in anonymously... You don't have to do anything.")
-            while True:
-                if client.logged_on:
-                    break                
-                time.sleep(0.25)
-            app_info = client.get_product_info([app_id])  # type: ignore
+            app_info = client.get_product_info([int(app_id)])  # type: ignore
         else:
             app_info = manifest_mode  # This is dogshit
         if app_info is None or app_info == "Manual":
@@ -383,9 +381,9 @@ def main():
                     continue
             break
         else:
-            depots_dict: dict[str, Any] = app_info.get("apps", {}).get(app_id, {}).get("depots", {})
+            depots_dict: dict[str, Any] = app_info.get("apps", {}).get(int(app_id), {}).get("depots", {})
             for depot_id, _ in depot_dec_key:
-                latest = depots_dict.get(depot_id, {}).get("manifests", {}).get("public", {}).get("gid")
+                latest = depots_dict.get(str(depot_id), {}).get("manifests", {}).get("public", {}).get("gid")
                 if latest is None:
                     latest = input(f"Steamcmd API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
                 print(f"Depot {depot_id} has manifest {latest}")
