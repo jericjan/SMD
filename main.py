@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, overload
 from urllib.parse import urljoin
-
+from steam.client import SteamClient
 import httpx
 import vdf  # type: ignore
 from InquirerPy import inquirer
@@ -17,7 +17,7 @@ from InquirerPy.base.control import Choice
 from pathvalidate import sanitize_filename
 import json
 from decrypt_manifest import decrypt_manifest
-
+import threading
 
 def get_steam_path():
     """Get the user's Steam location. Checks CurrentUser first, then LocalMachine"""
@@ -216,6 +216,9 @@ def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
 
+    client = SteamClient()
+    threading.Thread(target=client.anonymous_login).start()
+
     saved_lua = Path().cwd() / "saved_lua"
     named_ids = {}
     if not saved_lua.exists():
@@ -360,9 +363,14 @@ def main():
     while True:
         manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
         if manifest_mode == "Auto":
-            app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
+            print("Logging in anonymously... You don't have to do anything.")
+            while True:
+                if client.logged_on:
+                    break                
+                time.sleep(0.25)
+            app_info = client.get_product_info([app_id])  # type: ignore
         else:
-            app_info = manifest_mode
+            app_info = manifest_mode  # This is dogshit
         if app_info is None or app_info == "Manual":
             print(
                 f"{'Steamcmd api failed. ' if app_info is None else ''}"
@@ -375,7 +383,7 @@ def main():
                     continue
             break
         else:
-            depots_dict: dict[str, Any] = app_info.get("data", {}).get(app_id, {}).get("depots", {})
+            depots_dict: dict[str, Any] = app_info.get("apps", {}).get(app_id, {}).get("depots", {})
             for depot_id, _ in depot_dec_key:
                 latest = depots_dict.get(depot_id, {}).get("manifests", {}).get("public", {}).get("gid")
                 if latest is None:

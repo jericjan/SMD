@@ -12,7 +12,11 @@ It's best if you have `uv` installed.
 
 If you ever update `content_manifest.proto`, run this to build the stuff that python can understand:
 ```
-uv run python -m grpc_tools.protoc --proto_path=. --python_out=. --pyi_out=. content_manifest.proto
+uv run python -m grpc_tools.protoc --proto_path=. --python_out=. content_manifest.proto
+```
+Because of the `steam` module, the project is locked to version 1.48.2 of `grpcio-tools`. This means the python stub files (`.pyi`) cannot be generated. One workaround is to download a `protoc` binary (I used [this](https://github.com/protocolbuffers/protobuf/releases/tag/v32.1) one) and run this:
+```
+protoc.exe --pyi_out=. -I. content_manifest.proto
 ```
 
 Run this as well to generate a requirements.txt for non-uv users
