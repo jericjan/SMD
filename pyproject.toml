@@ -5,12 +5,13 @@ description = "Decrypt steam manifest files"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "grpcio-tools>=1.75.1",
+    "grpcio-tools>=1.48.2",
     "httpx>=0.28.1",
     "inquirerpy>=0.3.4",
     "isort>=6.1.0",
     "pathvalidate>=3.3.1",
     "protobuf>=3.20.3",
     "pycryptodome>=3.23.0",
+    "steam[client]>=1.4.4",
     "vdf>=3.4",
 ]
