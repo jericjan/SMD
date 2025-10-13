@@ -62,7 +62,7 @@ class ContentManifestMetadata(_message.Message):
     unique_chunks: int
     crc_encrypted: int
     crc_clear: int
-    def __init__(self, depot_id: _Optional[int] = ..., gid_manifest: _Optional[int] = ..., creation_time: _Optional[int] = ..., filenames_encrypted: bool = ..., cb_disk_original: _Optional[int] = ..., cb_disk_compressed: _Optional[int] = ..., unique_chunks: _Optional[int] = ..., crc_encrypted: _Optional[int] = ..., crc_clear: _Optional[int] = ...) -> None: ...
+    def __init__(self, depot_id: _Optional[int] = ..., gid_manifest: _Optional[int] = ..., creation_time: _Optional[int] = ..., filenames_encrypted: _Optional[bool] = ..., cb_disk_original: _Optional[int] = ..., cb_disk_compressed: _Optional[int] = ..., unique_chunks: _Optional[int] = ..., crc_encrypted: _Optional[int] = ..., crc_clear: _Optional[int] = ...) -> None: ...
 
 class ContentManifestSignature(_message.Message):
     __slots__ = ("signature",)
