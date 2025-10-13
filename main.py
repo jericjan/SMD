@@ -349,17 +349,24 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    # The official API doesn't return manifest IDs so using this one instead
+    # The official API doesn't return manifest IDs so using this one instead, can give outdated manifest IDs sometimes
     while True:
-        app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
-        if app_info is None:
-            print("Steamcmd api failed. Please supply latest manifest IDs for the following depots or blank to try the request again:")
+        manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
+        if manifest_mode == "Auto":
+            app_info = asyncio.run(get_request(f"https://api.steamcmd.net/v1/info/{app_id}", "json"))
+        else:
+            app_info = manifest_mode
+        if app_info is None or app_info == "Manual":
+            print(
+                f"{'Steamcmd api failed. ' if app_info is None else ''}"
+                "Please supply latest manifest IDs for the following depots or blank to try the request again:"
+            )
             for depot_id, _ in depot_dec_key:
                 if choice := input(f"Depot {depot_id}: "):
                     manifest_ids[depot_id] = choice
-                    break
                 else:
                     continue
+            break
         else:
             depots_dict: dict[str, Any] = app_info.get("data", {}).get(app_id, {}).get("depots", {})
             for depot_id, _ in depot_dec_key:
