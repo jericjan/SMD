@@ -343,9 +343,16 @@ def main():
     }
     acf_file = steam_lib_path / f"steamapps/appmanifest_{app_id}.acf"
 
-    with acf_file.open("w", encoding="utf-8") as f:
-        vdf.dump(acf_contents, f, pretty=True)  # type: ignore
-    print(f"Wrote .acf file to {acf_file}")
+    write_acf = True
+    if acf_file.exists():
+        write_acf = prompt_select(".acf file found. Is this an update?", [Choice(False, "Yes"), Choice(True, "No")])
+
+    if write_acf:
+        with acf_file.open("w", encoding="utf-8") as f:
+            vdf.dump(acf_contents, f, pretty=True)  # type: ignore
+        print(f"Wrote .acf file to {acf_file}")
+    else:
+        print("Skipped writing to .acf file")
 
     manifest_ids: dict[str, str] = {}
 
