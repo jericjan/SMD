@@ -40,8 +40,6 @@ protobuf==6.32.1
     #   grpcio-tools
 pycryptodome==3.23.0
     # via steam-manifest-decrypt (pyproject.toml)
-pywin32==311
-    # via steam-manifest-decrypt (pyproject.toml)
 setuptools==80.9.0
     # via grpcio-tools
 sniffio==1.3.1
