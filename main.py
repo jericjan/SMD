@@ -268,7 +268,7 @@ def main():
                 else:
                     break
             else:
-                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n"))
+                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n").strip("\"'"))
                 if lua_path.exists():
                     if lua_path.samefile(Path.cwd()):
                         # Switch to other option
