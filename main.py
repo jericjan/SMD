@@ -360,36 +360,33 @@ def main():
             if result.switch_choice is not None:
                 first_choice = result.switch_choice
 
-        success = True
-        if app_id := app_id_regex.search(lua_contents):
-            app_id = app_id.group()
-            print(f"App ID is {app_id}")
-            app_list_man.add_id(app_id)
-        else:
-            success = False
+        if not (app_id_match := app_id_regex.search(lua_contents)):
             print("App ID not found. Try again.")
+            continue
 
-        if depot_dec_key := depot_dec_key_regex.findall(lua_contents):
-            with vdf_file.open(encoding="utf-8") as f:
-                vdf_data = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
-            for depot_id, dec_key in depot_dec_key:
-                app_list_man.add_id(depot_id)
-                print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-                if depot_id not in vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']:
-                    vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots'][depot_id] = {'DecryptionKey': dec_key}
-                    print("Added to config.vdf succesfully.")
-                else:
-                    print("Already in config.vdf.")
-            with vdf_file.open("w", encoding="utf-8") as f:
-                vdf.dump(vdf_data, f, pretty=True)  # type: ignore
+        app_id = app_id_match.group()
+        print(f"App ID is {app_id}")
+        app_list_man.add_id(app_id)
 
-        else:
-            success = False
+        if not (depot_dec_key := depot_dec_key_regex.findall(lua_contents)):
             print("Decryption keys not found. Try again.")
+            continue
 
-        if success:
-            assert app_id is not None
-            break
+        with vdf_file.open(encoding="utf-8") as f:
+            vdf_data = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
+        for depot_id, dec_key in depot_dec_key:
+            app_list_man.add_id(depot_id)
+            print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
+            depots = vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']  # type: ignore
+            if depot_id not in depots:
+                depots[depot_id] = {'DecryptionKey': dec_key}
+                print("Added to config.vdf succesfully.")
+            else:
+                print("Already in config.vdf.")
+        with vdf_file.open("w", encoding="utf-8") as f:
+            vdf.dump(vdf_data, f, pretty=True)  # type: ignore
+
+        break
 
     if lua_path.suffix == ".zip":
         with (saved_lua / f"{app_id}.lua").open("w", encoding="utf-8") as f:
