@@ -444,34 +444,40 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    # The official API doesn't return manifest IDs so using steam module instead
+    # Get manifest IDs. The official API doesn't return these, so using steam module instead
     while True:
-        manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
-        if manifest_mode == "Auto":
-            app_info = client.get_product_info([int(app_id)])  # type: ignore
-        else:
-            app_info = manifest_mode  # This is dogshit
-        if app_info is None or app_info == "Manual":
-            print(
-                f"{'API failed. ' if app_info is None else ''}"
-                "Please supply latest manifest IDs for the following depots or blank to try the request again:"
-            )
-            for depot_id, _ in depot_dec_key:
-                if choice := input(f"Depot {depot_id}: "):
-                    manifest_ids[depot_id] = choice
-                else:
-                    continue
-            break
-        else:
-            depots_dict: dict[str, Any] = app_info.get("apps", {}).get(int(app_id), {}).get("depots", {})
-            for depot_id, _ in depot_dec_key:
-                latest = depots_dict.get(str(depot_id), {}).get("manifests", {}).get("public", {}).get("gid")
-                if latest is None:
-                    latest = input(f"API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
-                print(f"Depot {depot_id} has manifest {latest}")
-                manifest_ids[depot_id] = latest
-            break
+        manifest_mode: Literal["Auto", "Manual"] = prompt_select(
+            "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
+        )
+        app_info = client.get_product_info([int(app_id)]) if manifest_mode == "Auto" else None  # type: ignore
+        depots_dict: dict[str, Any] = (
+            app_info.get("apps", {}).get(int(app_id), {}).get("depots", {}) if app_info else {}
+        )
 
+        if not depots_dict:
+            print(    
+                f"{'API failed or returned malformed response. ' if manifest_mode == 'Auto' else ''}"
+                "Please supply latest manifest IDs for the following depots "
+                "or blank to try the request again:\n"
+            )
+
+        for depot_id, _ in depot_dec_key:
+            latest = (
+                depots_dict.get(str(depot_id), {})
+                .get("manifests", {})
+                .get("public", {})
+                .get("gid")
+            )
+            if latest is None:
+                if not (latest := input(f"Depot {depot_id}: ")):
+                    print("Blank entered. Let's try this again.")
+                    break
+            print(f"Depot {depot_id} has manifest {latest}")
+            manifest_ids[depot_id] = latest
+        else:
+            break  # User did not give a blank, end the loop
+
+    # Download and decrypt manifests
     for depot_id, dec_key in depot_dec_key:
         manifest_id = manifest_ids[depot_id]
 
