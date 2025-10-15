@@ -193,6 +193,8 @@ def prompt_select(msg: str, choices: list[Any], default: Optional[Any] = None, f
     for c in choices:
         if isinstance(c, Enum):
             new_choices.append(Choice(value=c, name=c.value))
+        elif isinstance(c, Choice):
+            new_choices.append(c)
         else:
             new_choices.append(Choice(value=c, name=str(c)))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
