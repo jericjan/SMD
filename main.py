@@ -8,7 +8,7 @@ import time
 import winreg
 import zipfile
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urljoin
 
 import httpx
@@ -26,6 +26,12 @@ class FirstChoice(Enum):
     ADD_LUA = "Add a lua file"
     SELECT_SAVED_LUA = "Choose from saved .lua files"
 
+
+class LuaResult(NamedTuple):
+    success: bool
+    path: Optional[Path]        # path on disk if file exists
+    contents: Optional[str]     # string contents of file (e.g., from zip read)
+    switch_choice: Optional["FirstChoice"]
 
 def get_steam_path():
     """Get the user's Steam location. Checks CurrentUser first, then LocalMachine"""
@@ -208,6 +214,14 @@ def get_game_name(app_id: str):
 
 
 def get_named_ids(folder: Path):
+    """Gets names of games from lua files
+
+    Args:
+        folder (Path): Folder with .lua files in it
+
+    Returns:
+        dict: a dict in the format (game_id, game_name)
+    """
     saved_ids = [x.stem for x in folder.glob("*.lua")]
     id_names_file = folder / "names.json"
     named_ids: dict[str, str] = {}
@@ -228,6 +242,72 @@ def get_named_ids(folder: Path):
         with id_names_file.open("w", encoding="utf-8") as f:
             json.dump(named_ids, f, indent=2)
     return named_ids
+
+
+def find_lua_in_zip(path: Path):
+    """Given a zip path, return the string contents, blank if it can't be found"""
+    lua_contents = ""
+    with zipfile.ZipFile(path) as zf:
+        for file in zf.filelist:
+            if file.filename.endswith(".lua"):
+                print(f".lua found: {file.filename}")
+                lua_contents = zf.read(file).decode(encoding="utf-8")
+                break  # lua found in ZIP, stop searching
+    return lua_contents
+
+
+def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaResult:
+    """Prompt the user to select a saved lua file
+
+    Args:
+        saved_lua (Path): Path to the folder with saved lua files
+        named_ids (dict[str, str]): A dict of (game_id, game_name)
+
+    Returns:
+        (bool, FirstChoice): Success boolean and an optional FirstChoice to change to other options
+    """
+    if len(named_ids) == 0:
+        print("You don't have any saved .lua files. Try adding some first.")
+        return LuaResult(False, None, None, FirstChoice.ADD_LUA)
+    lua_path: Optional[Path] = prompt_select(
+        "Choose a game:",
+        [
+            Choice(value=saved_lua / f"{app_id}.lua", name=name)
+            for app_id, name in named_ids.items()
+        ] + [Choice(value=None, name="(Add a lua file instead)")],
+        fuzzy=True
+    )
+    if lua_path is None or not lua_path.exists():
+        return LuaResult(False, None, None, FirstChoice.ADD_LUA)
+    return LuaResult(True, lua_path, None, None)
+
+
+def add_new_lua() -> LuaResult:
+    """Prompts user to add a new .lua file
+
+    Returns:
+        (bool, Path, FirstChoice): Success boolean, .lua file path, and an optional FirstChoice to change to other options
+    """
+    lua_path = Path(
+        input(
+            "Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\n"
+            "Leave it blank to switch to selecting a saved .lua:\n").strip("\"'")
+    )
+    if not lua_path.exists():
+        print("That file does not exist. Try again.")
+        return LuaResult(False, None, None, None)
+
+    if lua_path.samefile(Path.cwd()):  # Blank input
+        # Switch to other option
+        return LuaResult(False, None, None, FirstChoice.SELECT_SAVED_LUA)
+
+    if lua_path.suffix == ".zip":
+        lua_contents = find_lua_in_zip(lua_path)
+        if lua_contents == "":
+            print("Could not find .lua in ZIP file.")
+            return LuaResult(False, None, None, None)
+        return LuaResult(True, lua_path, lua_contents, None)
+    return LuaResult(True, lua_path, None, None)
 
 
 def main():
@@ -260,59 +340,26 @@ def main():
     steam_lib_path: Path = prompt_select("Where do you want to download the game?:", steam_libs)
     print(f"The game will be download to: {steam_lib_path}")
 
-    first_choice = prompt_select("Choose:", ["Add a lua file", "Choose from saved .lua files"], indexed=True)
+    first_choice: FirstChoice = prompt_select("Choose:", list(FirstChoice))
 
     while True:
         while True:
             lua_contents = ""
-            if first_choice == 1:
-                if len(named_ids) == 0:
-                    print("You don't have any saved .lua files. Try adding some first.")
-                    first_choice = 0
-                    continue                
-                lua_path: Optional[Path] = prompt_select(
-                    "Choose a game:",
-                    [
-                        Choice(value=saved_lua / f"{app_id}.lua", name=name)
-                        for app_id, name in named_ids.items()
-                    ] + [Choice(value=None, name="(Add a lua file instead)")],
-                    fuzzy=True
-                )
-                if lua_path is None or not lua_path.exists():
-                    first_choice = 0
-                    continue
-                else:
-                    break
-            else:
-                lua_path = Path(input("Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\nLeave it blank to switch to selecting a saved .lua:\n").strip("\"'"))
-                if lua_path.exists():
-                    if lua_path.samefile(Path.cwd()):
-                        # Switch to other option
-                        first_choice = 1
-                        continue                    
-                    if lua_path.suffix == ".zip":
-                        with zipfile.ZipFile(lua_path) as zf:
-                            files = zf.filelist
-                            found_lua = False
-                            for file in files:
-                                if file.filename.endswith(".lua"):
-                                    found_lua = True
-                                    print(f".lua found: {file.filename}")
-                                    lua_contents = zf.read(file).decode(encoding="utf-8")
-                                    break  # lua found in ZIP, stop searching
-                            if not found_lua:
-                                print("Could not find .lua in ZIP file.")
-                                continue
-                            else:
-                                break  # ZIP has lua, break
-                    else:
-                        break  # User probably provided a lua, break
-                else:
-                    print("That file does not exist. Try again.")
+            if first_choice == FirstChoice.SELECT_SAVED_LUA:
+                result = select_from_saved_luas(saved_lua, named_ids)
+            elif first_choice == FirstChoice.ADD_LUA:
+                result = add_new_lua()
 
-        if lua_contents == "":
-            with lua_path.open(encoding="utf-8") as f:
-                lua_contents = f.read()
+            if result.success and result.path is not None:
+                lua_path = result.path
+                if result.contents is not None:
+                    lua_contents = result.contents
+                else:
+                    lua_contents = result.path.read_text(encoding="utf-8")
+                break
+
+            if result.switch_choice is not None:
+                first_choice = result.switch_choice
 
         success = True
         if app_id := app_id_regex.search(lua_contents):
@@ -378,7 +425,7 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    # The official API doesn't return manifest IDs so using this one instead, can give outdated manifest IDs sometimes
+    # The official API doesn't return manifest IDs so using steam module instead
     while True:
         manifest_mode = prompt_select("How would you like to obtain the manifest ID?", ["Auto", "Manual"])
         if manifest_mode == "Auto":
@@ -387,7 +434,7 @@ def main():
             app_info = manifest_mode  # This is dogshit
         if app_info is None or app_info == "Manual":
             print(
-                f"{'Steamcmd api failed. ' if app_info is None else ''}"
+                f"{'API failed. ' if app_info is None else ''}"
                 "Please supply latest manifest IDs for the following depots or blank to try the request again:"
             )
             for depot_id, _ in depot_dec_key:
