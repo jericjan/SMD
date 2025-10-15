@@ -5,6 +5,7 @@ import msvcrt
 import re
 import shutil
 import time
+from types import TracebackType
 import winreg
 import zipfile
 from pathlib import Path
@@ -310,6 +311,35 @@ def add_new_lua() -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
+class VDFManager:
+    def __init__(self, path: Path):
+        self.path = path
+        self.data = vdf.VDFDict()
+
+    def __enter__(self):
+        with self.path.open(encoding="utf-8") as f:
+            self.data: vdf.VDFDict = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
+        return self.data
+
+    def __exit__(self, exc_type: Optional[type[BaseException]], exc_value: Optional[BaseException], exc_traceback: Optional[TracebackType]):
+        with self.path.open("w", encoding="utf-8") as f:
+            vdf.dump(self.data, f, pretty=True)  # type: ignore
+
+
+def add_decryption_key_to_config(
+    vdf_file: Path, depot_dec_key: list[tuple[str, str]]
+):
+    with VDFManager(vdf_file) as vdf_data:
+        for depot_id, dec_key in depot_dec_key:
+            print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
+            depots = vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']  # type: ignore
+            if depot_id not in depots:
+                depots[depot_id] = {'DecryptionKey': dec_key}
+                print("Added to config.vdf succesfully.")
+            else:
+                print("Already in config.vdf.")
+
+
 def main():
     app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
     depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
@@ -372,19 +402,10 @@ def main():
             print("Decryption keys not found. Try again.")
             continue
 
-        with vdf_file.open(encoding="utf-8") as f:
-            vdf_data = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
-        for depot_id, dec_key in depot_dec_key:
+        for depot_id, _ in depot_dec_key:
             app_list_man.add_id(depot_id)
-            print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-            depots = vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']  # type: ignore
-            if depot_id not in depots:
-                depots[depot_id] = {'DecryptionKey': dec_key}
-                print("Added to config.vdf succesfully.")
-            else:
-                print("Already in config.vdf.")
-        with vdf_file.open("w", encoding="utf-8") as f:
-            vdf.dump(vdf_data, f, pretty=True)  # type: ignore
+
+        add_decryption_key_to_config(vdf_file, depot_dec_key)
 
         break
 
@@ -444,7 +465,7 @@ def main():
             for depot_id, _ in depot_dec_key:
                 latest = depots_dict.get(str(depot_id), {}).get("manifests", {}).get("public", {}).get("gid")
                 if latest is None:
-                    latest = input(f"Steamcmd API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
+                    latest = input(f"API somehow returned malformed response. Supply latest manifest ID for depot {depot_id}: ")
                 print(f"Depot {depot_id} has manifest {latest}")
                 manifest_ids[depot_id] = latest
             break
