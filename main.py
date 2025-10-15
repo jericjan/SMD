@@ -5,10 +5,11 @@ import msvcrt
 import re
 import shutil
 import time
-from types import TracebackType
 import winreg
 import zipfile
+from enum import Enum
 from pathlib import Path
+from types import TracebackType
 from typing import Any, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urljoin
 
@@ -20,7 +21,6 @@ from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 
 from decrypt_manifest import decrypt_manifest
-from enum import Enum
 
 
 class FirstChoice(Enum):
@@ -29,13 +29,14 @@ class FirstChoice(Enum):
 
 
 class LuaResult(NamedTuple):
-    path: Optional[Path]        # path on disk if file exists
-    contents: Optional[str]     # string contents of file (e.g., from zip read)
+    path: Optional[Path]  # path on disk if file exists
+    contents: Optional[str]  # string contents of file (e.g., from zip read)
     switch_choice: Optional["FirstChoice"]
 
 
 def get_steam_path():
-    """Get the user's Steam location. Checks CurrentUser first, then LocalMachine"""
+    """Get the user's Steam location.
+    Checks CurrentUser first, then LocalMachine"""
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam") as key:
             return Path(winreg.QueryValueEx(key, "SteamPath")[0])
@@ -44,8 +45,7 @@ def get_steam_path():
 
     try:
         with winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\WOW6432Node\Valve\Steam"
+            winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam"
         ) as key:
             return Path(winreg.QueryValueEx(key, "InstallPath")[0])
     except FileNotFoundError:
@@ -67,7 +67,9 @@ async def get_request(url: str, type: Literal["json"]) -> Union[dict[Any, Any], 
     ...
 
 
-async def get_request(url: str, type: Literal['text', 'json'] = "text", timeout: int = 10) -> Union[str, dict[Any, Any], None]:
+async def get_request(
+    url: str, type: Literal["text", "json"] = "text", timeout: int = 10
+) -> Union[str, dict[Any, Any], None]:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.get(url)
@@ -86,9 +88,12 @@ async def get_request(url: str, type: Literal['text', 'json'] = "text", timeout:
 
 
 async def wait_for_enter():
-    print("If it takes too long, press Enter to cancel the request and input manually...")
+    print(
+        "If it takes too long, press Enter to cancel the request "
+        "and input manually..."
+    )
     while True:
-        if msvcrt.kbhit() and msvcrt.getch() == b'\r':
+        if msvcrt.kbhit() and msvcrt.getch() == b"\r":
             return
         await asyncio.sleep(0.05)
 
@@ -109,8 +114,7 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     cancel_task = asyncio.create_task(wait_for_enter())
 
     done, pending = await asyncio.wait(
-        {request_task, cancel_task},
-        return_when=asyncio.FIRST_COMPLETED
+        {request_task, cancel_task}, return_when=asyncio.FIRST_COMPLETED
     )
 
     result = None
@@ -142,7 +146,12 @@ class AppListManager:
         self.applist_folder = steam_path / "AppList"
         self.last_idx = 0
         if not self.applist_folder.exists():
-            self.applist_folder = Path(input("Could not find AppList folder. Please specify the full path here:\n"))
+            self.applist_folder = Path(
+                input(
+                    "Could not find AppList folder. "
+                    "Please specify the full path here:\n"
+                )
+            )
             # TODO: save this path in a settings.json or smth
 
     def get_local_ids(self):
@@ -161,7 +170,7 @@ class AppListManager:
             with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
                 f.write(id)
             self.last_idx = new_idx
-            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")
+            print(f"{id} added to AppList. " "There are now {len(ids) + 1} IDs stored.")
         else:
             print(f"{id} already in AppList")
 
@@ -181,14 +190,19 @@ def get_steam_libs(steam_path: Path):
         vdf_data: dict[Any, Any] = vdf.load(f)  # type: ignore
 
     paths: list[Path] = []
-    for library in vdf_data['libraryfolders'].values():
-        if (path := Path(library['path'])).exists():
+    for library in vdf_data["libraryfolders"].values():
+        if (path := Path(library["path"])).exists():
             paths.append(path)
 
     return paths
 
 
-def prompt_select(msg: str, choices: list[Any], default: Optional[Any] = None, fuzzy: bool = False):
+def prompt_select(
+    msg: str,
+    choices: list[Any],
+    default: Optional[Any] = None,
+    fuzzy: bool = False,
+):
     new_choices: list[Choice] = []
     for c in choices:
         if isinstance(c, Enum):
@@ -206,11 +220,19 @@ def prompt_select(msg: str, choices: list[Any], default: Optional[Any] = None, f
 
 
 def get_game_name(app_id: str):
-    official_info = asyncio.run(get_request(f"https://store.steampowered.com/api/appdetails/?appids={app_id}", "json"))
+    official_info = asyncio.run(
+        get_request(
+            f"https://store.steampowered.com/api/appdetails/?appids={app_id}",
+            "json",
+        )
+    )
     if official_info:
         app_name = official_info.get(app_id, {}).get("data", {}).get("name")
         if app_name is None:
-            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")
+            app_name = input(
+                "Request succeeded but couldn't find the game name. "
+                "Type the name of it: "
+            )
     else:
         app_name = input("Request failed. Type the name of the game: ")
     return app_name
@@ -248,7 +270,8 @@ def get_named_ids(folder: Path):
 
 
 def find_lua_in_zip(path: Path):
-    """Given a zip path, return the string contents, blank if it can't be found"""
+    """Given a zip path, return the string contents,
+    blank if it can't be found"""
     lua_contents = ""
     with zipfile.ZipFile(path) as zf:
         for file in zf.filelist:
@@ -267,7 +290,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
         named_ids (dict[str, str]): A dict of (game_id, game_name)
 
     Returns:
-        (bool, FirstChoice): Success boolean and an optional FirstChoice to change to other options
+        LuaResult:
     """
     if len(named_ids) == 0:
         print("You don't have any saved .lua files. Try adding some first.")
@@ -277,8 +300,9 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
         [
             Choice(value=saved_lua / f"{app_id}.lua", name=name)
             for app_id, name in named_ids.items()
-        ] + [Choice(value=None, name="(Add a lua file instead)")],
-        fuzzy=True
+        ]
+        + [Choice(value=None, name="(Add a lua file instead)")],
+        fuzzy=True,
     )
     if lua_path is None or not lua_path.exists():
         return LuaResult(None, None, FirstChoice.ADD_LUA)
@@ -289,12 +313,14 @@ def add_new_lua() -> LuaResult:
     """Prompts user to add a new .lua file
 
     Returns:
-        (bool, Path, FirstChoice): Success boolean, .lua file path, and an optional FirstChoice to change to other options
+        LuaResult:
     """
     lua_path = Path(
         input(
-            "Drag a .lua file (or .zip w/ .lua inside) into here then press Enter.\n"
-            "Leave it blank to switch to selecting a saved .lua:\n").strip("\"'")
+            "Drag a .lua file (or .zip w/ .lua inside) into here "
+            "then press Enter.\n"
+            "Leave it blank to switch to selecting a saved .lua:\n"
+        ).strip("\"'")
     )
     if not lua_path.exists():
         print("That file does not exist. Try again.")
@@ -323,28 +349,35 @@ class VDFManager:
             self.data: vdf.VDFDict = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
         return self.data
 
-    def __exit__(self, exc_type: Optional[type[BaseException]], exc_value: Optional[BaseException], exc_traceback: Optional[TracebackType]):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_traceback: Optional[TracebackType],
+    ):
         with self.path.open("w", encoding="utf-8") as f:
             vdf.dump(self.data, f, pretty=True)  # type: ignore
 
 
-def add_decryption_key_to_config(
-    vdf_file: Path, depot_dec_key: list[tuple[str, str]]
-):
+def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
     with VDFManager(vdf_file) as vdf_data:
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-            depots = vdf_data['InstallConfigStore']['Software']['Valve']['Steam']['depots']  # type: ignore
+            depots = vdf_data["InstallConfigStore"]["Software"]["Valve"]["Steam"][  # type: ignore
+                "depots"
+            ]
             if depot_id not in depots:
-                depots[depot_id] = {'DecryptionKey': dec_key}
+                depots[depot_id] = {"DecryptionKey": dec_key}
                 print("Added to config.vdf succesfully.")
             else:
                 print("Already in config.vdf.")
 
 
 def main():
-    app_id_regex = re.compile(r'(?<=addappid\()\d+(?=\))')
-    depot_dec_key_regex = re.compile(r'(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)')
+    app_id_regex = re.compile(r"(?<=addappid\()\d+(?=\))")
+    depot_dec_key_regex = re.compile(
+        r"(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)"
+    )
 
     client = SteamClient()
     print("Logging in to Steam anonymously...")
@@ -359,17 +392,24 @@ def main():
 
     steam_path = get_steam_path()
     if steam_path is None:
-        steam_path = Path(input("Couldn't find your Steam path. Paste the path here (The folder that has steam.exe)"))
+        steam_path = Path(
+            input(
+                "Couldn't find your Steam path. Paste the "
+                "path here (The folder that has steam.exe)"
+            )
+        )
     else:
         print(f"Your steam path is {steam_path}")
 
     app_list_man = AppListManager(steam_path)
 
-    vdf_file = (steam_path / "config/config.vdf")
+    vdf_file = steam_path / "config/config.vdf"
     shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
 
     steam_libs = get_steam_libs(steam_path)
-    steam_lib_path: Path = prompt_select("Where do you want to download the game?:", steam_libs)
+    steam_lib_path: Path = prompt_select(
+        "Where do you want to download the game?:", steam_libs
+    )
     print(f"The game will be download to: {steam_lib_path}")
 
     first_choice: FirstChoice = prompt_select("Choose:", list(FirstChoice))
@@ -420,20 +460,22 @@ def main():
     app_name = get_game_name(app_id)
 
     acf_contents: dict[str, dict[str, str]] = {
-        "AppState":
-        {
+        "AppState": {
             "AppID": app_id,
             "Universe": "1",
             "name": app_name,
             "installdir": sanitize_filename(app_name),
-            "StateFlags": "4"
+            "StateFlags": "4",
         }
     }
     acf_file = steam_lib_path / f"steamapps/appmanifest_{app_id}.acf"
 
     write_acf = True
     if acf_file.exists():
-        write_acf = prompt_select(".acf file found. Is this an update?", [Choice(False, "Yes"), Choice(True, "No")])
+        write_acf = prompt_select(
+            ".acf file found. Is this an update?",
+            [Choice(False, "Yes"), Choice(True, "No")],
+        )
 
     if write_acf:
         with acf_file.open("w", encoding="utf-8") as f:
@@ -444,21 +486,32 @@ def main():
 
     manifest_ids: dict[str, str] = {}
 
-    # Get manifest IDs. The official API doesn't return these, so using steam module instead
+    # Get manifest IDs. The official API doesn't return these,
+    # so using steam module instead
     while True:
         manifest_mode: Literal["Auto", "Manual"] = prompt_select(
             "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
         )
-        app_info = client.get_product_info([int(app_id)]) if manifest_mode == "Auto" else None  # type: ignore
+        app_info = (
+            client.get_product_info([int(app_id)])  # type: ignore
+            if manifest_mode == "Auto"
+            else None
+        )
         depots_dict: dict[str, Any] = (
-            app_info.get("apps", {}).get(int(app_id), {}).get("depots", {}) if app_info else {}
+            app_info.get("apps", {}).get(int(app_id), {}).get("depots", {})
+            if app_info
+            else {}
         )
 
         if not depots_dict:
-            print(    
-                f"{'API failed or returned malformed response. ' if manifest_mode == 'Auto' else ''}"
-                "Please supply latest manifest IDs for the following depots "
-                "or blank to try the request again:\n"
+            fail_msg = (
+                "API failed or returned malformed response. "
+                if manifest_mode == "Auto"
+                else ""
+            )
+            print(
+                f"{fail_msg}Please supply latest manifest IDs "
+                "for the following depots or blank to try the request again:\n"
             )
 
         for depot_id, _ in depot_dec_key:
@@ -490,8 +543,11 @@ def main():
             print("openst.top died. Trying again in 1s")
             time.sleep(1)
 
-        cdn = "https://cache1-man-rise.steamcontent.com/"  # You can get cdn urls by running download_sources in steam console
-        manifest_url = urljoin(cdn, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}")
+        # You can get cdn urls by running download_sources in steam console
+        cdn = "https://cache1-man-rise.steamcontent.com/"
+        manifest_url = urljoin(
+            cdn, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
+        )
 
         r = httpx.get(manifest_url)
         r.raise_for_status()
@@ -499,7 +555,7 @@ def main():
         with zipfile.ZipFile(io.BytesIO(r.content)) as f:
             encrypted = io.BytesIO(f.read("z"))
 
-        output_file = (steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest")
+        output_file = steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
 
         decrypt_manifest(encrypted, output_file, dec_key)
 
