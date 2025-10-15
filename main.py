@@ -19,6 +19,12 @@ from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 
 from decrypt_manifest import decrypt_manifest
+from enum import Enum
+
+
+class FirstChoice(Enum):
+    ADD_LUA = "Add a lua file"
+    SELECT_SAVED_LUA = "Choose from saved .lua files"
 
 
 def get_steam_path():
@@ -154,6 +160,14 @@ class AppListManager:
 
 
 def get_steam_libs(steam_path: Path):
+    """Get list of Steam library paths by the user
+
+    Args:
+        steam_path (Path): Steam install path
+
+    Returns:
+        list[Path]: list of Steam library paths
+    """    
     lib_folders = steam_path / "config/libraryfolders.vdf"
 
     with lib_folders.open(encoding="utf-8") as f:
