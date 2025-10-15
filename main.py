@@ -28,10 +28,10 @@ class FirstChoice(Enum):
 
 
 class LuaResult(NamedTuple):
-    success: bool
     path: Optional[Path]        # path on disk if file exists
     contents: Optional[str]     # string contents of file (e.g., from zip read)
     switch_choice: Optional["FirstChoice"]
+
 
 def get_steam_path():
     """Get the user's Steam location. Checks CurrentUser first, then LocalMachine"""
@@ -160,7 +160,7 @@ class AppListManager:
             with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
                 f.write(id)
             self.last_idx = new_idx
-            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")            
+            print(f"{id} added to AppList. There are now {len(ids) + 1} IDs stored.")
         else:
             print(f"{id} already in AppList")
 
@@ -173,7 +173,7 @@ def get_steam_libs(steam_path: Path):
 
     Returns:
         list[Path]: list of Steam library paths
-    """    
+    """
     lib_folders = steam_path / "config/libraryfolders.vdf"
 
     with lib_folders.open(encoding="utf-8") as f:
@@ -207,9 +207,9 @@ def get_game_name(app_id: str):
     if official_info:
         app_name = official_info.get(app_id, {}).get("data", {}).get("name")
         if app_name is None:
-            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")    
+            app_name = input("Request succeeded but couldn't find the game name. Type the name of it: ")
     else:
-        app_name = input("Request failed. Type the name of the game: ")    
+        app_name = input("Request failed. Type the name of the game: ")
     return app_name
 
 
@@ -268,7 +268,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
     """
     if len(named_ids) == 0:
         print("You don't have any saved .lua files. Try adding some first.")
-        return LuaResult(False, None, None, FirstChoice.ADD_LUA)
+        return LuaResult(None, None, FirstChoice.ADD_LUA)
     lua_path: Optional[Path] = prompt_select(
         "Choose a game:",
         [
@@ -278,8 +278,8 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
         fuzzy=True
     )
     if lua_path is None or not lua_path.exists():
-        return LuaResult(False, None, None, FirstChoice.ADD_LUA)
-    return LuaResult(True, lua_path, None, None)
+        return LuaResult(None, None, FirstChoice.ADD_LUA)
+    return LuaResult(lua_path, None, None)
 
 
 def add_new_lua() -> LuaResult:
@@ -295,19 +295,19 @@ def add_new_lua() -> LuaResult:
     )
     if not lua_path.exists():
         print("That file does not exist. Try again.")
-        return LuaResult(False, None, None, None)
+        return LuaResult(None, None, None)
 
     if lua_path.samefile(Path.cwd()):  # Blank input
         # Switch to other option
-        return LuaResult(False, None, None, FirstChoice.SELECT_SAVED_LUA)
+        return LuaResult(None, None, FirstChoice.SELECT_SAVED_LUA)
 
     if lua_path.suffix == ".zip":
         lua_contents = find_lua_in_zip(lua_path)
         if lua_contents == "":
             print("Could not find .lua in ZIP file.")
-            return LuaResult(False, None, None, None)
-        return LuaResult(True, lua_path, lua_contents, None)
-    return LuaResult(True, lua_path, None, None)
+            return LuaResult(None, None, None)
+        return LuaResult(lua_path, lua_contents, None)
+    return LuaResult(lua_path, None, None)
 
 
 def main():
@@ -344,13 +344,12 @@ def main():
 
     while True:
         while True:
-            lua_contents = ""
             if first_choice == FirstChoice.SELECT_SAVED_LUA:
                 result = select_from_saved_luas(saved_lua, named_ids)
             elif first_choice == FirstChoice.ADD_LUA:
                 result = add_new_lua()
 
-            if result.success and result.path is not None:
+            if result.path is not None:
                 lua_path = result.path
                 if result.contents is not None:
                     lua_contents = result.contents
