@@ -29,3 +29,10 @@ uv pip compile pyproject.toml -o requirements.txt
 - [ ] re-cracker (after updates)
   - [ ] achievement updater
 - [ ] steamless feature
+
+# Licenses
+This project includes the following third-party components:
+- [gbe_fork](https://github.com/Detanup01/gbe_fork/) (LGPL-3.0)
+- [Steamless](https://github.com/atom0s/Steamless/) (CC BY-NC-ND 4.0)
+
+Full license texts are available in the `third_party_licenses` directory.
