@@ -483,17 +483,6 @@ def main():
             else {}
         )
 
-        if not depots_dict:
-            fail_msg = (
-                "API failed or returned malformed response. "
-                if manifest_mode == "Auto"
-                else ""
-            )
-            print(
-                f"{fail_msg}Please supply latest manifest IDs "
-                "for the following depots or blank to try the request again:\n"
-            )
-
         for depot_id, _ in depot_dec_key:
             latest = (
                 depots_dict.get(str(depot_id), {})
@@ -502,7 +491,9 @@ def main():
                 .get("gid")
             )
             if latest is None:
-                if not (latest := input(f"Depot {depot_id}: ")):
+                if manifest_mode == "Auto":
+                    print("API failed. I need the latest manifest ID for this depot. Blank if you want to try the request again.")
+                if not (latest := input(f"Depot {depot_id}: ").strip()):
                     print("Blank entered. Let's try this again.")
                     break
             print(f"Depot {depot_id} has manifest {latest}")
