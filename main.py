@@ -196,9 +196,6 @@ def get_steam_libs(steam_path: Path):
     return paths
 
 
-
-
-
 def get_game_name(app_id: str):
     official_info = asyncio.run(
         get_request(
@@ -360,8 +357,6 @@ def main():
     )
 
     client = SteamClient()
-    print("Logging in to Steam anonymously...")
-    client.anonymous_login()
 
     saved_lua = Path().cwd() / "saved_lua"
     named_ids = {}
@@ -472,6 +467,9 @@ def main():
         manifest_mode: Literal["Auto", "Manual"] = prompt_select(
             "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
         )
+        if manifest_mode == "Auto" and not client.logged_on:
+            print("Logging in to Steam anonymously...")
+            client.anonymous_login()
         app_info = (
             client.get_product_info([int(app_id)])  # type: ignore
             if manifest_mode == "Auto"
