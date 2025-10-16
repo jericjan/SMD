@@ -15,12 +15,11 @@ from urllib.parse import urljoin
 
 import httpx
 import vdf  # type: ignore
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
 from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 
 from decrypt_manifest import decrypt_manifest
+from utils import prompt_select
 
 
 class FirstChoice(Enum):
@@ -197,26 +196,7 @@ def get_steam_libs(steam_path: Path):
     return paths
 
 
-def prompt_select(
-    msg: str,
-    choices: list[Any],
-    default: Optional[Any] = None,
-    fuzzy: bool = False,
-):
-    new_choices: list[Choice] = []
-    for c in choices:
-        if isinstance(c, Enum):
-            new_choices.append(Choice(value=c, name=c.value))
-        elif isinstance(c, Choice):
-            new_choices.append(c)
-        else:
-            new_choices.append(Choice(value=c, name=str(c)))
-    cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
-    return cmd(
-        message=msg,
-        choices=new_choices,
-        default=default,
-    ).execute()
+
 
 
 def get_game_name(app_id: str):
@@ -298,10 +278,10 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
     lua_path: Optional[Path] = prompt_select(
         "Choose a game:",
         [
-            Choice(value=saved_lua / f"{app_id}.lua", name=name)
+            (name, saved_lua / f"{app_id}.lua")
             for app_id, name in named_ids.items()
         ]
-        + [Choice(value=None, name="(Add a lua file instead)")],
+        + [("(Add a lua file instead)", None)],
         fuzzy=True,
     )
     if lua_path is None or not lua_path.exists():
@@ -474,7 +454,7 @@ def main():
     if acf_file.exists():
         write_acf = prompt_select(
             ".acf file found. Is this an update?",
-            [Choice(False, "Yes"), Choice(True, "No")],
+            [("Yes", False), ("No", True)],
         )
 
     if write_acf:
