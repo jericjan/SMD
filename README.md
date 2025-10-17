@@ -25,10 +25,7 @@ uv pip compile pyproject.toml -o requirements.txt
 ```
 
 # To-Do
-- [ ] auto-cracker (gbe_fork)
-- [ ] re-cracker (after updates)
-  - [ ] achievement updater
-- [ ] steamless feature
+- [ ] achievement generator
 
 # Licenses
 This project includes the following third-party components:

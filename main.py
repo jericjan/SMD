@@ -18,19 +18,32 @@ import vdf  # type: ignore
 from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 
+from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
 from utils import prompt_select
 
 
-class FirstChoice(Enum):
-    ADD_LUA = "Add a lua file"
+class LuaChoice(Enum):
+    ADD_LUA = "Add a .lua file"
     SELECT_SAVED_LUA = "Choose from saved .lua files"
+
+
+class MainMenu(Enum):
+    MANAGE_LUA = "Manage .lua files"
+    CRACK_GAME = "Crack a game (gbe_fork)"
+    REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
+    EXIT = "Exit"
+
+
+class MainReturnCode(Enum):
+    LOOP = 0
+    EXIT = 1
 
 
 class LuaResult(NamedTuple):
     path: Optional[Path]  # path on disk if file exists
     contents: Optional[str]  # string contents of file (e.g., from zip read)
-    switch_choice: Optional["FirstChoice"]
+    switch_choice: Optional["LuaChoice"]
 
 
 def get_steam_path():
@@ -149,7 +162,7 @@ class AppListManager:
                 input(
                     "Could not find AppList folder. "
                     "Please specify the full path here:\n"
-                )
+                ).strip("\"'")
             )
             # TODO: save this path in a settings.json or smth
 
@@ -271,7 +284,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
     """
     if len(named_ids) == 0:
         print("You don't have any saved .lua files. Try adding some first.")
-        return LuaResult(None, None, FirstChoice.ADD_LUA)
+        return LuaResult(None, None, LuaChoice.ADD_LUA)
     lua_path: Optional[Path] = prompt_select(
         "Choose a game:",
         [
@@ -282,7 +295,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
         fuzzy=True,
     )
     if lua_path is None or not lua_path.exists():
-        return LuaResult(None, None, FirstChoice.ADD_LUA)
+        return LuaResult(None, None, LuaChoice.ADD_LUA)
     return LuaResult(lua_path, None, None)
 
 
@@ -305,7 +318,7 @@ def add_new_lua() -> LuaResult:
 
     if lua_path.samefile(Path.cwd()):  # Blank input
         # Switch to other option
-        return LuaResult(None, None, FirstChoice.SELECT_SAVED_LUA)
+        return LuaResult(None, None, LuaChoice.SELECT_SAVED_LUA)
 
     if lua_path.suffix == ".zip":
         lua_contents = find_lua_in_zip(lua_path)
@@ -350,7 +363,7 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, 
                 print("Already in config.vdf.")
 
 
-def main():
+def main() -> MainReturnCode:
     app_id_regex = re.compile(r"(?<=addappid\()\d+(?=\))")
     depot_dec_key_regex = re.compile(
         r"(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)"
@@ -371,7 +384,7 @@ def main():
             input(
                 "Couldn't find your Steam path. Paste the "
                 "path here (The folder that has steam.exe)"
-            )
+            ).strip("\"'")
         )
     else:
         print(f"Your steam path is {steam_path}")
@@ -387,13 +400,28 @@ def main():
     )
     print(f"The game will be download to: {steam_lib_path}")
 
-    first_choice: FirstChoice = prompt_select("Choose:", list(FirstChoice))
+    menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
+
+    if menu_choice == MainMenu.EXIT:
+        return MainReturnCode.EXIT
+
+    if menu_choice in (MainMenu.CRACK_GAME, MainMenu.REMOVE_DRM):
+        cracker = GameCracker(steam_lib_path)
+        game = cracker.get_game()
+        if menu_choice == MainMenu.CRACK_GAME:
+            dll = cracker.find_steam_dll(game)
+            cracker.crack_dll(dll)
+        else:
+            cracker.apply_steamless(game)
+        return MainReturnCode.LOOP
+
+    lua_choice: LuaChoice = prompt_select("Choose:", list(LuaChoice))
 
     while True:
         while True:
-            if first_choice == FirstChoice.SELECT_SAVED_LUA:
+            if lua_choice == LuaChoice.SELECT_SAVED_LUA:
                 result = select_from_saved_luas(saved_lua, named_ids)
-            elif first_choice == FirstChoice.ADD_LUA:
+            elif lua_choice == LuaChoice.ADD_LUA:
                 result = add_new_lua()
 
             if result.path is not None:
@@ -405,7 +433,7 @@ def main():
                 break
 
             if result.switch_choice is not None:
-                first_choice = result.switch_choice
+                lua_choice = result.switch_choice
 
         if not (app_id_match := app_id_regex.search(lua_contents)):
             print("App ID not found. Try again.")
@@ -490,7 +518,10 @@ def main():
             )
             if latest is None:
                 if manifest_mode == "Auto":
-                    print("API failed. I need the latest manifest ID for this depot. Blank if you want to try the request again.")
+                    print(
+                        "API failed. I need the latest manifest ID for this depot. "
+                        "Blank if you want to try the request again."
+                    )
                 if not (latest := input(f"Depot {depot_id}: ").strip()):
                     print("Blank entered. Let's try this again.")
                     break
@@ -528,6 +559,16 @@ def main():
 
         decrypt_manifest(encrypted, output_file, dec_key)
 
+    return MainReturnCode.LOOP
+
 
 if __name__ == "__main__":
-    main()
+    while True:
+        if main() == MainReturnCode.EXIT:
+            break
+        elif not (
+            choice := prompt_select(
+                "Go back to the Main Menu?", [("Yes", True), ("No", False)]
+            )
+        ):
+            break
