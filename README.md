@@ -5,8 +5,8 @@ Download and decrypt Steam manifest files. Basically imitates what steamtools do
 It's best if you have `uv` installed.
 
 1. Clone the repo
-2. Run `uv sync` to install dependencies
-3. Run `uv run main.py` to run the program
+2. Run `uv sync` to install dependencies  
+3. Either `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it
 
 # Contributing
 

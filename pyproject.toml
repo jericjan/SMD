@@ -15,6 +15,7 @@ dependencies = [
     "pathvalidate>=3.3.1",
     "protobuf>=3.20.3",
     "pycryptodome>=3.23.0",
+    "pyinstaller>=6.16.0",
     "pyperclip>=1.11.0",
     "steam[client]>=1.4.4",
     "vdf>=3.4",

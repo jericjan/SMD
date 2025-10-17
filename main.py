@@ -563,6 +563,8 @@ def main() -> MainReturnCode:
 
 
 if __name__ == "__main__":
+
+    print(str(Path(__file__).resolve().parent))
     while True:
         if main() == MainReturnCode.EXIT:
             break

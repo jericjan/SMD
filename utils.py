@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 from typing import Any, Optional
 
 from InquirerPy import inquirer
@@ -30,3 +31,8 @@ def prompt_select(
         default=default,
         **kwargs
     ).execute()
+
+
+def root_folder():
+    """Returns the executable's root folder"""
+    return Path(__file__).resolve().parent

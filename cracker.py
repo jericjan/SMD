@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pyperclip
 
-from utils import prompt_select
+from utils import prompt_select, root_folder
 
 
 class GameCracker:
@@ -39,7 +39,7 @@ class GameCracker:
             else:
                 print("Incorrect format. Try again.")
 
-        gbe_fork_folder = Path("third_party/gbe_fork/")
+        gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
         with dll_path.open("rb") as f:
             target_hash = hashlib.md5(f.read()).hexdigest()
         with (gbe_fork_folder / dll_path.name).open("rb") as f:
@@ -78,7 +78,7 @@ class GameCracker:
         )
 
     def apply_steamless(self, game_path: Path):
-        steamless_exe = Path(r"third_party\steamless\Steamless.CLI.exe")
+        steamless_exe = root_folder() / "third_party/steamless/Steamless.CLI.exe"
         subprocess.run(["explorer", game_path])
         while True:
             game_exe = Path(
