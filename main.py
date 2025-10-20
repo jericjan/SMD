@@ -181,7 +181,10 @@ class AppListManager:
             with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
                 f.write(id)
             self.last_idx = new_idx
-            print(f"{id} added to AppList. " "There are now {len(ids) + 1} IDs stored.")
+            print(
+                f"{id} added to AppList. "
+                f"There are now {len(ids) + 1} IDs stored."
+            )
         else:
             print(f"{id} already in AppList")
 
@@ -369,9 +372,9 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, 
 
 
 def main() -> MainReturnCode:
-    app_id_regex = re.compile(r"(?<=addappid\()\d+(?=\))")
+    app_id_regex = re.compile(r"addappid\s*\(\s*(\d+)\s*\)")
     depot_dec_key_regex = re.compile(
-        r"(?<=addappid\()(\d+),\d,(?:\"|\')(\S+)(?:\"|\')\)"
+        r"addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
     )
 
     client = SteamClient()
@@ -444,7 +447,7 @@ def main() -> MainReturnCode:
             print("App ID not found. Try again.")
             continue
 
-        app_id = app_id_match.group()
+        app_id = app_id_match.group(1)
         print(f"App ID is {app_id}")
         app_list_man.add_id(app_id)
 
