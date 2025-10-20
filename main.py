@@ -65,18 +65,17 @@ def get_steam_path():
 
 
 @overload
-async def get_request(url: str) -> Union[str, None]:
-    ...
+async def get_request(url: str) -> Union[str, None]: ...
 
 
 @overload
-async def get_request(url: str, type: Literal["text"]) -> Union[str, None]:
-    ...
+async def get_request(url: str, type: Literal["text"]) -> Union[str, None]: ...
 
 
 @overload
-async def get_request(url: str, type: Literal["json"]) -> Union[dict[Any, Any], None]:
-    ...
+async def get_request(
+    url: str, type: Literal["json"]
+) -> Union[dict[Any, Any], None]: ...
 
 
 async def get_request(
@@ -287,10 +286,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: dict[str, str]) -> LuaRes
         return LuaResult(None, None, LuaChoice.ADD_LUA)
     lua_path: Optional[Path] = prompt_select(
         "Choose a game:",
-        [
-            (name, saved_lua / f"{app_id}.lua")
-            for app_id, name in named_ids.items()
-        ]
+        [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()]
         + [("(Add a lua file instead)", None)],
         fuzzy=True,
     )
@@ -337,7 +333,7 @@ class VDFManager:
     def __enter__(self):
         with self.path.open(encoding="utf-8") as f:
             self.data: vdf.VDFDict = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
-        return self.data
+        return self
 
     def __exit__(
         self,
@@ -348,14 +344,23 @@ class VDFManager:
         with self.path.open("w", encoding="utf-8") as f:
             vdf.dump(self.data, f, pretty=True)  # type: ignore
 
+    def enter_path(self, *paths: str) -> dict[Any, Any]:
+        """
+        Walks or creates nested dicts in a VDFDict
+        """
+        current = self.data
+        for key in paths:
+            current = current.setdefault(key, {})  # type: ignore
+        return current  # type: ignore
+
 
 def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
-    with VDFManager(vdf_file) as vdf_data:
+    with VDFManager(vdf_file) as vdf_man:
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-            depots = vdf_data["InstallConfigStore"]["Software"]["Valve"]["Steam"][  # type: ignore
-                "depots"
-            ]
+            depots = vdf_man.enter_path(
+                "InstallConfigStore", "Software", "Valve", "Steam", "depots"
+            )
             if depot_id not in depots:
                 depots[depot_id] = {"DecryptionKey": dec_key}
                 print("Added to config.vdf succesfully.")
