@@ -83,39 +83,7 @@ class GameCracker:
         )
 
     def apply_steamless(self, app_info: AppInfo):
-        def manual_exe_input(app_info : AppInfo):
-            subprocess.run(["explorer", app_info.path])
-            while True:
-                game_exe = Path(
-                    input("Drag the game .exe here and press Enter: ").strip("\"'")
-                )
-                if not game_exe.exists():
-                    print("Doesn't exist. Try again")
-                break
-            return game_exe
-
-        if not self.client.logged_on:
-            print("Logging in to Steam anonymously... ")
-            self.client.anonymous_login()
-        info = self.client.get_product_info([int(app_info.app_id)])  # type: ignore
-        if not info:
-            print("Failed to get app info...")
-            game_exe = manual_exe_input(app_info)
-        else:
-            possible_launches = enter_path(
-                info, "apps", int(app_info.app_id), "config", "launch"
-            )
-            windows_exes: list[str] = []
-            for p_launch in possible_launches.values():
-                if p_launch['config']['oslist'] == "windows":
-                    windows_exes.append(p_launch['executable'])
-            if windows_exes:
-                if len(windows_exes) > 1:
-                    game_exe = prompt_select("Choose the exe:", windows_exes)
-                else:
-                    game_exe = app_info.path / windows_exes[0]
-            else:
-                game_exe = manual_exe_input(app_info)
+        game_exe = self.select_executable(app_info)
 
         steamless_exe = root_folder() / "third_party/steamless/Steamless.CLI.exe"
 
@@ -133,3 +101,43 @@ class GameCracker:
         else:
             print(output.stdout)
             print("Steamtools failed...")
+
+    def _prompt_manual_exe(self, app_info : AppInfo):
+        subprocess.run(["explorer", app_info.path])
+        while True:
+            game_exe = Path(
+                input("Drag the game .exe here and press Enter: ").strip("\"'")
+            )
+            if not game_exe.exists():
+                print("Doesn't exist. Try again")
+            break
+        return game_exe
+
+    def _get_windows_execs(self, info: dict[str, Any], app_id: int) -> list[str]:
+        launches = enter_path(info, "apps", app_id, "config", "launch")
+        return [
+            launch["executable"]
+            for launch in launches.values()
+            if enter_path(launch, "config", "oslist") == "windows"
+        ]
+
+    def select_executable(self, app_info: AppInfo) -> Path:
+        """Selects EXE to get used for Steamless"""
+        if not self.client.logged_on:
+            print("Logging in to Steam anonymously...")
+            self.client.anonymous_login()
+
+        info = self.client.get_product_info([int(app_info.app_id)])  # type: ignore
+        if not info:
+            print("Failed to get app info...")
+            return self._prompt_manual_exe(app_info)
+
+        windows_exes = self._get_windows_execs(info, int(app_info.app_id))
+        if not windows_exes:
+            return self._prompt_manual_exe(app_info)
+
+        if len(windows_exes) == 1:
+            return app_info.path / windows_exes[0]
+
+        chosen = prompt_select("Choose the exe:", windows_exes)
+        return app_info.path / chosen

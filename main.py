@@ -353,7 +353,13 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, 
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
             depots = enter_path(
-                vdf_data, "InstallConfigStore", "Software", "Valve", "Steam", "depots"
+                vdf_data,
+                "InstallConfigStore",
+                "Software",
+                "Valve",
+                "Steam",
+                "depots",
+                mutate=True,
             )
             if depot_id not in depots:
                 depots[depot_id] = {"DecryptionKey": dec_key}
