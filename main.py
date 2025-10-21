@@ -20,7 +20,7 @@ from steam.client import SteamClient  # type: ignore
 
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
-from utils import prompt_select
+from utils import enter_path, prompt_select
 
 
 class LuaChoice(Enum):
@@ -336,7 +336,7 @@ class VDFManager:
     def __enter__(self):
         with self.path.open(encoding="utf-8") as f:
             self.data: vdf.VDFDict = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
-        return self
+        return self.data
 
     def __exit__(
         self,
@@ -347,22 +347,13 @@ class VDFManager:
         with self.path.open("w", encoding="utf-8") as f:
             vdf.dump(self.data, f, pretty=True)  # type: ignore
 
-    def enter_path(self, *paths: str) -> dict[Any, Any]:
-        """
-        Walks or creates nested dicts in a VDFDict
-        """
-        current = self.data
-        for key in paths:
-            current = current.setdefault(key, {})  # type: ignore
-        return current  # type: ignore
-
 
 def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
-    with VDFManager(vdf_file) as vdf_man:
+    with VDFManager(vdf_file) as vdf_data:
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-            depots = vdf_man.enter_path(
-                "InstallConfigStore", "Software", "Valve", "Steam", "depots"
+            depots = enter_path(
+                vdf_data, "InstallConfigStore", "Software", "Valve", "Steam", "depots"
             )
             if depot_id not in depots:
                 depots[depot_id] = {"DecryptionKey": dec_key}
@@ -414,13 +405,13 @@ def main() -> MainReturnCode:
         return MainReturnCode.EXIT
 
     if menu_choice in (MainMenu.CRACK_GAME, MainMenu.REMOVE_DRM):
-        cracker = GameCracker(steam_lib_path)
+        cracker = GameCracker(steam_lib_path, client)
         app_info = cracker.get_game()
         if menu_choice == MainMenu.CRACK_GAME:
             dll = cracker.find_steam_dll(app_info.path)
             cracker.crack_dll(app_info.app_id, dll)
         else:
-            cracker.apply_steamless(app_info.path)
+            cracker.apply_steamless(app_info)
         return MainReturnCode.LOOP
 
     lua_choice: LuaChoice = prompt_select("Choose:", list(LuaChoice))

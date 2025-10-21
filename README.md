@@ -41,7 +41,6 @@ uv pip compile pyproject.toml -o requirements.txt
 
 # To-Do
 - [ ] achievement generator
-- [ ] steamless - use `get_product_info()` to get executable location
 
 # Licenses
 This project includes the following third-party components:

@@ -1,7 +1,8 @@
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
+import vdf  # type: ignore
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
@@ -11,7 +12,7 @@ def prompt_select(
     choices: list[Any],
     default: Optional[Any] = None,
     fuzzy: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     new_choices: list[Choice] = []
     for c in choices:
@@ -25,14 +26,19 @@ def prompt_select(
         else:
             new_choices.append(Choice(value=c, name=str(c)))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
-    return cmd(
-        message=msg,
-        choices=new_choices,
-        default=default,
-        **kwargs
-    ).execute()
+    return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
 
 
 def root_folder():
     """Returns the executable's root folder"""
     return Path(__file__).resolve().parent
+
+
+def enter_path(obj: Union[vdf.VDFDict, dict[Any, Any]], *paths: Union[int, str]) -> Any:
+    """
+    Walks or creates nested dicts in a VDFDict/dict
+    """
+    current = obj
+    for key in paths:
+        current = current.setdefault(key, {})  # type: ignore
+    return current  # type: ignore
