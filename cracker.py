@@ -3,22 +3,37 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any, NamedTuple
 
 import pyperclip
+import vdf
 
 from utils import prompt_select, root_folder
 
 
+class AppInfo(NamedTuple):
+    app_id: str
+    path: Path
+
+
 class GameCracker:
     def __init__(self, library_path: Path):
-        self.games_path = library_path / "steamapps/common"
+        self.steamapps_path = library_path / "steamapps"
 
-    def get_game(self) -> Path:
-        paths: list[Path] = []
-        for path in self.games_path.iterdir():
-            if path.is_dir():
-                paths.append(path)
-        return prompt_select("Select a game", [(x.name, x) for x in paths], fuzzy=True)
+    def get_game(self) -> AppInfo:
+        games: list[tuple[str, AppInfo]] = []
+        for path in self.steamapps_path.glob("*.acf"):
+            print(f"doing {str(path)}")
+            with path.open(encoding="utf-8") as f:
+                app_acf: dict[Any, Any] = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
+            app_state = app_acf.get("AppState", {})
+            name = app_state.get("name")
+            installdir = app_state.get("installdir")
+            app_id = app_state.get("appid")
+            games.append(
+                (name, AppInfo(app_id, self.steamapps_path / "common" / installdir))
+            )
+        return prompt_select("Select a game", games, fuzzy=True)
 
     def find_steam_dll(self, game_path: Path) -> Path:
         files = list(game_path.rglob("steam_api*.dll"))
@@ -28,17 +43,7 @@ class GameCracker:
             )
         return files[0]
 
-    def crack_dll(self, dll_path: Path):
-        valid_app_id = re.compile(r"(?:(?=store\.steampowered.com\/app\/)\d+)|\d+")
-        while True:
-            app_id = input("Enter app id or steam page link: ").strip()
-            if match := valid_app_id.search(app_id):
-                app_id = match.group()
-                print(f"App ID is {app_id}")
-                break
-            else:
-                print("Incorrect format. Try again.")
-
+    def crack_dll(self, app_id: str, dll_path: Path):
         gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
         with dll_path.open("rb") as f:
             target_hash = hashlib.md5(f.read()).hexdigest()

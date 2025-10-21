@@ -41,7 +41,6 @@ uv pip compile pyproject.toml -o requirements.txt
 
 # To-Do
 - [ ] achievement generator
-- [ ] crack_dll - remove asking for app ID and just look for it in `saved_lua`
 - [ ] steamless - use `get_product_info()` to get executable location
 
 # Licenses

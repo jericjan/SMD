@@ -415,12 +415,12 @@ def main() -> MainReturnCode:
 
     if menu_choice in (MainMenu.CRACK_GAME, MainMenu.REMOVE_DRM):
         cracker = GameCracker(steam_lib_path)
-        game = cracker.get_game()
+        app_info = cracker.get_game()
         if menu_choice == MainMenu.CRACK_GAME:
-            dll = cracker.find_steam_dll(game)
-            cracker.crack_dll(dll)
+            dll = cracker.find_steam_dll(app_info.path)
+            cracker.crack_dll(app_info.app_id, dll)
         else:
-            cracker.apply_steamless(game)
+            cracker.apply_steamless(app_info.path)
         return MainReturnCode.LOOP
 
     lua_choice: LuaChoice = prompt_select("Choose:", list(LuaChoice))
