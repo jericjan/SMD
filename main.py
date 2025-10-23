@@ -10,13 +10,14 @@ import zipfile
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, NamedTuple, Optional, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, cast, overload
 from urllib.parse import urljoin
 
 import httpx
 import vdf  # type: ignore
 from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
+from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
@@ -375,7 +376,7 @@ def main() -> MainReturnCode:
     )
 
     client = SteamClient()
-
+    cdn = CDNClient(client)
     saved_lua = Path().cwd() / "saved_lua"
     named_ids = {}
     if not saved_lua.exists():
@@ -549,12 +550,13 @@ def main() -> MainReturnCode:
             time.sleep(1)
 
         # You can get cdn urls by running download_sources in steam console
-        cdn = "https://cache1-man-rise.steamcontent.com/"
+        cdn_server = cast(ContentServer, cdn.get_content_server())
+        cdn_server_name = f"http{'s' if cdn_server.https else ''}://{cdn_server.host}"
         manifest_url = urljoin(
-            cdn, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
+            cdn_server_name, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
         )
 
-        r = httpx.get(manifest_url)
+        r = httpx.get(manifest_url, timeout=None)
         r.raise_for_status()
 
         with zipfile.ZipFile(io.BytesIO(r.content)) as f:
