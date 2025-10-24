@@ -445,7 +445,10 @@ def main() -> MainReturnCode:
         app_info = cracker.get_game()
         if menu_choice == MainMenu.CRACK_GAME:
             dll = cracker.find_steam_dll(app_info.path)
-            cracker.crack_dll(app_info.app_id, dll)
+            if dll is None:
+                print("Could not find steam_api DLL. Maybe you haven't downloaded the game yet...")
+            else:
+                cracker.crack_dll(app_info.app_id, dll)
         else:
             cracker.apply_steamless(app_info)
         return MainReturnCode.LOOP

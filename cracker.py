@@ -2,7 +2,7 @@ import hashlib
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Optional
 
 import pyperclip
 import vdf  # type: ignore
@@ -35,13 +35,15 @@ class GameCracker:
             )
         return prompt_select("Select a game", games, fuzzy=True)
 
-    def find_steam_dll(self, game_path: Path) -> Path:
+    def find_steam_dll(self, game_path: Path) -> Optional[Path]:
         files = list(game_path.rglob("steam_api*.dll"))
         if len(files) > 1:
             return prompt_select(
                 "More than one DLL found. Pick one:", [(x.name, x) for x in files]
             )
-        return files[0]
+        if len(files) == 1:
+            return files[0]
+        return None
 
     def crack_dll(self, app_id: str, dll_path: Path):
         gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
