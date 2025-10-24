@@ -984,6 +984,7 @@ version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "black" },
+    { name = "colorama" },
     { name = "flake8" },
     { name = "flake8-bugbear" },
     { name = "grpcio-tools" },
@@ -1003,6 +1004,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "black", specifier = ">=25.9.0" },
+    { name = "colorama", specifier = ">=0.4.6" },
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-bugbear", specifier = ">=24.12.12" },
     { name = "grpcio-tools", specifier = ">=1.48.2" },

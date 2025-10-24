@@ -13,6 +13,7 @@ from types import TracebackType
 from typing import Any, Literal, NamedTuple, Optional, Union, cast, overload
 from urllib.parse import urljoin
 
+from colorama import init as color_init, Fore, Style
 import httpx
 import vdf  # type: ignore
 from pathvalidate import sanitize_filename
@@ -22,6 +23,8 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
 from utils import enter_path, prompt_select
+
+VERSION = "1.1"
 
 
 class LuaChoice(Enum):
@@ -446,7 +449,10 @@ def main() -> MainReturnCode:
         if menu_choice == MainMenu.CRACK_GAME:
             dll = cracker.find_steam_dll(app_info.path)
             if dll is None:
-                print("Could not find steam_api DLL. Maybe you haven't downloaded the game yet...")
+                print(
+                    "Could not find steam_api DLL. "
+                    "Maybe you haven't downloaded the game yet..."
+                )
             else:
                 cracker.crack_dll(app_info.app_id, dll)
         else:
@@ -604,8 +610,17 @@ def main() -> MainReturnCode:
 
 
 if __name__ == "__main__":
-
-    print(str(Path(__file__).resolve().parent))
+    color_init()
+    print(Fore.GREEN + f"""  ██████       ███▄ ▄███▓     ▓█████▄
+▒██    ▒      ▓██▒▀█▀ ██▒     ▒██▀ ██▌
+░ ▓██▄        ▓██    ▓██░     ░██   █▌
+  ▒   ██▒     ▒██    ▒██      ░▓█▄   ▌
+▒██████▒▒ ██▓ ▒██▒   ░██▒ ██▓ ░▒████▓  ██▓
+▒ ▒▓▒ ▒ ░ ▒▓▒ ░ ▒░   ░  ░ ▒▓▒  ▒▒▓  ▒  ▒▓▒
+░ ░▒  ░ ░ ░▒  ░  ░      ░ ░▒   ░ ▒  ▒  ░▒
+░  ░  ░   ░   ░      ░    ░    ░ ░  ░  ░
+      ░    ░         ░     ░     ░      ░
+           ░               ░   ░        ░ \nVersion: {VERSION}""" + Style.RESET_ALL)
     while True:
         if main() == MainReturnCode.EXIT:
             break
