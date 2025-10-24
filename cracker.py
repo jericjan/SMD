@@ -78,7 +78,7 @@ class GameCracker:
         else:  # 32
             (api_folder / "steam_api64.dll").unlink()
 
-        pyperclip.copy(str(api_folder.absolute()))
+        pyperclip.copy(str((api_folder / "steam_settings").absolute()))
         print(
             "API folder has been copied to clipboard. "
             "Use a tool like Achievement Watcher to generate it."
