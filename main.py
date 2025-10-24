@@ -27,6 +27,7 @@ from utils import enter_path, prompt_select
 class LuaChoice(Enum):
     ADD_LUA = "Add a .lua file"
     SELECT_SAVED_LUA = "Choose from saved .lua files"
+    AUTO_DOWNLOAD = "Automatically download a .lua file"
 
 
 class MainMenu(Enum):
@@ -369,6 +370,34 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, 
                 print("Already in config.vdf.")
 
 
+def download_lua(dest: Path) -> LuaResult:
+    """Downloads a lua file from oureverday's repo"""
+    while True:
+        app_id = input('Enter the App ID or Store link: ').strip()
+        if match := re.search(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+", app_id):
+            app_id = match.group()
+            break
+        print("Not a valid format. Just type the App ID.")
+    lua_contents = asyncio.run(get_request(
+        f"https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/{app_id}/{app_id}.lua"
+    ))
+    if lua_contents is None:
+        restart = prompt_select(
+            "Could not find it in oureveryday's repo. Try again?",
+            [("Yes", True), ("No (Add a .lua instead)", False)],
+        )
+        if restart:
+            return LuaResult(None, None, None)
+        print("Switching to manual .lua selection...")
+        return LuaResult(None, None, LuaChoice.ADD_LUA)
+
+    lua_path = (dest / f"{app_id}.lua")
+    with lua_path.open("w", encoding="utf-8") as f:
+        f.write(lua_contents)
+
+    return LuaResult(lua_path, None, None)
+
+
 def main() -> MainReturnCode:
     app_id_regex = re.compile(r"addappid\s*\(\s*(\d+)\s*\)")
     depot_dec_key_regex = re.compile(
@@ -429,6 +458,8 @@ def main() -> MainReturnCode:
                 result = select_from_saved_luas(saved_lua, named_ids)
             elif lua_choice == LuaChoice.ADD_LUA:
                 result = add_new_lua()
+            elif lua_choice == LuaChoice.AUTO_DOWNLOAD:
+                result = download_lua(saved_lua)
 
             if result.path is not None:
                 lua_path = result.path

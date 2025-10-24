@@ -32,6 +32,8 @@ uv pip compile pyproject.toml -o requirements.txt
 
 # To-Do
 - [ ] achievement generator
+- [ ] keep track on if game was cracked / steamless'd before
+  - [ ] prompt to automatically crack and steamless if so
 
 # Licenses
 This project includes the following third-party components:
