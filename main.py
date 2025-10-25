@@ -190,6 +190,13 @@ class AppListManager:
                 f"{id} added to AppList. "
                 f"There are now {len(ids) + 1} IDs stored."
             )
+            if (len(ids) + 1) > self.max_id_limit:
+                print(
+                    Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
+                    "for Greenluma. "
+                    "I haven't implemented anything to deal with this yet."
+                    + Style.RESET_ALL
+                )
         else:
             print(f"{id} already in AppList")
 
