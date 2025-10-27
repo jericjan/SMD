@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -49,3 +50,27 @@ def enter_path(
         else:
             current = current.get(key, {})  # type: ignore
     return current  # type: ignore
+
+
+SETTINGS_FILE = Path.cwd() / "settings.json"
+
+
+def _load_settings() -> dict[Any, Any]:
+    SETTINGS_FILE.touch(exist_ok=True)
+    with SETTINGS_FILE.open(encoding="utf-8") as f:
+        try:
+            settings = json.load(f)
+        except json.JSONDecodeError:
+            settings: dict[Any, Any] = {}
+    return settings
+
+
+def get_setting(key: str):
+    return _load_settings().get(key)
+
+
+def set_setting(key: str, value: str):
+    settings = _load_settings()
+    settings[key] = value
+    with SETTINGS_FILE.open("w", encoding="utf-8") as f:
+        settings = json.dump(settings, f)

@@ -12,3 +12,4 @@ wheels/
 *.lua
 saved_lua/
 protoc.exe
+settings.json
