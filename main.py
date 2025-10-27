@@ -7,7 +7,6 @@ import shutil
 import time
 import winreg
 import zipfile
-from base64 import b64decode, b64encode
 from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryFile

@@ -10,7 +10,16 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 
 1. Clone the repo
 2. Run `uv sync` to install dependencies  
-3. Either `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it
+3. Download [gbe_fork_tools](https://github.com/Detanup01/gbe_fork_tools/releases) (compiled) and paste the `generate_emu_config` folder inside `\third_party\gbe_fork_tools`. It should look something like this now:  
+```
+├───gbe_fork
+├───gbe_fork_tools
+│   └───generate_emu_config
+│       └───_internal
+│       └───generate_emu_config.exe
+└───steamless
+```
+4. Either `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it
 
 # Pre-requisites
 This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but for now, it's most convenient in normal mode.
