@@ -1,4 +1,6 @@
 # Steam Manifest Decryptor (SMD)
+<img alt="" src="https://img.shields.io/github/repo-size/jericjan/SMD" />
+
 Download and decrypt Steam manifest files. Basically imitates what steamtools does and greenluma couldn't.
 
 ## **Educational use only.** This project is provided for educational purposes only. Use at your own risk.

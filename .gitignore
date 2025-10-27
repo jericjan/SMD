@@ -13,3 +13,4 @@ wheels/
 saved_lua/
 protoc.exe
 settings.bin
+third_party/gbe_fork_tools/**
