@@ -3,6 +3,7 @@ import os
 
 import keyring
 from nacl.secret import SecretBox
+from nacl.exceptions import CryptoError
 
 SERVICE = "smd_tool"
 KEYNAME = "master_key"
@@ -26,5 +27,9 @@ def keyring_encrypt(data: str):
 
 
 def keyring_decrypt(data: bytes):
+    """Returns none if it failed to decrypt (e.g. master key changed)"""
     box = get_secret_box()
-    return box.decrypt(data).decode()
+    try:
+        return box.decrypt(data).decode()
+    except CryptoError:
+        pass
