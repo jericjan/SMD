@@ -57,7 +57,6 @@ class GameCracker:
         print("DLL has not been cracked")
 
         api_folder = dll_path.parent
-        (api_folder / "steam_appid.txt").write_text(app_id, "utf-8")
 
         gse_app_folder = Path.home() / f"AppData/Roaming/GSE Saves/{app_id}"
 
@@ -71,6 +70,7 @@ class GameCracker:
         dll_path.rename(backup_name)
 
         shutil.copytree(gbe_fork_folder, api_folder, dirs_exist_ok=True)
+        (api_folder / "steam_appid.txt").write_text(app_id, "utf-8")
 
         # TODO: this sucks btw
         if "64" in dll_path.name:
