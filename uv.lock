@@ -573,14 +573,10 @@ wheels = [
 [[package]]
 name = "inquirerpy"
 version = "0.3.4"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/kazhala/InquirerPy#714d9068896c1a1f9f4d1354f43f922cd5cfe16d" }
 dependencies = [
     { name = "pfzy" },
     { name = "prompt-toolkit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/64/73/7570847b9da026e07053da3bbe2ac7ea6cde6bb2cbd3c7a5a950fa0ae40b/InquirerPy-0.3.4.tar.gz", hash = "sha256:89d2ada0111f337483cb41ae31073108b2ec1e618a49d7110b0d7ade89fc197e", size = 44431 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/ff/3b59672c47c6284e8005b42e84ceba13864aa0f39f067c973d1af02f5d91/InquirerPy-0.3.4-py3-none-any.whl", hash = "sha256:c65fdfbac1fa00e3ee4fb10679f4d3ed7a012abf4833910e63c295827fe2a7d4", size = 67677 },
 ]
 
 [[package]]
@@ -1009,7 +1005,7 @@ requires-dist = [
     { name = "flake8-bugbear", specifier = ">=24.12.12" },
     { name = "grpcio-tools", specifier = ">=1.48.2" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "inquirerpy", specifier = ">=0.3.4" },
+    { name = "inquirerpy", git = "https://github.com/kazhala/InquirerPy" },
     { name = "isort", specifier = ">=6.1.0" },
     { name = "pathvalidate", specifier = ">=3.3.1" },
     { name = "protobuf", specifier = ">=3.20.3" },

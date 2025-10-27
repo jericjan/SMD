@@ -61,7 +61,7 @@ importlib-metadata==8.7.0
     #   isort
     #   pyinstaller
     #   pyinstaller-hooks-contrib
-inquirerpy==0.3.4
+inquirerpy @ git+https://github.com/kazhala/InquirerPy@714d9068896c1a1f9f4d1354f43f922cd5cfe16d
     # via steam-manifest-decrypt (pyproject.toml)
 isort==6.1.0
     # via steam-manifest-decrypt (pyproject.toml)
