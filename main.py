@@ -404,7 +404,7 @@ def get_manilua(dest: Path, app_id: str):
     url = f"https://www.piracybound.com/api/game/{app_id}"
     chunk_size = (1024**2) // 2  # 0.5 MiB
 
-    if (manilua_key := get_setting("manilua_key")) is None:
+    if (manilua_key := get_setting("manilua_key", True)) is None:
         manilua_key = prompt_secret(
             "Paste your manilua API key here: ",
             lambda x: x.startswith("manilua"),
@@ -413,10 +413,7 @@ def get_manilua(dest: Path, app_id: str):
                 "Go the manilua website and request an API key. It's free."
             ),
         ).strip()
-        manilua_key = b64encode(manilua_key.encode()).decode()
-        set_setting("manilua_key", manilua_key)
-
-    manilua_key = b64decode(manilua_key).decode()
+        set_setting("manilua_key", manilua_key, True)
 
     headers = {
         "Authorization": f"Bearer {manilua_key}",

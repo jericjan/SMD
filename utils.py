@@ -1,12 +1,14 @@
-import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
+import msgpack  # type: ignore
 import vdf  # type: ignore
 from InquirerPy import inquirer
-from InquirerPy.utils import InquirerPyValidate
 from InquirerPy.base.control import Choice
+from InquirerPy.utils import InquirerPyValidate
+
+from crypto import keyring_decrypt, keyring_encrypt
 
 
 def prompt_select(
@@ -70,25 +72,26 @@ def enter_path(
     return current  # type: ignore
 
 
-SETTINGS_FILE = Path.cwd() / "settings.json"
+SETTINGS_FILE = Path.cwd() / "settings.bin"
 
 
 def _load_settings() -> dict[Any, Any]:
     SETTINGS_FILE.touch(exist_ok=True)
-    with SETTINGS_FILE.open(encoding="utf-8") as f:
+    with SETTINGS_FILE.open("rb") as f:
         try:
-            settings = json.load(f)
-        except json.JSONDecodeError:
+            settings = cast("dict[Any, Any]", msgpack.unpackb(f.read()))  # type: ignore
+        except ValueError:
             settings: dict[Any, Any] = {}
     return settings
 
 
-def get_setting(key: str):
-    return _load_settings().get(key)
+def get_setting(key: str, crypt: bool = False):
+    value = _load_settings().get(key)
+    return keyring_decrypt(value) if (value and crypt) else value
 
 
-def set_setting(key: str, value: str):
+def set_setting(key: str, value: str, crypt: bool = False):
     settings = _load_settings()
-    settings[key] = value
-    with SETTINGS_FILE.open("w", encoding="utf-8") as f:
-        settings = json.dump(settings, f)
+    settings[key] = keyring_encrypt(value) if crypt else value
+    with SETTINGS_FILE.open("wb") as f:
+        f.write(msgpack.packb(settings))  # type: ignore
