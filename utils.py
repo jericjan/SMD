@@ -33,6 +33,10 @@ def prompt_select(
     return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
 
 
+def prompt_text(msg: str):
+    return inquirer.text(msg).execute().strip()
+
+
 def prompt_secret(
     msg: str,
     validator: Optional[InquirerPyValidate] = None,
