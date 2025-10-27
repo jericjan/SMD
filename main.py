@@ -24,7 +24,7 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
-from utils import enter_path, get_setting, prompt_select, set_setting
+from utils import enter_path, get_setting, prompt_secret, prompt_select, set_setting
 
 VERSION = "1.1"
 
@@ -402,12 +402,15 @@ def get_manilua(dest: Path, app_id: str):
     chunk_size = (1024**2) // 2  # 0.5 MiB
 
     if (manilua_key := get_setting("manilua_key")) is None:
-        while True:
-            manilua_key = input("Paste your manilua API key here: ")
-            if manilua_key.startswith("manilua_"):
-                set_setting("manilua_key", manilua_key)
-                break
-            print("Invalid API key.")
+        manilua_key = prompt_secret(
+            "Paste your manilua API key here: ",
+            lambda x: x.startswith("manilua"),
+            "That's not a manilua key!",
+            long_instruction=(
+                "Go the manilua website and request an API key. It's free."
+            ),
+        ).strip()
+        set_setting("manilua_key", manilua_key)
 
     headers = {
         "Authorization": f"Bearer {manilua_key}",

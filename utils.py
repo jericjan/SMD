@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 
 import vdf  # type: ignore
 from InquirerPy import inquirer
+from InquirerPy.utils import InquirerPyValidate
 from InquirerPy.base.control import Choice
 
 
@@ -28,6 +29,23 @@ def prompt_select(
             new_choices.append(Choice(value=c, name=str(c)))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
     return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
+
+
+def prompt_secret(
+    msg: str,
+    validator: Optional[InquirerPyValidate] = None,
+    invalid_msg: str = "Invalid input",
+    instruction: str = "",
+    long_instruction: str = "",
+):
+    return inquirer.secret(
+        message=msg,
+        transformer=lambda _: "[hidden]",
+        validate=validator,
+        invalid_message=invalid_msg,
+        instruction=instruction,
+        long_instruction=long_instruction,
+    ).execute()
 
 
 def root_folder():
