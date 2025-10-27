@@ -33,8 +33,8 @@ def prompt_select(
     return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
 
 
-def prompt_text(msg: str):
-    return inquirer.text(msg).execute().strip()
+def prompt_text(msg: str, long_instruction: str = ""):
+    return inquirer.text(msg, long_instruction=long_instruction).execute().strip()
 
 
 def prompt_secret(

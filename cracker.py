@@ -1,14 +1,22 @@
 import hashlib
+import os
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
-import pyperclip
 import vdf  # type: ignore
-
-from utils import enter_path, prompt_select, root_folder
 from steam.client import SteamClient  # type: ignore
+
+from utils import (
+    enter_path,
+    get_setting,
+    prompt_secret,
+    prompt_select,
+    prompt_text,
+    root_folder,
+    set_setting,
+)
 
 
 class AppInfo(NamedTuple):
@@ -45,7 +53,52 @@ class GameCracker:
             return files[0]
         return None
 
-    def crack_dll(self, app_id: str, dll_path: Path):
+    def generate_gbe_config(self, app_id: str, dst_steam_settings_folder: Path):
+        tools_folder = root_folder() / "third_party/gbe_fork_tools/generate_emu_config/"
+        config_exe = tools_folder / "generate_emu_config.exe"
+        if (
+            (user := get_setting("steam_user")) is None
+            or (password := get_setting("steam_pass", True)) is None
+            or (steam32_id := get_setting("steam32_id")) is None
+        ):
+            print("No steam credentials saved. Please provide them. This is all stored locally.")
+            user = prompt_text("Username:")
+            password = prompt_secret("Password:")
+            steam32_id = prompt_text("Your Steam32 ID:", "You can try visiting https://steamid.xyz/ to find it.")
+            set_setting("steam_user", user)
+            set_setting("steam_pass", password, True)
+            set_setting("steam32_id", steam32_id)
+
+        env = os.environ.copy()
+        env["GSE_CFG_USERNAME"] = user
+        env["GSE_CFG_PASSWORD"] = password
+        subprocess.run(
+            [str(config_exe.absolute()), app_id],
+            env=env,
+            cwd=str(tools_folder.absolute()),
+        )
+        backup_folder = tools_folder / f"backup/{app_id}"
+        src_steam_settings = tools_folder / f"output/{app_id}/steam_settings"
+
+        steam_root = self.steamapps_path.parent
+        steam_stats_folder = steam_root / "appcache/stats"
+
+        for bin_file in backup_folder.glob("*.bin"):
+            shutil.copy(bin_file, steam_stats_folder)
+            print(f"{str(bin_file)} copied to {str(steam_stats_folder)}")
+
+        src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
+        dst_user_stats = steam_stats_folder / f"UserGameStats_{steam32_id}_{app_id}.bin"
+        shutil.copy(
+            src_user_stats,
+            dst_user_stats
+        )
+        print(f"{str(src_user_stats)} copied to {str(dst_user_stats)}")
+
+        shutil.copytree(src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True)
+        print(f"{str(src_steam_settings)} copied to {str(dst_steam_settings_folder)}")
+
+    def _crack_dll_core(self, app_id: str, dll_path: Path):
         gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
         with dll_path.open("rb") as f:
             target_hash = hashlib.md5(f.read()).hexdigest()
@@ -78,11 +131,15 @@ class GameCracker:
         else:  # 32
             (api_folder / "steam_api64.dll").unlink()
 
-        pyperclip.copy(str((api_folder / "steam_settings").absolute()))
-        print(
-            "API folder has been copied to clipboard. "
-            "Use a tool like Achievement Watcher to generate it."
+    def crack_dll(self, app_id: str, dll_path: Path):
+        self._crack_dll_core(app_id, dll_path)
+        gen_achievements = prompt_select(
+            "Would you like to generate config files for gbe_fork? "
+            "(Contains achievement data)",
+            [("Yes", True), ("No", False)],
         )
+        if gen_achievements:
+            self.generate_gbe_config(app_id, dll_path.parent / "steam_settings")
 
     def apply_steamless(self, app_info: AppInfo):
         game_exe = self.select_executable(app_info)

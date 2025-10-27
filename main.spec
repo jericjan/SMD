@@ -13,6 +13,7 @@ a = Analysis(
         ("third_party", "third_party"),
         ("LICENSE", "."),
         ("third_party_licenses", "third_party_licenses"),
+        ("static", "static")
     ],
     hiddenimports=[],
     hookspath=[],
