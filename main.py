@@ -7,6 +7,7 @@ import shutil
 import time
 import winreg
 import zipfile
+from base64 import b64decode, b64encode
 from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryFile
@@ -41,9 +42,11 @@ class MainMenu(Enum):
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
     EXIT = "Exit"
 
+
 class LuaEndpoint(Enum):
     OUREVERYDAY = "oureveryday (quick but could be limited)"
     MANILUA = "Manilua (more stuff, needs API key)"
+
 
 class MainReturnCode(Enum):
     LOOP = 0
@@ -410,7 +413,10 @@ def get_manilua(dest: Path, app_id: str):
                 "Go the manilua website and request an API key. It's free."
             ),
         ).strip()
+        manilua_key = b64encode(manilua_key.encode()).decode()
         set_setting("manilua_key", manilua_key)
+
+    manilua_key = b64decode(manilua_key).decode()
 
     headers = {
         "Authorization": f"Bearer {manilua_key}",
