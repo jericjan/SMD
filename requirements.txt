@@ -6,6 +6,8 @@ anyio==4.11.0
     # via httpx
 attrs==25.4.0
     # via flake8-bugbear
+backports-tarfile==1.2.0
+    # via jaraco-context
 black==25.9.0
     # via steam-manifest-decrypt (pyproject.toml)
 cachetools==6.2.1
@@ -16,7 +18,9 @@ certifi==2025.10.5
     #   httpx
     #   requests
 cffi==2.0.0
-    # via gevent
+    # via
+    #   gevent
+    #   pynacl
 charset-normalizer==3.4.3
     # via requests
 click==8.1.8
@@ -59,14 +63,29 @@ idna==3.10
 importlib-metadata==8.7.0
     # via
     #   isort
+    #   keyring
     #   pyinstaller
     #   pyinstaller-hooks-contrib
 inquirerpy @ git+https://github.com/kazhala/InquirerPy@714d9068896c1a1f9f4d1354f43f922cd5cfe16d
     # via steam-manifest-decrypt (pyproject.toml)
 isort==6.1.0
     # via steam-manifest-decrypt (pyproject.toml)
+jaraco-classes==3.4.0
+    # via keyring
+jaraco-context==6.0.1
+    # via keyring
+jaraco-functools==4.3.0
+    # via keyring
+keyring==25.6.0
+    # via steam-manifest-decrypt (pyproject.toml)
 mccabe==0.7.0
     # via flake8
+more-itertools==10.8.0
+    # via
+    #   jaraco-classes
+    #   jaraco-functools
+msgpack==1.1.2
+    # via steam-manifest-decrypt (pyproject.toml)
 mypy-extensions==1.1.0
     # via black
 packaging==25.0
@@ -105,12 +124,16 @@ pyinstaller==6.16.0
     # via steam-manifest-decrypt (pyproject.toml)
 pyinstaller-hooks-contrib==2025.9
     # via pyinstaller
+pynacl==1.6.0
+    # via steam-manifest-decrypt (pyproject.toml)
 pyperclip==1.11.0
     # via steam-manifest-decrypt (pyproject.toml)
 pytokens==0.2.0
     # via black
 pywin32-ctypes==0.2.3
-    # via pyinstaller
+    # via
+    #   keyring
+    #   pyinstaller
 requests==2.32.5
     # via steam
 setuptools==80.9.0
