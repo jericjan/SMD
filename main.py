@@ -536,16 +536,16 @@ def main() -> MainReturnCode:
     vdf_file = steam_path / "config/config.vdf"
     shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
 
-    steam_libs = get_steam_libs(steam_path)
-    steam_lib_path: Path = prompt_select(
-        "Where do you want to download the game?:", steam_libs
-    )
-    print(f"The game will be download to: {steam_lib_path}")
-
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
 
     if menu_choice == MainMenu.EXIT:
         return MainReturnCode.EXIT
+
+    steam_libs = get_steam_libs(steam_path)
+    steam_lib_path: Path = prompt_select(
+        "Select a Steam library location:", steam_libs
+    )
+    print(f"The game will be downloaded to: {steam_lib_path}")
 
     if menu_choice in (MainMenu.CRACK_GAME, MainMenu.REMOVE_DRM):
         cracker = GameCracker(steam_lib_path, client)
