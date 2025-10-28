@@ -5,15 +5,37 @@ upx_excludes = [
     str(x.relative_to(".")) for x in Path("third_party").rglob("*") if x.is_file()
 ]
 
+def file_is_inside_dir(file: Path, dir: Path):
+    try:
+        file.relative_to(dir)
+        return True
+    except ValueError:
+        return False
+
+tree = Tree("third_party")
+
+third_party_files = []
+
+# excludes in Tree doesn't work some reason
+for _, file, _ in tree:
+    if not any(
+        file_is_inside_dir(Path(file), Path(x))
+        for x in (
+            "third_party/gbe_fork_tools/generate_emu_config/output/",
+            "third_party/gbe_fork_tools/generate_emu_config/backup/",
+        )
+    ):
+        third_party_files.append((file, Path(file).parent if Path(file).is_file() else file))
+
 a = Analysis(
     ["main.py"],
     pathex=[],
     binaries=[],
     datas=[
-        ("third_party", "third_party"),
+        *third_party_files,
         ("LICENSE", "."),
         ("third_party_licenses", "third_party_licenses"),
-        ("static", "static")
+        ("static", "static"),
     ],
     hiddenimports=[],
     hookspath=[],
