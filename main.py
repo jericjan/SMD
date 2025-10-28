@@ -154,14 +154,22 @@ class AppListManager:
     def __init__(self, steam_path: Path):
         self.max_id_limit = 168
         self.steam_path = steam_path
-        self.applist_folder = steam_path / "AppList"
         self.last_idx = 0
+
+        saved_applist = get_setting(Settings.APPLIST_FOLDER)
+        self.applist_folder = (
+            steam_path / "AppList" if saved_applist is None else Path(saved_applist)
+        )
+
         if not self.applist_folder.exists():
             self.applist_folder = prompt_dir(
                 "Could not find AppList folder. "
                 "Please specify the full path here:"
             )
-            # TODO: save this path in a settings.json or smth
+            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
+        elif saved_applist is None:
+            print(f"AppsList folder automatically selected: {self.applist_folder}")
+            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
 
     def get_local_ids(self):
         ids: list[str] = []
@@ -532,7 +540,7 @@ def main() -> MainReturnCode:
                         x,
                     )
                     for x in Settings
-                ] + [('Back', None)],
+                ] + [('[Back]', None)],
             )
             if not selected_key:
                 break
@@ -540,7 +548,9 @@ def main() -> MainReturnCode:
             value = value if value else "(unset)"
             print(
                 f"{selected_key.clean_name} is set to "
+                + Fore.YELLOW
                 + ("[ENCRYPTED]" if selected_key.hidden else value)
+                + Style.RESET_ALL
             )
             edit = prompt_select(
                 "Do you want to edit this setting?", [("Yes", True), ("No", False)]

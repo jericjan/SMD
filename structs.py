@@ -34,11 +34,13 @@ class SettingItem(NamedTuple):
     hidden: bool  # Whether the item is hidden when inputting the data
 
 
+# Note: values are only obtained through get_setting() in utils.py
 class Settings(Enum):
     MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True)
     STEAM_USER = SettingItem("steam_user", "Steam Username", False)
     STEAM_PASS = SettingItem("steam_pass", "Steam Password", True)
     STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)
+    APPLIST_FOLDER = SettingItem("applist_folder", "GreenLuma AppList Folder", False)
 
     @property
     def key_name(self) -> str:
