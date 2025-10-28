@@ -98,14 +98,14 @@ class GameCracker:
 
         src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
         dst_user_stats = steam_stats_folder / f"UserGameStats_{steam32_id}_{app_id}.bin"
-        shutil.copy(
-            src_user_stats,
-            dst_user_stats
-        )
-        print(
-            f"{str(src_user_stats.relative_to(root_folder()))} copied to "
-            + str(dst_user_stats)
-        )
+        if not dst_user_stats.exists():
+            shutil.copy(src_user_stats, dst_user_stats)
+            print(
+                f"{str(src_user_stats.relative_to(root_folder()))} copied to "
+                + str(dst_user_stats)
+            )
+        else:
+            print(f"{dst_user_stats.name} already exists. Skipping this step.")
 
         shutil.copytree(
             src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True
