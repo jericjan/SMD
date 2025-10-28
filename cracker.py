@@ -8,6 +8,7 @@ from typing import Any, NamedTuple, Optional
 import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
+from structs import Settings
 from utils import (
     enter_path,
     get_setting,
@@ -58,9 +59,9 @@ class GameCracker:
         tools_folder = root_folder() / "third_party/gbe_fork_tools/generate_emu_config/"
         config_exe = tools_folder / "generate_emu_config.exe"
         if (
-            (user := get_setting("steam_user")) is None
-            or (password := get_setting("steam_pass", True)) is None
-            or (steam32_id := get_setting("steam32_id")) is None
+            (user := get_setting(Settings.STEAM_USER)) is None
+            or (password := get_setting(Settings.STEAM_PASS)) is None
+            or (steam32_id := get_setting(Settings.STEAM32_ID)) is None
         ):
             print(
                 "No steam credentials saved. Please provide them. "
@@ -73,9 +74,9 @@ class GameCracker:
                 long_instruction="You can try visiting https://steamid.xyz/ "
                 "to find it.",
             )
-            set_setting("steam_user", user)
-            set_setting("steam_pass", password, True)
-            set_setting("steam32_id", steam32_id)
+            set_setting(Settings.STEAM_USER, user)
+            set_setting(Settings.STEAM_PASS, password)
+            set_setting(Settings.STEAM32_ID, steam32_id)
 
         env = os.environ.copy()
         env["GSE_CFG_USERNAME"] = user

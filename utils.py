@@ -9,6 +9,7 @@ from InquirerPy.base.control import Choice
 from InquirerPy.utils import InquirerPyValidate
 
 from crypto import keyring_decrypt, keyring_encrypt
+from structs import Settings
 
 
 def prompt_select(
@@ -121,7 +122,8 @@ def enter_path(
 SETTINGS_FILE = Path.cwd() / "settings.bin"
 
 
-def _load_settings() -> dict[Any, Any]:
+def load_settings() -> dict[Any, Any]:
+    """Returns all saved settings as a dict"""
     SETTINGS_FILE.touch(exist_ok=True)
     with SETTINGS_FILE.open("rb") as f:
         try:
@@ -131,13 +133,13 @@ def _load_settings() -> dict[Any, Any]:
     return settings
 
 
-def get_setting(key: str, crypt: bool = False):
-    value = _load_settings().get(key)
-    return keyring_decrypt(value) if (value and crypt) else value
+def get_setting(key: Settings):
+    value = load_settings().get(key.key_name)
+    return keyring_decrypt(value) if (value and key.hidden) else value
 
 
-def set_setting(key: str, value: str, crypt: bool = False):
-    settings = _load_settings()
-    settings[key] = keyring_encrypt(value) if crypt else value
+def set_setting(key: Settings, value: str):
+    settings = load_settings()
+    settings[key.key_name] = keyring_encrypt(value) if key.hidden else value
     with SETTINGS_FILE.open("wb") as f:
         f.write(msgpack.packb(settings))  # type: ignore

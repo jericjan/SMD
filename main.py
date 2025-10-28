@@ -7,11 +7,10 @@ import shutil
 import time
 import winreg
 import zipfile
-from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryFile
 from types import TracebackType
-from typing import Any, Literal, NamedTuple, Optional, Union, cast, overload
+from typing import Any, Literal, Optional, Union, cast, overload
 from urllib.parse import urljoin
 
 import httpx
@@ -24,9 +23,18 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
+from structs import (
+    LuaChoice,
+    LuaEndpoint,
+    LuaResult,
+    MainMenu,
+    MainReturnCode,
+    Settings,
+)
 from utils import (
     enter_path,
     get_setting,
+    load_settings,
     prompt_dir,
     prompt_file,
     prompt_secret,
@@ -36,35 +44,6 @@ from utils import (
 )
 
 VERSION = "1.1"
-
-
-class LuaChoice(Enum):
-    ADD_LUA = "Add a .lua file"
-    SELECT_SAVED_LUA = "Choose from saved .lua files"
-    AUTO_DOWNLOAD = "Automatically download a .lua file"
-
-
-class MainMenu(Enum):
-    MANAGE_LUA = "Manage .lua files"
-    CRACK_GAME = "Crack a game (gbe_fork)"
-    REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
-    EXIT = "Exit"
-
-
-class LuaEndpoint(Enum):
-    OUREVERYDAY = "oureveryday (quick but could be limited)"
-    MANILUA = "Manilua (more stuff, needs API key)"
-
-
-class MainReturnCode(Enum):
-    LOOP = 0
-    EXIT = 1
-
-
-class LuaResult(NamedTuple):
-    path: Optional[Path]  # path on disk if file exists
-    contents: Optional[str]  # string contents of file (e.g., from zip read)
-    switch_choice: Optional["LuaChoice"]
 
 
 def get_steam_path():
@@ -406,7 +385,7 @@ def get_manilua(dest: Path, app_id: str):
     url = f"https://www.piracybound.com/api/game/{app_id}"
     chunk_size = (1024**2) // 2  # 0.5 MiB
 
-    if (manilua_key := get_setting("manilua_key", True)) is None:
+    if (manilua_key := get_setting(Settings.MANILUA_KEY)) is None:
         manilua_key = prompt_secret(
             "Paste your manilua API key here: ",
             lambda x: x.startswith("manilua"),
@@ -415,7 +394,7 @@ def get_manilua(dest: Path, app_id: str):
                 "Go the manilua website and request an API key. It's free."
             ),
         ).strip()
-        set_setting("manilua_key", manilua_key, True)
+        set_setting(Settings.MANILUA_KEY, manilua_key)
 
     headers = {
         "Authorization": f"Bearer {manilua_key}",
@@ -540,6 +519,19 @@ def main() -> MainReturnCode:
 
     if menu_choice == MainMenu.EXIT:
         return MainReturnCode.EXIT
+
+    if menu_choice == MainMenu.SETTINGS:
+        settings = load_settings()
+        if len(settings) > 0:
+            selected_key = prompt_select("Select a setting to change:", list(settings.keys()))
+            pass
+        else:
+            print(
+                "You have no settings set. Just use the tool and "
+                "whenever it prompts for "
+                "something that needs to be saved, it'll show up here."
+            )
+        return MainReturnCode.LOOP
 
     steam_libs = get_steam_libs(steam_path)
     steam_lib_path: Path = prompt_select(
