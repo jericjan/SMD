@@ -45,8 +45,7 @@ uv pip compile pyproject.toml -o requirements.txt
 - [ ] keep track on if game was cracked / steamless'd before
   - [ ] prompt to automatically crack and steamless if so
 - [ ] if given a ZIP, use existing manifest instead of redownloading
-- [ ] AppList manager (deletion, adding dlc)
-- [ ] UserGameStatsSchema and gbe_fork achievement generation via gbe_fork_tools
+- [ ] AppList folder manager (deletion, adding dlc)
 
 # Licenses
 This project includes the following third-party components:

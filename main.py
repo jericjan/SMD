@@ -43,7 +43,7 @@ from utils import (
     set_setting,
 )
 
-VERSION = "1.1"
+VERSION = "2.1"
 
 
 def get_steam_path():
