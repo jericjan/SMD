@@ -49,7 +49,8 @@ class GameCracker:
         files = list(game_path.rglob("steam_api*.dll"))
         if len(files) > 1:
             return prompt_select(
-                "More than one DLL found. Pick one:", [(x.name, x) for x in files]
+                "More than one DLL found. Pick one:",
+                [(str(x.relative_to(game_path)), x) for x in files],
             )
         if len(files) == 1:
             return files[0]
