@@ -521,17 +521,37 @@ def main() -> MainReturnCode:
         return MainReturnCode.EXIT
 
     if menu_choice == MainMenu.SETTINGS:
-        settings = load_settings()
-        if len(settings) > 0:
-            selected_key = prompt_select("Select a setting to change:", list(settings.keys()))
-            pass
-        else:
-            print(
-                "You have no settings set. Just use the tool and "
-                "whenever it prompts for "
-                "something that needs to be saved, it'll show up here."
+        while True:
+            saved_settings = load_settings()        
+            selected_key: Optional[Settings] = prompt_select(
+                "Select a setting to change:",
+                [
+                    (
+                        x.clean_name
+                        + (" (unset)" if x.key_name not in saved_settings else ""),
+                        x,
+                    )
+                    for x in Settings
+                ] + [('Back', None)],
             )
-        return MainReturnCode.LOOP
+            if not selected_key:
+                break
+            value = get_setting(selected_key)
+            value = value if value else "(unset)"
+            print(
+                f"{selected_key.clean_name} is set to "
+                + ("[ENCRYPTED]" if selected_key.hidden else value)
+            )
+            edit = prompt_select(
+                "Do you want to edit this setting?", [("Yes", True), ("No", False)]
+            )
+            if not edit:
+                continue
+            func = prompt_secret if selected_key.hidden else prompt_text            
+            new_value = func("Enter the new value:")
+            set_setting(selected_key, new_value)
+
+        return MainReturnCode.LOOP_NO_PROMPT
 
     steam_libs = get_steam_libs(steam_path)
     steam_lib_path: Path = prompt_select(
@@ -718,11 +738,13 @@ if __name__ == "__main__":
       ░    ░         ░     ░     ░      ░
            ░               ░   ░        ░ \nVersion: {VERSION}""" + Style.RESET_ALL)
     while True:
-        if main() == MainReturnCode.EXIT:
+        return_code = main()
+        if return_code == MainReturnCode.EXIT:
             break
-        elif not (
-            choice := prompt_select(
-                "Go back to the Main Menu?", [("Yes", True), ("No", False)]
-            )
-        ):
-            break
+        elif return_code == MainReturnCode.LOOP_NO_PROMPT:
+            continue
+        elif return_code == MainReturnCode.LOOP:
+            if exit := prompt_select(
+                "Go back to the Main Menu?", [("Yes", False), ("No (Exit)", True)]
+            ):
+                break

@@ -24,23 +24,29 @@ class LuaEndpoint(Enum):
 
 class MainReturnCode(Enum):
     LOOP = 0
-    EXIT = 1
+    LOOP_NO_PROMPT = 1
+    EXIT = 2
 
 
 class SettingItem(NamedTuple):
-    name: str
+    key_name: str
+    clean_name: str
     hidden: bool  # Whether the item is hidden when inputting the data
 
 
 class Settings(Enum):
-    MANILUA_KEY = SettingItem("manilua_key", True)
-    STEAM_USER = SettingItem("steam_user", False)
-    STEAM_PASS = SettingItem("steam_pass", True)
-    STEAM32_ID = SettingItem("steam32_id", False)
+    MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True)
+    STEAM_USER = SettingItem("steam_user", "Steam Username", False)
+    STEAM_PASS = SettingItem("steam_pass", "Steam Password", True)
+    STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)
 
     @property
     def key_name(self) -> str:
-        return self.value.name
+        return self.value.key_name
+
+    @property
+    def clean_name(self) -> str:
+        return self.value.clean_name
 
     @property
     def hidden(self) -> bool:
