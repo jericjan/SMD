@@ -24,7 +24,16 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
-from utils import enter_path, get_setting, prompt_secret, prompt_select, set_setting
+from utils import (
+    enter_path,
+    get_setting,
+    prompt_dir,
+    prompt_file,
+    prompt_secret,
+    prompt_select,
+    prompt_text,
+    set_setting,
+)
 
 VERSION = "1.1"
 
@@ -157,7 +166,7 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
             result = await request_task
     except asyncio.CancelledError:
         print("✅")
-        result = input("Please provide the manifest request code: ")
+        result = prompt_text("Please provide the manifest request code:")
 
     return result
 
@@ -169,11 +178,9 @@ class AppListManager:
         self.applist_folder = steam_path / "AppList"
         self.last_idx = 0
         if not self.applist_folder.exists():
-            self.applist_folder = Path(
-                input(
-                    "Could not find AppList folder. "
-                    "Please specify the full path here:\n"
-                ).strip("\"'")
+            self.applist_folder = prompt_dir(
+                "Could not find AppList folder. "
+                "Please specify the full path here:"
             )
             # TODO: save this path in a settings.json or smth
 
@@ -240,12 +247,12 @@ def get_game_name(app_id: str):
     if official_info:
         app_name = official_info.get(app_id, {}).get("data", {}).get("name")
         if app_name is None:
-            app_name = input(
+            app_name = prompt_text(
                 "Request succeeded but couldn't find the game name. "
                 "Type the name of it: "
             )
     else:
-        app_name = input("Request failed. Type the name of the game: ")
+        app_name = prompt_text("Request failed. Type the name of the game: ")
     return app_name
 
 
@@ -323,16 +330,12 @@ def add_new_lua() -> LuaResult:
     Returns:
         LuaResult:
     """
-    lua_path = Path(
-        input(
-            "Drag a .lua file (or .zip w/ .lua inside) into here "
-            "then press Enter.\n"
-            "Leave it blank to switch to selecting a saved .lua:\n"
-        ).strip("\"'")
+    lua_path = prompt_file(
+        "Drag a .lua file (or .zip w/ .lua inside) into here "
+        "then press Enter.\n"
+        "Leave it blank to switch to selecting a saved .lua:",
+        allow_blank=True
     )
-    if not lua_path.exists():
-        print("That file does not exist. Try again.")
-        return LuaResult(None, None, None)
 
     if lua_path.samefile(Path.cwd()):  # Blank input
         # Switch to other option
@@ -466,14 +469,25 @@ def get_manilua(dest: Path, app_id: str):
 
 def download_lua(dest: Path) -> LuaResult:
     """Downloads a lua file from two endpoints"""
+
+    reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
+
+    def validate_app_id(x: str) -> bool:
+        return bool(reg.search(x))
+
+    def filter_app_id(x: str) -> str:
+        match = reg.search(x)
+        assert match is not None  # lmao
+        return match.group()
+
     source: LuaEndpoint = prompt_select("Select an endpoint:", list(LuaEndpoint))
 
-    while True:
-        app_id = input('Enter the App ID or Store link: ').strip()
-        if match := re.search(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+", app_id):
-            app_id = match.group()
-            break
-        print("Not a valid format. Just type the App ID.")
+    app_id = prompt_text(
+        "Enter the App ID or Store link:",
+        validator=validate_app_id,
+        invalid_msg="Not a valid format.",
+        filter=filter_app_id,
+    )
 
     if source == LuaEndpoint.OUREVERYDAY:
         lua_path = get_oureverday(dest, app_id)
@@ -510,11 +524,9 @@ def main() -> MainReturnCode:
 
     steam_path = get_steam_path()
     if steam_path is None:
-        steam_path = Path(
-            input(
-                "Couldn't find your Steam path. Paste the "
-                "path here (The folder that has steam.exe)"
-            ).strip("\"'")
+        steam_path = prompt_dir(
+            "Couldn't find your Steam path. Paste the "
+            "path here (The folder that has steam.exe)"
         )
     else:
         print(f"Your steam path is {steam_path}")
@@ -660,7 +672,7 @@ def main() -> MainReturnCode:
                         "API failed. I need the latest manifest ID for this depot. "
                         "Blank if you want to try the request again."
                     )
-                if not (latest := input(f"Depot {depot_id}: ").strip()):
+                if not (latest := prompt_text(f"Depot {depot_id}: ")):
                     print("Blank entered. Let's try this again.")
                     break
             print(f"Depot {depot_id} has manifest {latest}")

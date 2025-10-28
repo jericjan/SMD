@@ -11,6 +11,7 @@ from steam.client import SteamClient  # type: ignore
 from utils import (
     enter_path,
     get_setting,
+    prompt_file,
     prompt_secret,
     prompt_select,
     prompt_text,
@@ -61,10 +62,17 @@ class GameCracker:
             or (password := get_setting("steam_pass", True)) is None
             or (steam32_id := get_setting("steam32_id")) is None
         ):
-            print("No steam credentials saved. Please provide them. This is all stored locally.")
+            print(
+                "No steam credentials saved. Please provide them. "
+                "This is all stored locally."
+            )
             user = prompt_text("Username:")
             password = prompt_secret("Password:")
-            steam32_id = prompt_text("Your Steam32 ID:", "You can try visiting https://steamid.xyz/ to find it.")
+            steam32_id = prompt_text(
+                "Your Steam32 ID:",
+                long_instruction="You can try visiting https://steamid.xyz/ "
+                "to find it.",
+            )
             set_setting("steam_user", user)
             set_setting("steam_pass", password, True)
             set_setting("steam32_id", steam32_id)
@@ -85,7 +93,7 @@ class GameCracker:
 
         for bin_file in backup_folder.glob("*.bin"):
             shutil.copy(bin_file, steam_stats_folder)
-            print(f"{str(bin_file)} copied to {str(steam_stats_folder)}")
+            print(f"{bin_file.name} copied to {str(steam_stats_folder)}")
 
         src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
         dst_user_stats = steam_stats_folder / f"UserGameStats_{steam32_id}_{app_id}.bin"
@@ -93,10 +101,18 @@ class GameCracker:
             src_user_stats,
             dst_user_stats
         )
-        print(f"{str(src_user_stats)} copied to {str(dst_user_stats)}")
+        print(
+            f"{str(src_user_stats.relative_to(root_folder()))} copied to "
+            + str(dst_user_stats)
+        )
 
-        shutil.copytree(src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True)
-        print(f"{str(src_steam_settings)} copied to {str(dst_steam_settings_folder)}")
+        shutil.copytree(
+            src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True
+        )
+        print(
+            f"{str(src_steam_settings.relative_to(root_folder()))} copied to "
+            + str(dst_steam_settings_folder)
+        )
 
     def _crack_dll_core(self, app_id: str, dll_path: Path):
         gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
@@ -161,15 +177,11 @@ class GameCracker:
             print(output.stdout)
             print("Steamtools failed...")
 
-    def _prompt_manual_exe(self, app_info : AppInfo):
+    def _prompt_manual_exe(self, app_info: AppInfo):
         subprocess.run(["explorer", app_info.path])
-        while True:
-            game_exe = Path(
-                input("Drag the game .exe here and press Enter: ").strip("\"'")
-            )
-            if not game_exe.exists():
-                print("Doesn't exist. Try again")
-            break
+        game_exe = prompt_file(
+            "Drag the game .exe here and press Enter:",
+        )
         return game_exe
 
     def _get_windows_execs(self, info: dict[str, Any], app_id: int) -> list[str]:
