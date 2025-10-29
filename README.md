@@ -22,17 +22,17 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 4. Either `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it
 
 # Pre-requisites
-This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but for now, it's most convenient in normal mode.
-
+This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but you'll have to specify the AppList folder location manually.
 
 # Features
 - Downloads and decrypt latest manifest
+- Downloading lua files from either Manilua (API key required) or oureveryday
 - Stores imported lua files for later use (e.g. updating the game)
 - Cracks games with [gbe_fork](https://github.com/Detanup01/gbe_fork/)
 - Removes SteamStub DRM with [Steamless](https://github.com/atom0s/Steamless/)
-
-# Caveats
-It can't generate achievements for gbe_fork automatically so you'll have to use a tool like Achievement Watcher in the meantime.
+- Via [gbe_fork_tools](https://github.com/Detanup01/gbe_fork_tools) :
+  - `steam_settings` folder generation 
+   - `Steam\appcache\stats` .bin file generation (for Steam achievements directly in the Steam overlay/library)
 
 # Contributing
 
@@ -50,6 +50,7 @@ uv pip compile pyproject.toml -o requirements.txt
 # Licenses
 This project includes the following third-party components:
 - [gbe_fork](https://github.com/Detanup01/gbe_fork/) (LGPL-3.0)
+- [gbe_fork_tools](https://github.com/Detanup01/gbe_fork_tools) (LGPL-3.0)
 - [Steamless](https://github.com/atom0s/Steamless/) (CC BY-NC-ND 4.0)
 
 Full license texts are available in the `third_party_licenses` directory.

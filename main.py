@@ -46,7 +46,7 @@ from utils import (
     vdf_load,
 )
 
-VERSION = "2.1"
+VERSION = "2.2"
 
 
 def get_steam_path():
