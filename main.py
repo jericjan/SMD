@@ -7,10 +7,11 @@ import shutil
 import time
 import winreg
 import zipfile
+from collections import OrderedDict
 from pathlib import Path
 from tempfile import TemporaryFile
 from types import TracebackType
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Callable, Literal, Optional, Union, cast, overload
 from urllib.parse import urljoin
 
 import httpx
@@ -24,6 +25,7 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
 from structs import (
+    LoggedInUser,
     LuaChoice,
     LuaEndpoint,
     LuaResult,
@@ -337,10 +339,12 @@ def add_new_lua() -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
+# TODO: this one kinda ass
 class VDFManager:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, auto_dump: bool = False):
         self.path = path
         self.data = vdf.VDFDict()
+        self.auto_dump = auto_dump
 
     def __enter__(self):
         with self.path.open(encoding="utf-8") as f:
@@ -353,12 +357,13 @@ class VDFManager:
         exc_value: Optional[BaseException],
         exc_traceback: Optional[TracebackType],
     ):
-        with self.path.open("w", encoding="utf-8") as f:
-            vdf.dump(self.data, f, pretty=True)  # type: ignore
+        if self.auto_dump:
+            with self.path.open("w", encoding="utf-8") as f:
+                vdf.dump(self.data, f, pretty=True)  # type: ignore
 
 
 def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
-    with VDFManager(vdf_file) as vdf_data:
+    with VDFManager(vdf_file, auto_dump=True) as vdf_data:
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
             depots = enter_path(
@@ -562,6 +567,63 @@ def main() -> MainReturnCode:
             set_setting(selected_key, new_value)
 
         return MainReturnCode.LOOP_NO_PROMPT
+
+    if menu_choice == MainMenu.OFFLINE_FIX:
+        print(
+            Fore.YELLOW + "Steam will fail to launch when you close it while in OFFLINE Mode. "
+            "Set it back to ONLINE to fix it." + Style.RESET_ALL
+        )
+        loginusers_file = steam_path / "config/loginusers.vdf"
+        if not loginusers_file.exists():
+            print("loginusers.vdf file can't be found. Have you already logged in once through Steam?")
+            return MainReturnCode.LOOP_NO_PROMPT
+        with loginusers_file.open(encoding="utf-8") as f:
+            vdf_data: OrderedDict[str, Any] = vdf.load(f, mapper=OrderedDict)  # type: ignore        
+        vdf_users = vdf_data.get('users')
+        if vdf_users is None:
+            print("There are no users on this Steam installation...")
+            return MainReturnCode.LOOP_NO_PROMPT
+        user_ids = vdf_users.keys()
+        users: list[LoggedInUser] = []
+        for user_id in user_ids:
+            x = vdf_users[user_id]
+            users.append(
+                LoggedInUser(
+                    user_id,
+                    x.get("PersonaName", "[MISSING]"),
+                    x.get("WantsOfflineMode", "[MISSING]"),
+                )
+            )
+        if len(users) == 0:
+            print("There are no users on this Steam installation")
+            return MainReturnCode.LOOP_NO_PROMPT
+        offline_converter: Callable[[str], str] = lambda x: (
+            "ONLINE" if x == "0" else "OFFLINE"
+        )
+        chosen_user: Optional[LoggedInUser] = prompt_select(
+            "Select a user: ",
+            [
+                (
+                    f"{x.PERSONA_NAME} - "
+                    + offline_converter(x.WANTS_OFFLINE_MODE),
+                    x,
+                )
+                for x in users
+            ]
+            + [("Back", None)],
+        )
+        if chosen_user is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+
+        new_value = (
+            "0" if chosen_user.WANTS_OFFLINE_MODE == "1" else "1"
+        )
+
+        vdf_data["users"][chosen_user.STEAM64_ID]["WantsOfflineMode"] = new_value
+        with loginusers_file.open("w", encoding="utf-8") as f:
+            vdf.dump(vdf_data, f, pretty=True)  # type: ignore
+        print(f"{chosen_user.PERSONA_NAME} is now {offline_converter(new_value)}")
+        return MainReturnCode.LOOP
 
     steam_libs = get_steam_libs(steam_path)
     steam_lib_path: Path = prompt_select(

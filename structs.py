@@ -13,6 +13,7 @@ class MainMenu(Enum):
     MANAGE_LUA = "Manage .lua files"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
+    OFFLINE_FIX = "Offline Mode Fix"
     SETTINGS = "Settings"
     EXIT = "Exit"
 
@@ -53,6 +54,14 @@ class Settings(Enum):
     @property
     def hidden(self) -> bool:
         return self.value.hidden
+
+
+class LoggedInUser(NamedTuple):
+    """A user in loginusers.vdf"""
+
+    STEAM64_ID: str
+    PERSONA_NAME: str
+    WANTS_OFFLINE_MODE: str
 
 
 class LuaResult(NamedTuple):
