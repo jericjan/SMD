@@ -13,6 +13,7 @@ class MainMenu(Enum):
     MANAGE_LUA = "Manage .lua files"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
+    DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
     OFFLINE_FIX = "Offline Mode Fix"
     SETTINGS = "Settings"
     EXIT = "Exit"
@@ -68,3 +69,9 @@ class LuaResult(NamedTuple):
     path: Optional[Path]  # path on disk if file exists
     contents: Optional[str]  # string contents of file (e.g., from zip read)
     switch_choice: Optional["LuaChoice"]
+
+
+class GenEmuMode(Enum):
+    USER_GAME_STATS = 0
+    STEAM_SETTINGS = 1
+    ALL = 2  # idk why i have this, it's there if i ever need it

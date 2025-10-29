@@ -30,6 +30,7 @@ from structs import (
     MainMenu,
     MainReturnCode,
     Settings,
+    GenEmuMode
 )
 from utils import (
     VDFLoadAndDumper,
@@ -511,7 +512,7 @@ def main() -> MainReturnCode:
 
     if menu_choice == MainMenu.SETTINGS:
         while True:
-            saved_settings = load_settings()        
+            saved_settings = load_settings()
             selected_key: Optional[Settings] = prompt_select(
                 "Select a setting to change:",
                 [
@@ -538,7 +539,7 @@ def main() -> MainReturnCode:
             )
             if not edit:
                 continue
-            func = prompt_secret if selected_key.hidden else prompt_text            
+            func = prompt_secret if selected_key.hidden else prompt_text
             new_value = func("Enter the new value:")
             set_setting(selected_key, new_value)
 
@@ -546,12 +547,16 @@ def main() -> MainReturnCode:
 
     if menu_choice == MainMenu.OFFLINE_FIX:
         print(
-            Fore.YELLOW + "Steam will fail to launch when you close it while in OFFLINE Mode. "
+            Fore.YELLOW
+            + "Steam will fail to launch when you close it while in OFFLINE Mode. "
             "Set it back to ONLINE to fix it." + Style.RESET_ALL
         )
         loginusers_file = steam_path / "config/loginusers.vdf"
         if not loginusers_file.exists():
-            print("loginusers.vdf file can't be found. Have you already logged in once through Steam?")
+            print(
+                "loginusers.vdf file can't be found. "
+                "Have you already logged in once through Steam?"
+            )
             return MainReturnCode.LOOP_NO_PROMPT
         vdf_data = vdf_load(loginusers_file, mapper=OrderedDict)
 
@@ -606,7 +611,11 @@ def main() -> MainReturnCode:
     )
     print(f"The game will be downloaded to: {steam_lib_path}")
 
-    if menu_choice in (MainMenu.CRACK_GAME, MainMenu.REMOVE_DRM):
+    if menu_choice in (
+        MainMenu.CRACK_GAME,
+        MainMenu.REMOVE_DRM,
+        MainMenu.DL_USER_GAME_STATS,
+    ):
         cracker = GameCracker(steam_lib_path, client)
         app_info = cracker.get_game()
         if menu_choice == MainMenu.CRACK_GAME:
@@ -618,8 +627,10 @@ def main() -> MainReturnCode:
                 )
             else:
                 cracker.crack_dll(app_info.app_id, dll)
-        else:
+        elif menu_choice == MainMenu.REMOVE_DRM:
             cracker.apply_steamless(app_info)
+        elif menu_choice == MainMenu.DL_USER_GAME_STATS:
+            cracker.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         return MainReturnCode.LOOP
 
     lua_choice: LuaChoice = prompt_select("Choose:", list(LuaChoice))

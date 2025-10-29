@@ -3,12 +3,12 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple, Optional, overload
 
 import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
-from structs import Settings
+from structs import GenEmuMode, Settings
 from utils import (
     enter_path,
     get_setting,
@@ -56,7 +56,31 @@ class GameCracker:
             return files[0]
         return None
 
-    def generate_gbe_config(self, app_id: str, dst_steam_settings_folder: Path):
+    @overload
+    def run_gen_emu(
+        self, app_id: str, mode: Literal[GenEmuMode.USER_GAME_STATS]
+    ) -> None: ...
+
+    @overload
+    def run_gen_emu(
+        self,
+        app_id: str,
+        mode: Literal[GenEmuMode.STEAM_SETTINGS, GenEmuMode.ALL],
+        dst_steam_settings_folder: Path,
+    ) -> None: ...
+
+    def run_gen_emu(
+        self,
+        app_id: str,
+        mode: GenEmuMode,
+        dst_steam_settings_folder: Optional[Path] = None,
+    ):
+        if mode in (GenEmuMode.STEAM_SETTINGS, GenEmuMode.ALL):
+            if dst_steam_settings_folder is None:
+                raise ValueError(
+                    "dst_steam_settings_folder is required for STEAM_SETTINGS or ALL."
+                )
+
         tools_folder = root_folder() / "third_party/gbe_fork_tools/generate_emu_config/"
         config_exe = tools_folder / "generate_emu_config.exe"
         if (
@@ -82,8 +106,12 @@ class GameCracker:
         env = os.environ.copy()
         env["GSE_CFG_USERNAME"] = user
         env["GSE_CFG_PASSWORD"] = password
+
+        extra_args: list[str] = []
+        if mode == GenEmuMode.USER_GAME_STATS:
+            extra_args.extend(["-skip_ach", "-skip_con", "-skip_inv"])
         subprocess.run(
-            [str(config_exe.absolute()), app_id],
+            [str(config_exe.absolute()), "-clean", *extra_args, app_id],
             env=env,
             cwd=str(tools_folder.absolute()),
         )
@@ -93,28 +121,33 @@ class GameCracker:
         steam_root = self.steamapps_path.parent
         steam_stats_folder = steam_root / "appcache/stats"
 
-        for bin_file in backup_folder.glob("*.bin"):
-            shutil.copy(bin_file, steam_stats_folder)
-            print(f"{bin_file.name} copied to {str(steam_stats_folder)}")
+        if mode == GenEmuMode.USER_GAME_STATS or mode == GenEmuMode.ALL:
+            for bin_file in backup_folder.glob("*.bin"):
+                shutil.copy(bin_file, steam_stats_folder)
+                print(f"{bin_file.name} copied to {str(steam_stats_folder)}")
 
-        src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
-        dst_user_stats = steam_stats_folder / f"UserGameStats_{steam32_id}_{app_id}.bin"
-        if not dst_user_stats.exists():
-            shutil.copy(src_user_stats, dst_user_stats)
-            print(
-                f"{str(src_user_stats.relative_to(root_folder()))} copied to "
-                + str(dst_user_stats)
+            src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
+            dst_user_stats = (
+                steam_stats_folder / f"UserGameStats_{steam32_id}_{app_id}.bin"
             )
-        else:
-            print(f"{dst_user_stats.name} already exists. Skipping this step.")
+            if not dst_user_stats.exists():
+                shutil.copy(src_user_stats, dst_user_stats)
+                print(
+                    f"{str(src_user_stats.relative_to(root_folder()))} copied to "
+                    + str(dst_user_stats)
+                )
+            else:
+                print(f"{dst_user_stats.name} already exists. Skipping this step.")
 
-        shutil.copytree(
-            src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True
-        )
-        print(
-            f"{str(src_steam_settings.relative_to(root_folder()))} copied to "
-            + str(dst_steam_settings_folder)
-        )
+        if mode == GenEmuMode.STEAM_SETTINGS or mode == GenEmuMode.ALL:
+            assert dst_steam_settings_folder is not None
+            shutil.copytree(
+                src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True
+            )
+            print(
+                f"{str(src_steam_settings.relative_to(root_folder()))} copied to "
+                + str(dst_steam_settings_folder)
+            )
 
     def _crack_dll_core(self, app_id: str, dll_path: Path):
         gbe_fork_folder = root_folder() / "third_party/gbe_fork/"
@@ -157,7 +190,9 @@ class GameCracker:
             [("Yes", True), ("No", False)],
         )
         if gen_achievements:
-            self.generate_gbe_config(app_id, dll_path.parent / "steam_settings")
+            self.run_gen_emu(
+                app_id, GenEmuMode.STEAM_SETTINGS, dll_path.parent / "steam_settings"
+            )
 
     def apply_steamless(self, app_info: AppInfo):
         game_exe = self.select_executable(app_info)
