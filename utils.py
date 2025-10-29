@@ -21,6 +21,7 @@ def prompt_select(
     choices: list[Any],
     default: Optional[Any] = None,
     fuzzy: bool = False,
+    cancellable: bool = False,
     **kwargs: Any,
 ):
     new_choices: list[Choice] = []
@@ -34,6 +35,8 @@ def prompt_select(
                 new_choices.append(Choice(value=c[1], name=c[0]))  # type: ignore
         else:
             new_choices.append(Choice(value=c, name=str(c)))
+    if cancellable:
+        new_choices.append(Choice(value=None, name="[Back]"))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
     return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
 

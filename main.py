@@ -47,7 +47,7 @@ from utils import (
     vdf_load,
 )
 
-VERSION = "2.2"
+VERSION = "2.3"
 
 
 def get_steam_path():
@@ -522,7 +522,8 @@ def main() -> MainReturnCode:
                         x,
                     )
                     for x in Settings
-                ] + [('[Back]', None)],
+                ],
+                cancellable=True
             )
             if not selected_key:
                 break
@@ -585,13 +586,12 @@ def main() -> MainReturnCode:
             "Select a user: ",
             [
                 (
-                    f"{x.PERSONA_NAME} - "
-                    + offline_converter(x.WANTS_OFFLINE_MODE),
+                    f"{x.PERSONA_NAME} - " + offline_converter(x.WANTS_OFFLINE_MODE),
                     x,
                 )
                 for x in users
-            ]
-            + [("Back", None)],
+            ],
+            cancellable=True,
         )
         if chosen_user is None:
             return MainReturnCode.LOOP_NO_PROMPT
@@ -606,9 +606,15 @@ def main() -> MainReturnCode:
         return MainReturnCode.LOOP
 
     steam_libs = get_steam_libs(steam_path)
-    steam_lib_path: Path = prompt_select(
-        "Select a Steam library location:", steam_libs
+    steam_lib_path: Optional[Path] = prompt_select(
+        "Select a Steam library location:",
+        steam_libs,
+        cancellable=True,
+        default=steam_libs[0],
     )
+    if steam_lib_path is None:
+        return MainReturnCode.LOOP_NO_PROMPT
+
     print(f"The game will be downloaded to: {steam_lib_path}")
 
     if menu_choice in (
@@ -618,6 +624,8 @@ def main() -> MainReturnCode:
     ):
         cracker = GameCracker(steam_lib_path, client)
         app_info = cracker.get_game()
+        if app_info is None:
+            return MainReturnCode.LOOP_NO_PROMPT
         if menu_choice == MainMenu.CRACK_GAME:
             dll = cracker.find_steam_dll(app_info.path)
             if dll is None:
@@ -633,7 +641,12 @@ def main() -> MainReturnCode:
             cracker.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         return MainReturnCode.LOOP
 
-    lua_choice: LuaChoice = prompt_select("Choose:", list(LuaChoice))
+    lua_choice: Optional[LuaChoice] = prompt_select(
+        "Choose:", list(LuaChoice), cancellable=True
+    )
+
+    if lua_choice is None:
+        return MainReturnCode.LOOP_NO_PROMPT
 
     while True:
         while True:

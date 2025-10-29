@@ -31,7 +31,7 @@ class GameCracker:
         self.steamapps_path = library_path / "steamapps"
         self.client = client
 
-    def get_game(self) -> AppInfo:
+    def get_game(self) -> Optional[AppInfo]:
         games: list[tuple[str, AppInfo]] = []
         for path in self.steamapps_path.glob("*.acf"):
             with path.open(encoding="utf-8") as f:
@@ -43,7 +43,7 @@ class GameCracker:
             games.append(
                 (name, AppInfo(app_id, self.steamapps_path / "common" / installdir))
             )
-        return prompt_select("Select a game", games, fuzzy=True)
+        return prompt_select("Select a game", games, fuzzy=True, cancellable=True)
 
     def find_steam_dll(self, game_path: Path) -> Optional[Path]:
         files = list(game_path.rglob("steam_api*.dll"))
