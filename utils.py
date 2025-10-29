@@ -1,6 +1,8 @@
+from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional, Union, cast
+from types import TracebackType
+from typing import Any, Callable, Optional, TypeVar, Union, cast, overload
 
 import msgpack  # type: ignore
 import vdf  # type: ignore
@@ -10,6 +12,8 @@ from InquirerPy.utils import InquirerPyValidate
 
 from crypto import keyring_decrypt, keyring_encrypt
 from structs import Settings
+
+_DictType = TypeVar("_DictType", bound=dict[Any, Any])
 
 
 def prompt_select(
@@ -143,3 +147,49 @@ def set_setting(key: Settings, value: str):
     settings[key.key_name] = keyring_encrypt(value) if key.hidden else value
     with SETTINGS_FILE.open("wb") as f:
         f.write(msgpack.packb(settings))  # type: ignore
+
+
+def vdf_dump(vdf_file: Path, obj: dict[str, Any]):
+    with vdf_file.open("w", encoding="utf-8") as f:
+        vdf.dump(obj, f, pretty=True)  # type: ignore
+
+
+@overload
+def vdf_load(
+    vdf_file: Path, mapper: type[OrderedDict[Any, Any]]
+) -> OrderedDict[Any, Any]: ...
+
+
+@overload
+def vdf_load(vdf_file: Path, mapper: type[_DictType]) -> _DictType: ...
+
+
+@overload
+def vdf_load(vdf_file: Path) -> dict[Any, Any]: ...
+
+
+def vdf_load(vdf_file: Path, mapper: type[_DictType] = dict) -> _DictType:
+    with vdf_file.open(encoding="utf-8") as f:
+        data: _DictType = vdf.load(f, mapper=mapper)  # type: ignore
+    return data
+
+
+class VDFLoadAndDumper:
+    """For when you need to load and dump a vdf file in one line.
+    Use `vdf_load` or `vdf_dump` to do just one of the two"""
+    def __init__(self, path: Path):
+        self.path = path
+        self.data = vdf.VDFDict()
+
+    def __enter__(self):
+        self.data = vdf_load(self.path, mapper=vdf.VDFDict)
+        return self.data
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_traceback: Optional[TracebackType],
+    ):
+        if exc_type is None:
+            vdf_dump(self.path, self.data)

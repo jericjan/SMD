@@ -10,12 +10,10 @@ import zipfile
 from collections import OrderedDict
 from pathlib import Path
 from tempfile import TemporaryFile
-from types import TracebackType
 from typing import Any, Callable, Literal, Optional, Union, cast, overload
 from urllib.parse import urljoin
 
 import httpx
-import vdf  # type: ignore
 from colorama import Fore, Style
 from colorama import init as color_init
 from pathvalidate import sanitize_filename
@@ -34,6 +32,7 @@ from structs import (
     Settings,
 )
 from utils import (
+    VDFLoadAndDumper,
     enter_path,
     get_setting,
     load_settings,
@@ -43,6 +42,8 @@ from utils import (
     prompt_select,
     prompt_text,
     set_setting,
+    vdf_dump,
+    vdf_load,
 )
 
 VERSION = "2.1"
@@ -215,9 +216,7 @@ def get_steam_libs(steam_path: Path):
     """
     lib_folders = steam_path / "config/libraryfolders.vdf"
 
-    with lib_folders.open(encoding="utf-8") as f:
-        vdf_data: dict[Any, Any] = vdf.load(f)  # type: ignore
-
+    vdf_data = vdf_load(lib_folders)
     paths: list[Path] = []
     for library in vdf_data["libraryfolders"].values():
         if (path := Path(library["path"])).exists():
@@ -339,31 +338,8 @@ def add_new_lua() -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
-# TODO: this one kinda ass
-class VDFManager:
-    def __init__(self, path: Path, auto_dump: bool = False):
-        self.path = path
-        self.data = vdf.VDFDict()
-        self.auto_dump = auto_dump
-
-    def __enter__(self):
-        with self.path.open(encoding="utf-8") as f:
-            self.data: vdf.VDFDict = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
-        return self.data
-
-    def __exit__(
-        self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        exc_traceback: Optional[TracebackType],
-    ):
-        if self.auto_dump:
-            with self.path.open("w", encoding="utf-8") as f:
-                vdf.dump(self.data, f, pretty=True)  # type: ignore
-
-
 def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
-    with VDFManager(vdf_file, auto_dump=True) as vdf_data:
+    with VDFLoadAndDumper(vdf_file) as vdf_data:
         for depot_id, dec_key in depot_dec_key:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
             depots = enter_path(
@@ -577,8 +553,8 @@ def main() -> MainReturnCode:
         if not loginusers_file.exists():
             print("loginusers.vdf file can't be found. Have you already logged in once through Steam?")
             return MainReturnCode.LOOP_NO_PROMPT
-        with loginusers_file.open(encoding="utf-8") as f:
-            vdf_data: OrderedDict[str, Any] = vdf.load(f, mapper=OrderedDict)  # type: ignore        
+        vdf_data = vdf_load(loginusers_file, mapper=OrderedDict)
+
         vdf_users = vdf_data.get('users')
         if vdf_users is None:
             print("There are no users on this Steam installation...")
@@ -620,8 +596,7 @@ def main() -> MainReturnCode:
         )
 
         vdf_data["users"][chosen_user.STEAM64_ID]["WantsOfflineMode"] = new_value
-        with loginusers_file.open("w", encoding="utf-8") as f:
-            vdf.dump(vdf_data, f, pretty=True)  # type: ignore
+        vdf_dump(loginusers_file, vdf_data)
         print(f"{chosen_user.PERSONA_NAME} is now {offline_converter(new_value)}")
         return MainReturnCode.LOOP
 
@@ -715,8 +690,7 @@ def main() -> MainReturnCode:
         )
 
     if write_acf:
-        with acf_file.open("w", encoding="utf-8") as f:
-            vdf.dump(acf_contents, f, pretty=True)  # type: ignore
+        vdf_dump(acf_file, acf_contents)
         print(f"Wrote .acf file to {acf_file}")
     else:
         print("Skipped writing to .acf file")
