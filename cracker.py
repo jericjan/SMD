@@ -122,9 +122,24 @@ class GameCracker:
         steam_stats_folder = steam_root / "appcache/stats"
 
         if mode == GenEmuMode.USER_GAME_STATS or mode == GenEmuMode.ALL:
-            for bin_file in backup_folder.glob("*.bin"):
+            bin_files = backup_folder.glob("*.bin")
+            bin_file_count = 0
+            for bin_file in bin_files:
+                bin_file_count += 1
                 shutil.copy(bin_file, steam_stats_folder)
                 print(f"{bin_file.name} copied to {str(steam_stats_folder)}")
+
+            if bin_file_count == 0:
+                id_64 = prompt_text(
+                    "No .bin files found. Go to https://steamladder.com/ and "
+                    "find the game you want, "
+                    "then copy the Steam64 ID of a random user that owns that game"
+                ).strip()
+                with Path(
+                    r"third_party\gbe_fork_tools\generate_emu_config\top_owners_ids.txt"
+                ).open("w", encoding="utf-8") as f:
+                    f.write(id_64)
+                self.run_gen_emu(app_id, GenEmuMode.USER_GAME_STATS)
 
             src_user_stats = root_folder() / "static/UserGameStats_steamid_appid.bin"
             dst_user_stats = (
