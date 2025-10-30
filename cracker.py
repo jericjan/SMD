@@ -109,7 +109,7 @@ class GameCracker:
 
         extra_args: list[str] = []
         if mode == GenEmuMode.USER_GAME_STATS:
-            extra_args.extend(["-skip_ach", "-skip_con", "-skip_inv"])
+            extra_args.extend(["-skip_con", "-skip_inv"])
         subprocess.run(
             [str(config_exe.absolute()), "-clean", *extra_args, app_id],
             env=env,
