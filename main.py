@@ -5,6 +5,7 @@ import msvcrt
 import re
 import shutil
 import time
+import traceback
 import winreg
 import zipfile
 from collections import OrderedDict
@@ -442,7 +443,7 @@ def main() -> MainReturnCode:
         named_ids = get_named_ids(saved_lua)
 
     steam_path = get_steam_path()
-    if steam_path is None:
+    if steam_path is None or not steam_path.exists():
         steam_path = prompt_dir(
             "Couldn't find your Steam path. Paste the "
             "path here (The folder that has steam.exe)"
@@ -451,9 +452,6 @@ def main() -> MainReturnCode:
         print(f"Your steam path is {steam_path}")
 
     app_list_man = AppListManager(steam_path)
-
-    vdf_file = steam_path / "config/config.vdf"
-    shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
 
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
 
@@ -556,7 +554,9 @@ def main() -> MainReturnCode:
         return MainReturnCode.LOOP
 
     if menu_choice == MainMenu.MANAGE_APPLIST:
-        applist_choice: Optional[AppListChoice] = prompt_select("Choose:", list(AppListChoice), cancellable=True)
+        applist_choice: Optional[AppListChoice] = prompt_select(
+            "Choose:", list(AppListChoice), cancellable=True
+        )
         if applist_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
         if applist_choice == AppListChoice.DELETE:
@@ -656,6 +656,8 @@ def main() -> MainReturnCode:
         for depot_id, _ in depot_dec_key:
             app_list_man.add_id(int(depot_id))
 
+        vdf_file = steam_path / "config/config.vdf"
+        shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
         add_decryption_key_to_config(vdf_file, depot_dec_key)
 
         break
@@ -666,17 +668,6 @@ def main() -> MainReturnCode:
     elif not (saved_lua / lua_path.name).exists():
         shutil.copyfile(lua_path, saved_lua / lua_path.name)
 
-    app_name = get_game_name(app_id)
-
-    acf_contents: dict[str, dict[str, str]] = {
-        "AppState": {
-            "AppID": app_id,
-            "Universe": "1",
-            "name": app_name,
-            "installdir": sanitize_filename(app_name),
-            "StateFlags": "4",
-        }
-    }
     acf_file = steam_lib_path / f"steamapps/appmanifest_{app_id}.acf"
 
     write_acf = True
@@ -687,11 +678,22 @@ def main() -> MainReturnCode:
         )
 
     if write_acf:
+        app_name = get_game_name(app_id)
+        acf_contents: dict[str, dict[str, str]] = {
+            "AppState": {
+                "AppID": app_id,
+                "Universe": "1",
+                "name": app_name,
+                "installdir": sanitize_filename(app_name),
+                "StateFlags": "4",
+            }
+        }
         vdf_dump(acf_file, acf_contents)
         print(f"Wrote .acf file to {acf_file}")
     else:
         print("Skipped writing to .acf file")
 
+    # A dict of Depot IDs mapped to Manifest IDs
     manifest_ids: dict[str, str] = {}
 
     # Get manifest IDs. The official API doesn't return these,
@@ -781,7 +783,15 @@ if __name__ == "__main__":
       ░    ░         ░     ░     ░      ░
            ░               ░   ░        ░ \nVersion: {VERSION}""" + Style.RESET_ALL)
     while True:
-        return_code = main()
+        try:
+            return_code = main()
+        except Exception:
+            print("There was an error:\n" + Fore.RED)
+            traceback.print_exc()
+            print(Style.RESET_ALL, end="")
+            input("Press Enter to restart the program...")
+            continue
+
         if return_code == MainReturnCode.EXIT:
             break
         elif return_code == MainReturnCode.LOOP_NO_PROMPT:
