@@ -274,7 +274,7 @@ def add_new_lua() -> LuaResult:
         "Drag a .lua file (or .zip w/ .lua inside) into here "
         "then press Enter.\n"
         "Leave it blank to switch to selecting a saved .lua:",
-        allow_blank=True
+        allow_blank=True,
     )
 
     if lua_path.samefile(Path.cwd()):  # Blank input
@@ -311,12 +311,14 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, 
 
 
 def get_oureverday(dest: Path, app_id: str):
-    lua_contents = asyncio.run(get_request(
-        f"https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/{app_id}/{app_id}.lua"
-    ))
+    lua_contents = asyncio.run(
+        get_request(
+            f"https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/{app_id}/{app_id}.lua"
+        )
+    )
     if lua_contents is None:
         return
-    lua_path = (dest / f"{app_id}.lua")
+    lua_path = dest / f"{app_id}.lua"
     with lua_path.open("w", encoding="utf-8") as f:
         f.write(lua_contents)
     return lua_path
@@ -343,7 +345,7 @@ def get_manilua(dest: Path, app_id: str):
 
     with httpx.stream("GET", url, headers=headers) as response:
         try:
-            total = int(response.headers.get('Content-Length', '0'))
+            total = int(response.headers.get("Content-Length", "0"))
         except Exception as e:
             print(f"Could not parse Content-Length header: {e}")
             total = 0
@@ -359,7 +361,7 @@ def get_manilua(dest: Path, app_id: str):
 
             f.seek(0)
             data = f.read()
-    lua_bytes = b''
+    lua_bytes = b""
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             files = zf.filelist
@@ -375,10 +377,7 @@ def get_manilua(dest: Path, app_id: str):
         try:
             print(Fore.RED + json.dumps(json.load(f)) + Style.RESET_ALL)
         except json.JSONDecodeError:
-            print(
-                "Did not receive a ZIP file or JSON: \n"
-                + f.read().decode()
-            )
+            print("Did not receive a ZIP file or JSON: \n" + f.read().decode())
 
     lua_path = dest / f"{app_id}.lua"
     if len(lua_bytes) > 0:
@@ -471,7 +470,7 @@ def main() -> MainReturnCode:
                     )
                     for x in Settings
                 ],
-                cancellable=True
+                cancellable=True,
             )
             if not selected_key:
                 break
@@ -509,7 +508,7 @@ def main() -> MainReturnCode:
             return MainReturnCode.LOOP_NO_PROMPT
         vdf_data = vdf_load(loginusers_file, mapper=OrderedDict)
 
-        vdf_users = vdf_data.get('users')
+        vdf_users = vdf_data.get("users")
         if vdf_users is None:
             print("There are no users on this Steam installation...")
             return MainReturnCode.LOOP_NO_PROMPT
@@ -544,9 +543,7 @@ def main() -> MainReturnCode:
         if chosen_user is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        new_value = (
-            "0" if chosen_user.WANTS_OFFLINE_MODE == "1" else "1"
-        )
+        new_value = "0" if chosen_user.WANTS_OFFLINE_MODE == "1" else "1"
 
         vdf_data["users"][chosen_user.STEAM64_ID]["WantsOfflineMode"] = new_value
         vdf_dump(loginusers_file, vdf_data)
@@ -571,7 +568,7 @@ def main() -> MainReturnCode:
             ids_str: list[int] = prompt_text(
                 "Input IDs that you would like to add (separate them with spaces)",
                 validator=validator,
-                filter=digit_filter
+                filter=digit_filter,
             )
             for id in ids_str:
                 app_list_man.add_id(id)
@@ -772,7 +769,9 @@ def main() -> MainReturnCode:
 
 if __name__ == "__main__":
     color_init()
-    print(Fore.GREEN + f"""  ██████       ███▄ ▄███▓     ▓█████▄
+    print(
+        Fore.GREEN
+        + f"""  ██████       ███▄ ▄███▓     ▓█████▄
 ▒██    ▒      ▓██▒▀█▀ ██▒     ▒██▀ ██▌
 ░ ▓██▄        ▓██    ▓██░     ░██   █▌
   ▒   ██▒     ▒██    ▒██      ░▓█▄   ▌
@@ -781,13 +780,20 @@ if __name__ == "__main__":
 ░ ░▒  ░ ░ ░▒  ░  ░      ░ ░▒   ░ ▒  ▒  ░▒
 ░  ░  ░   ░   ░      ░    ░    ░ ░  ░  ░
       ░    ░         ░     ░     ░      ░
-           ░               ░   ░        ░ \nVersion: {VERSION}""" + Style.RESET_ALL)
+           ░               ░   ░        ░ \nVersion: {VERSION}"""
+        + Style.RESET_ALL
+    )
     while True:
         try:
             return_code = main()
         except Exception:
-            print("There was an error:\n" + Fore.RED)
-            traceback.print_exc()
+            print(
+                "There was an error. You can also find this in crash.log:\n" + Fore.RED
+            )
+            with Path("crash.log").open("w+", encoding="utf-8") as f:
+                traceback.print_exc(file=f)
+                f.seek(0)
+                print(f.read())
             print(Style.RESET_ALL, end="")
             input("Press Enter to restart the program...")
             continue
