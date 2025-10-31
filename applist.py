@@ -1,0 +1,178 @@
+from pathlib import Path
+from typing import Any, Optional
+
+from colorama import Fore, Style
+from steam.client import SteamClient  # type: ignore
+
+from structs import AppListFile, DepotOrAppID, OrganizedAppIDs, Settings
+from utils import enter_path, get_setting, prompt_dir, prompt_select, set_setting
+
+
+class AppListManager:
+    def __init__(self, steam_path: Path):
+        self.max_id_limit = 168
+        self.steam_path = steam_path
+        self.last_idx = 0
+
+        # App ID / Depot IDs mapped to their name and type
+        self.id_map: dict[int, DepotOrAppID] = {}
+
+        saved_applist = get_setting(Settings.APPLIST_FOLDER)
+        self.applist_folder = (
+            steam_path / "AppList" if saved_applist is None else Path(saved_applist)
+        )
+
+        if not self.applist_folder.exists():
+            self.applist_folder = prompt_dir(
+                "Could not find AppList folder. " "Please specify the full path here:"
+            )
+            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
+        elif saved_applist is None:
+            print(f"AppsList folder automatically selected: {self.applist_folder}")
+            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
+
+    def get_local_ids(self, sort: bool = False) -> list[AppListFile]:
+        ids: list[AppListFile] = []
+        for file in self.applist_folder.glob("*.txt"):
+            if file.stem.isdigit():
+                if int(file.stem) > self.last_idx:
+                    self.last_idx = int(file.stem)
+            ids.append(AppListFile(
+                file,
+                int(file.read_text(encoding="utf-8").strip())
+            ))
+        if sort:
+            ids.sort(key=lambda x: int(x.path.stem))
+        return ids
+
+    def add_id(self, id: int):
+        local_ids = [x.app_id for x in self.get_local_ids()]
+        if id not in local_ids:
+            new_idx = self.last_idx + 1
+            with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
+                f.write(str(id))
+            self.last_idx = new_idx
+            print(
+                f"{id} added to AppList. "
+                f"There are now {len(local_ids) + 1} IDs stored."
+            )
+            if (len(local_ids) + 1) > self.max_id_limit:
+                print(
+                    Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
+                    "for Greenluma. "
+                    "I haven't implemented anything to deal with this yet."
+                    + Style.RESET_ALL
+                )
+        else:
+            print(f"{id} already in AppList")
+
+    def remove_ids(self, ids_to_delete: list[int]):
+        local_ids = self.get_local_ids(sort=True)
+        for local_id in local_ids:
+            if local_id.app_id in ids_to_delete:
+                local_id.path.unlink(missing_ok=True)
+                local_ids.remove(local_id)
+                print(f"{local_id.path.name} deleted")
+        for new_idx, remaining_id in enumerate(local_ids):
+            new_name = remaining_id.path.parent / f"{new_idx}.txt"
+            if remaining_id.path.name != new_name.name:
+                remaining_id.path.rename(new_name)
+
+    def tweak_last_digit(self, app_id: int):
+        chars = list(str(app_id))
+        chars[-1] = "0"
+        return int("".join(chars))
+
+    def get_product_info_with_retry(self, client: SteamClient, ids: list[int]):
+        if not ids:
+            raise ValueError("`ids` should not be empty")
+        while True:
+            info = client.get_product_info(ids)  # type: ignore
+            if info is not None:
+                return info
+
+    def update_depot_info(self, product_info: dict[str, Any]):
+        apps_data = enter_path(product_info, "apps")
+
+        for app_id, app_details in apps_data.items():
+            app_name = enter_path(app_details, "common", "name")
+            depots = enter_path(app_details, "depots")
+
+            self.id_map[int(app_id)] = DepotOrAppID(app_name, app_id, None)
+
+            for depot_id in depots.keys():
+                if depot_id.isdigit():
+                    self.id_map[int(depot_id)] = DepotOrAppID(
+                        app_name, depot_id, app_id
+                    )
+
+    def prompt_id_deletion(self, client: SteamClient):
+        ids = [int(x.app_id) for x in self.get_local_ids()]
+        if not client.logged_on:
+            print("Logging in anonymously")
+            client.anonymous_login()
+        info = self.get_product_info_with_retry(client, ids)
+        self.update_depot_info(info)
+
+        still_missing: list[int] = []
+
+        for app_id in ids:
+            if app_id not in self.id_map:
+                # There is a Depot ID in AppList without a corresponding App ID
+                still_missing.append(self.tweak_last_digit(app_id))
+
+        if still_missing:
+            info = self.get_product_info_with_retry(client, still_missing)
+            self.update_depot_info(info)
+
+        organized: OrganizedAppIDs = {}
+
+        for app_id in ids:
+            if app_id in self.id_map:
+                item = self.id_map[app_id]
+                if item.parent_id is not None:  # is a depot
+                    app = enter_path(
+                        organized,
+                        item.parent_id,
+                        mutate=True,
+                    )
+                    app.setdefault("children", []).append(item.id)
+                    if 'exists' not in app:
+                        app['exists'] = False
+                        app['name'] = item.name
+                else:
+                    app = enter_path(organized, app_id, mutate=True)
+                    app['exists'] = True
+                    app['name'] = item.name
+            else:
+                organized[app_id] = {"exists": True, "name": "UNKNOWN GAME"}
+
+        menu_items: list[tuple[str, int]] = []
+
+        for app_id, val in organized.items():
+            ext = '(MISSING)' if not val.get('exists') else ''
+            name = f"{app_id} - {val.get('name')} {ext}"
+            menu_items.append((name, app_id))
+            depots = val.get("children")
+            if depots:
+                for depot in depots:
+                    menu_items.append((f"└──>{depot}", int(depot)))
+        ids_to_delete: Optional[list[int]] = prompt_select(
+            "Select IDs to delete from AppList:",
+            menu_items,
+            multiselect=True,
+            long_instruction="Press Space to select items, "
+            "and Enter to confirm selections. Ctrl+Z to cancel.",
+            mandatory=False
+        )
+        if ids_to_delete is None:
+            print("No IDs selected. Doing nothing")
+            return
+        self.remove_ids(ids_to_delete)
+
+
+if __name__ == "__main__":
+    steam = SteamClient()
+    steam.anonymous_login()
+    a = AppListManager(Path(r"C:\GAMES\Steam"))
+    a.prompt_id_deletion(steam)

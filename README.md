@@ -75,7 +75,6 @@ Usually happens when you don't have the manifest or your manifest file is outdat
 - [ ] keep track on if game was cracked / steamless'd before
   - [ ] prompt to automatically crack and steamless if so
 - [ ] if given a ZIP, use existing manifest instead of redownloading
-- [ ] AppList folder manager (deletion, adding dlc)
 
 # Licenses
 This project includes the following third-party components:

@@ -20,9 +20,12 @@ from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
+from applist import AppListManager
 from cracker import GameCracker
 from decrypt_manifest import decrypt_manifest
 from structs import (
+    AppListChoice,
+    GenEmuMode,
     LoggedInUser,
     LuaChoice,
     LuaEndpoint,
@@ -30,7 +33,6 @@ from structs import (
     MainMenu,
     MainReturnCode,
     Settings,
-    GenEmuMode
 )
 from utils import (
     VDFLoadAndDumper,
@@ -152,58 +154,6 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
         result = prompt_text("Please provide the manifest request code:")
 
     return result
-
-
-class AppListManager:
-    def __init__(self, steam_path: Path):
-        self.max_id_limit = 168
-        self.steam_path = steam_path
-        self.last_idx = 0
-
-        saved_applist = get_setting(Settings.APPLIST_FOLDER)
-        self.applist_folder = (
-            steam_path / "AppList" if saved_applist is None else Path(saved_applist)
-        )
-
-        if not self.applist_folder.exists():
-            self.applist_folder = prompt_dir(
-                "Could not find AppList folder. "
-                "Please specify the full path here:"
-            )
-            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
-        elif saved_applist is None:
-            print(f"AppsList folder automatically selected: {self.applist_folder}")
-            set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
-
-    def get_local_ids(self):
-        ids: list[str] = []
-        for file in self.applist_folder.glob("*.txt"):
-            if file.stem.isdigit():
-                if int(file.stem) > self.last_idx:
-                    self.last_idx = int(file.stem)
-            ids.append(file.read_text(encoding="utf-8").strip())
-        return ids
-
-    def add_id(self, id: str):
-        ids = self.get_local_ids()
-        if id not in ids:
-            new_idx = self.last_idx + 1
-            with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
-                f.write(id)
-            self.last_idx = new_idx
-            print(
-                f"{id} added to AppList. "
-                f"There are now {len(ids) + 1} IDs stored."
-            )
-            if (len(ids) + 1) > self.max_id_limit:
-                print(
-                    Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
-                    "for Greenluma. "
-                    "I haven't implemented anything to deal with this yet."
-                    + Style.RESET_ALL
-                )
-        else:
-            print(f"{id} already in AppList")
 
 
 def get_steam_libs(steam_path: Path):
@@ -605,6 +555,29 @@ def main() -> MainReturnCode:
         print(f"{chosen_user.PERSONA_NAME} is now {offline_converter(new_value)}")
         return MainReturnCode.LOOP
 
+    if menu_choice == MainMenu.MANAGE_APPLIST:
+        applist_choice: Optional[AppListChoice] = prompt_select("Choose:", list(AppListChoice), cancellable=True)
+        if applist_choice is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+        if applist_choice == AppListChoice.DELETE:
+            app_list_man.prompt_id_deletion(client)
+        elif applist_choice == AppListChoice.ADD:
+            validator: Callable[[str], bool] = lambda x: all(
+                [y.isdigit() for y in x.split()]
+            )
+            digit_filter: Callable[[str], list[int]] = lambda x: [
+                int(y) for y in x.split()
+            ]
+            ids_str: list[int] = prompt_text(
+                "Input IDs that you would like to add (separate them with spaces)",
+                validator=validator,
+                filter=digit_filter
+            )
+            for id in ids_str:
+                app_list_man.add_id(id)
+
+        return MainReturnCode.LOOP_NO_PROMPT
+
     steam_libs = get_steam_libs(steam_path)
     steam_lib_path: Optional[Path] = prompt_select(
         "Select a Steam library location:",
@@ -674,14 +647,14 @@ def main() -> MainReturnCode:
 
         app_id = app_id_match.group(1)
         print(f"App ID is {app_id}")
-        app_list_man.add_id(app_id)
+        app_list_man.add_id(int(app_id))
 
         if not (depot_dec_key := depot_dec_key_regex.findall(lua_contents)):
             print("Decryption keys not found. Try again.")
             continue
 
         for depot_id, _ in depot_dec_key:
-            app_list_man.add_id(depot_id)
+            app_list_man.add_id(int(depot_id))
 
         add_decryption_key_to_config(vdf_file, depot_dec_key)
 

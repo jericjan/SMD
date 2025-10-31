@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, TypedDict
 
 
 class LuaChoice(Enum):
@@ -15,8 +15,14 @@ class MainMenu(Enum):
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
     DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
     OFFLINE_FIX = "Offline Mode Fix"
+    MANAGE_APPLIST = "Manage AppList IDs"
     SETTINGS = "Settings"
     EXIT = "Exit"
+
+
+class AppListChoice(Enum):
+    ADD = "Add an ID"
+    DELETE = "Delete an ID"
 
 
 class LuaEndpoint(Enum):
@@ -75,3 +81,26 @@ class GenEmuMode(Enum):
     USER_GAME_STATS = 0
     STEAM_SETTINGS = 1
     ALL = 2  # idk why i have this, it's there if i ever need it
+
+
+class DepotOrAppID(NamedTuple):
+    name: str
+    id: str  # app id
+    parent_id: Optional[str]  # The parent app ID if it's a depot
+
+
+class AppIDInfoRequired(TypedDict):
+    exists: bool
+    name: str
+
+
+class AppIDInfo(AppIDInfoRequired, total=False):
+    children: list[str]
+
+
+OrganizedAppIDs = dict[int, AppIDInfo]
+
+
+class AppListFile(NamedTuple):
+    path: Path
+    app_id: int
