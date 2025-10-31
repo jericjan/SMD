@@ -41,6 +41,30 @@ Whenever you update the dependencies, run this as well to update the requirement
 uv pip compile pyproject.toml -o requirements.txt
 ```
 
+# FAQ
+
+### Why use this?
+I guess if you're paranoid about Steamtools and want an open-source equivalent. It's not exactly the same but gets the main functionality down. I heard word that Steamtools is actually safe (as long as you're getting it from the right source), so yeah, your decision. 
+
+### How do I get achievements working?
+There's basically two methods: **UserGameStatsSchema** method or **gbe_fork** method.
+#### UserGameStatsSchema method
+Your achievements can show up in the overlay and library, but it depends on what mode you installed Greenluma in. It seems to work best in `stealth mode` and `stealth mode (any folder)`, but I haven't tested this. In normal mode, you *can* get achievements but it doesn't notify you when you get them. Although, in other games it does... Your achievement data will be stored in `Steam\appcache\stats` like any genuine game although it won't be backed up to the cloud. There's also another **catch**: You can only view the achievement when you switch Steam to offline mode. And I should mention that Steam will fail to launch with Greenluma if you close it while it's still in offline mode. My tool has the `Offline Mode Fix` menu to deal with this.
+
+#### gbe_fork method
+You're basically applying a steam emulator and making the emulator handle the achievements. Just crack your game using the tool and confirm when it asks you to generate achievements for gbe_fork. Your achievements won't show up in the Steam overlay or in your library page though. Your achievement data will be in `AppData\Roaming\GSE Saves`. 
+
+### What about cloud sync?
+Nope, can't help ya with this one.
+
+### I get "Content Still Encrypted" error
+Your decryption key is missing in the `config/config.vdf` folder. Try to import the lua file again.
+
+### I get "No Internet Connection" error
+Usually happens when you don't have the manifest or your manifest file is outdated. Try to import the lua file again.
+
+
+
 # To-Do
 - [ ] keep track on if game was cracked / steamless'd before
   - [ ] prompt to automatically crack and steamless if so
@@ -54,3 +78,4 @@ This project includes the following third-party components:
 - [Steamless](https://github.com/atom0s/Steamless/) (CC BY-NC-ND 4.0)
 
 Full license texts are available in the `third_party_licenses` directory.
+
