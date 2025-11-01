@@ -1,13 +1,10 @@
 import asyncio
-import json
 import msvcrt
-from pathlib import Path
 from typing import Any, Literal, Union, overload
 
 import httpx
 
 from smd.prompts import prompt_text
-from smd.structs import NamedIDs
 
 
 @overload
@@ -44,7 +41,7 @@ async def get_request(
         print(f"An error occurred: {e}")
 
 
-async def wait_for_enter():
+async def _wait_for_enter():
     print(
         "If it takes too long, press Enter to cancel the request "
         "and input manually..."
@@ -68,7 +65,7 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     print(f"Requesting from URL: {url}")
 
     request_task = asyncio.create_task(get_request(url))
-    cancel_task = asyncio.create_task(wait_for_enter())
+    cancel_task = asyncio.create_task(_wait_for_enter())
 
     done, pending = await asyncio.wait(
         {request_task, cancel_task}, return_when=asyncio.FIRST_COMPLETED
@@ -116,43 +113,4 @@ def get_game_name(app_id: str):
     return app_name
 
 
-def load_named_ids(file: Path) -> NamedIDs:
-    if not file.exists():
-        return NamedIDs({})
-    with file.open("r", encoding="utf-8") as f:
-        return json.load(f)
 
-
-def save_named_ids(file: Path, data: NamedIDs):
-    with file.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-
-def get_named_ids(folder: Path) -> NamedIDs:
-    """Gets names of games from lua files.
-    Try to read saved names first, then request names of newer files.
-    If there are untracked files, update `names.json` accordingly
-
-    Args:
-        folder (Path): Folder with .lua files in it
-
-    Returns:
-        dict: a dict in the format (game_id, game_name)
-    """
-    if not folder.exists():
-        folder.mkdir()
-        return NamedIDs({})
-
-    id_names_file = folder / "names.json"
-    named_ids: NamedIDs = load_named_ids(id_names_file)
-
-    new_ids = False
-    saved_ids = [x.stem for x in folder.glob("*.lua")]
-    for saved_id in saved_ids:
-        if saved_id not in named_ids:
-            new_ids = True
-            named_ids[saved_id] = get_game_name(saved_id)
-
-    if new_ids:
-        save_named_ids(id_names_file, named_ids)
-    return named_ids

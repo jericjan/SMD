@@ -14,15 +14,13 @@ from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from smd.applist import AppListManager
-from smd.file_access import (
-    add_new_lua,
-    select_from_saved_luas,
-)
-from smd.http_utils import get_game_name, get_gmrc, get_named_ids
+from smd.http_utils import get_game_name, get_gmrc
 from smd.lua_downloader import download_lua
+from smd.lua_selection import add_new_lua, select_from_saved_luas
 from smd.manifest_crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
-from smd.storage.vdf import vdf_dump, add_decryption_key_to_config
+from smd.storage.named_ids import get_named_ids
+from smd.storage.vdf import add_decryption_key_to_config, vdf_dump
 from smd.structs import DepotManifestMap, LuaChoice, LuaParsedInfo  # type: ignore
 from smd.utils import get_product_info
 
