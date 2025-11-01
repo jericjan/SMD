@@ -1,3 +1,5 @@
+"""For managing Greenluma's AppList folder"""
+
 from pathlib import Path
 from typing import Any, Optional
 
@@ -68,12 +70,13 @@ class AppListManager:
 
     def remove_ids(self, ids_to_delete: list[int]):
         local_ids = self.get_local_ids(sort=True)
+        remaining_ids = [*local_ids]
         for local_id in local_ids:
             if local_id.app_id in ids_to_delete:
                 local_id.path.unlink(missing_ok=True)
-                local_ids.remove(local_id)
+                remaining_ids.remove(local_id)
                 print(f"{local_id.path.name} deleted")
-        for new_idx, remaining_id in enumerate(local_ids):
+        for new_idx, remaining_id in enumerate(remaining_ids):
             new_name = remaining_id.path.parent / f"{new_idx}.txt"
             if remaining_id.path.name != new_name.name:
                 remaining_id.path.rename(new_name)
@@ -169,10 +172,3 @@ class AppListManager:
             print("No IDs selected. Doing nothing")
             return
         self.remove_ids(ids_to_delete)
-
-
-if __name__ == "__main__":
-    steam = SteamClient()
-    steam.anonymous_login()
-    a = AppListManager(Path(r"C:\GAMES\Steam"))
-    a.prompt_id_deletion(steam)
