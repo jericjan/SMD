@@ -111,6 +111,3 @@ def get_game_name(app_id: str):
     else:
         app_name = prompt_text("Request failed. Type the name of the game: ")
     return app_name
-
-
-

@@ -69,5 +69,3 @@ def add_new_lua() -> LuaResult:
             return LuaResult(None, None, None)
         return LuaResult(lua_path, lua_contents, None)
     return LuaResult(lua_path, None, None)
-
-

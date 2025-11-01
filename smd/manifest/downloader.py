@@ -71,6 +71,7 @@ class ManifestDownloader():
         self,
         lua: LuaParsedInfo,
     ):
+        """Gets latest manifest IDs and downloads respective manifests"""
         cdn = CDNClient(self.client)
         manifest_ids = self.get_manifest_ids(lua)
         # Download and decrypt manifests

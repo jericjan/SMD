@@ -161,7 +161,7 @@ class UI:
 
         lua_manager = LuaManager(self.steam_client, self.steam_path)
         downloader = ManifestDownloader(self.steam_client, self.steam_path)
-        parsed_lua = lua_manager.get_lua_info(lua_choice)
+        parsed_lua = lua_manager.fetch_lua(lua_choice)
         self.app_list_man.add_ids(parsed_lua)
         add_decryption_keys_to_config(self.steam_path, parsed_lua)
         lua_manager.backup_lua(parsed_lua)

@@ -40,7 +40,7 @@ class GameHandler:
     def get_game(self) -> Optional[ACFInfo]:
         games: list[tuple[AppName, ACFInfo]] = []
         for path in self.steamapps_path.glob("*.acf"):
-            app_acf = vdf_load(path)        
+            app_acf = vdf_load(path)
             app_state = app_acf.get("AppState", {})
             name = app_state.get("name")
             installdir = app_state.get("installdir")

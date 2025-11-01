@@ -1,3 +1,5 @@
+"""API endpoints are in here"""
+
 import asyncio
 import io
 import json

@@ -21,7 +21,8 @@ class LuaManager:
         self.named_ids = get_named_ids(self.saved_lua)
         self.steam_path = steam_path
 
-    def get_lua_info(self, choice: LuaChoice) -> LuaParsedInfo:
+    def fetch_lua(self, choice: LuaChoice) -> LuaParsedInfo:
+        """Depending on the choice, fetch a lua file then parse the contents"""
         app_id_regex = re.compile(r"addappid\s*\(\s*(\d+)\s*\)")
         depot_dec_key_regex = re.compile(
             r"addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
@@ -66,5 +67,3 @@ class LuaManager:
                 f.write(lua.contents)
         elif not (self.saved_lua / lua.path.name).exists():
             shutil.copyfile(lua.path, self.saved_lua / lua.path.name)
-
-

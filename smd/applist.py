@@ -59,6 +59,7 @@ class AppListManager:
         return ids
 
     def add_ids(self, app_ids: Union[int, list[int], LuaParsedInfo]):
+        """Adds IDs to the AppList folder"""
         if isinstance(app_ids, int):
             app_ids = [app_ids]
         if isinstance(app_ids, LuaParsedInfo):
