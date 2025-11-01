@@ -12,6 +12,7 @@ from smd.structs import (
     AppListChoice,
     AppListFile,
     DepotOrAppID,
+    LuaParsedInfo,
     MainReturnCode,
     OrganizedAppIDs,
     ProductInfo,
@@ -57,10 +58,11 @@ class AppListManager:
             ids.sort(key=lambda x: int(x.path.stem))
         return ids
 
-    def add_ids(self, app_ids: Union[int, list[int]]):
+    def add_ids(self, app_ids: Union[int, list[int], LuaParsedInfo]):
         if isinstance(app_ids, int):
             app_ids = [app_ids]
-
+        if isinstance(app_ids, LuaParsedInfo):
+            app_ids = [int(app_ids.id), *[int(x.depot_id) for x in app_ids.depots]]
         for app_id in app_ids:
             local_ids = [x.app_id for x in self.get_local_ids()]
             if app_id not in local_ids:

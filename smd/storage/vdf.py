@@ -1,14 +1,15 @@
+import shutil
 from collections import OrderedDict
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Optional, TypeVar, overload
 
-from pathvalidate import sanitize_filename
 import vdf  # type: ignore
+from pathvalidate import sanitize_filename
 
 from smd.http_utils import get_game_name
 from smd.prompts import prompt_select
-from smd.structs import DepotKeyPair, LuaParsedInfo
+from smd.structs import LuaParsedInfo
 from smd.utils import enter_path
 
 _DictType = TypeVar("_DictType", bound=dict[Any, Any])
@@ -81,10 +82,12 @@ def get_steam_libs(steam_path: Path):
     return paths
 
 
-def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[DepotKeyPair]):
-    """Adds decryption keys to config.vdf"""
+def add_decryption_keys_to_config(steam_path: Path, lua: LuaParsedInfo):
+    """Adds decryption keys from parsed lua to config.vdf"""
+    vdf_file = steam_path / "config/config.vdf"
+    shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
     with VDFLoadAndDumper(vdf_file) as vdf_data:
-        for depot_id, dec_key in depot_dec_key:
+        for depot_id, dec_key in lua.depots:
             print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
             depots = enter_path(
                 vdf_data,

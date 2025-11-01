@@ -9,18 +9,15 @@ from typing import Any, Literal, cast
 from urllib.parse import urljoin
 
 import httpx
-from pathvalidate import sanitize_filename
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.applist import AppListManager
-from smd.http_utils import get_game_name, get_gmrc
+from smd.http_utils import get_gmrc
 from smd.lua_downloader import download_lua
 from smd.lua_selection import add_new_lua, select_from_saved_luas
 from smd.manifest_crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.storage.named_ids import get_named_ids
-from smd.storage.vdf import add_decryption_key_to_config, vdf_dump
 from smd.structs import DepotManifestMap, LuaChoice, LuaParsedInfo  # type: ignore
 from smd.utils import get_product_info
 
@@ -71,15 +68,11 @@ class LuaManager:
             if not (depot_dec_key := depot_dec_key_regex.findall(lua_contents)):
                 print("Decryption keys not found. Try again.")
                 continue
-
-            vdf_file = self.steam_path / "config/config.vdf"
-            shutil.copyfile(vdf_file, (self.steam_path / "config/config.vdf.backup"))
-            add_decryption_key_to_config(vdf_file, depot_dec_key)
-
             break
         return LuaParsedInfo(app_id, depot_dec_key, lua_path, lua_contents)
 
     def backup_lua(self, lua: LuaParsedInfo):
+        """Saves the lua file for later use"""
         if lua.path.suffix == ".zip":
             with (self.saved_lua / f"{lua.id}.lua").open("w", encoding="utf-8") as f:
                 f.write(lua.contents)
