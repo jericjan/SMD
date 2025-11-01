@@ -165,9 +165,9 @@ class LuaManager:
     def download_manifests(
         self,
         lua: LuaParsedInfo,
-        manifest_ids: DepotManifestMap,
     ):
         cdn = CDNClient(self.client)
+        manifest_ids = self.get_manifest_ids(lua)
         # Download and decrypt manifests
         for depot_id, dec_key in lua.depots:
             manifest_id = manifest_ids[depot_id]
