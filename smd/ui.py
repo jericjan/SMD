@@ -7,7 +7,7 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
-from smd.lua_manager import LuaManager
+from smd.lua.manager import LuaManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
