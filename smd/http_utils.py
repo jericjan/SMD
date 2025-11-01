@@ -127,7 +127,7 @@ def save_named_ids(file: Path, data: dict[str, str]):
         json.dump(data, f, indent=2)
 
 
-def get_named_ids(folder: Path):
+def get_named_ids(folder: Path) -> dict[str, str]:
     """Gets names of games from lua files.
     Try to read saved names first, then request names of newer files.
     If there are untracked files, update `names.json` accordingly
@@ -138,6 +138,10 @@ def get_named_ids(folder: Path):
     Returns:
         dict: a dict in the format (game_id, game_name)
     """
+    if not folder.exists():
+        folder.mkdir()
+        return {}
+
     id_names_file = folder / "names.json"
     named_ids: dict[str, str] = load_named_ids(id_names_file)
 

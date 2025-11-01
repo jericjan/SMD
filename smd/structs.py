@@ -2,7 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple, Optional, TypedDict
+from typing import Literal, NamedTuple, Optional, TypedDict
 
 
 class LuaChoice(Enum):
@@ -20,6 +20,19 @@ class MainMenu(Enum):
     MANAGE_APPLIST = "Manage AppList IDs"
     SETTINGS = "Settings"
     EXIT = "Exit"
+
+
+GameSpecificChoices = Literal[
+    MainMenu.CRACK_GAME,
+    MainMenu.REMOVE_DRM,
+    MainMenu.DL_USER_GAME_STATS,
+]
+
+GAME_SPECIFIC_CHOICES = (
+    MainMenu.CRACK_GAME,
+    MainMenu.REMOVE_DRM,
+    MainMenu.DL_USER_GAME_STATS,
+)
 
 
 class AppListChoice(Enum):
@@ -106,3 +119,16 @@ OrganizedAppIDs = dict[int, AppIDInfo]
 class AppListFile(NamedTuple):
     path: Path
     app_id: int
+
+
+AppId = str
+DepotId = str
+DecryptionKey = str
+DepotKeyMapping = list[tuple[DepotId, DecryptionKey]]
+
+
+class LuaParsedInfo(NamedTuple):
+    id: AppId
+    depots: DepotKeyMapping
+    path: Path
+    contents: str

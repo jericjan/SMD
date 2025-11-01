@@ -1,0 +1,167 @@
+from collections import OrderedDict
+from pathlib import Path
+from typing import Callable, Optional
+
+from colorama import Fore, Style
+from steam.client import SteamClient  # type: ignore
+
+
+from smd.applist import AppListManager
+from smd.cracker import GameCracker
+from smd.file_access import get_steam_libs
+from smd.lua_parser import LuaParser
+from smd.prompts import prompt_secret, prompt_select, prompt_text
+from smd.storage.settings import get_setting, load_all_settings, set_setting
+from smd.storage.vdf import vdf_dump, vdf_load
+from smd.structs import (
+    GameSpecificChoices,
+    LoggedInUser,
+    LuaChoice,
+    MainReturnCode,
+    Settings,
+)
+
+
+class UI:
+
+    def __init__(
+        self, client: SteamClient, app_list_man: AppListManager, steam_path: Path
+    ):
+        self.steam_client = client
+        self.steam_path = steam_path
+        self.app_list_man = app_list_man
+
+    def edit_settings_menu(self) -> MainReturnCode:
+        while True:
+            saved_settings = load_all_settings()
+            selected_key: Optional[Settings] = prompt_select(
+                "Select a setting to change:",
+                [
+                    (
+                        x.clean_name
+                        + (" (unset)" if x.key_name not in saved_settings else ""),
+                        x,
+                    )
+                    for x in Settings
+                ],
+                cancellable=True,
+            )
+            if not selected_key:
+                break
+            value = get_setting(selected_key)
+            value = value if value else "(unset)"
+            print(
+                f"{selected_key.clean_name} is set to "
+                + Fore.YELLOW
+                + ("[ENCRYPTED]" if selected_key.hidden else value)
+                + Style.RESET_ALL
+            )
+            edit = prompt_select(
+                "Do you want to edit this setting?", [("Yes", True), ("No", False)]
+            )
+            if not edit:
+                continue
+            func = prompt_secret if selected_key.hidden else prompt_text
+            new_value = func("Enter the new value:")
+            set_setting(selected_key, new_value)
+        return MainReturnCode.LOOP_NO_PROMPT
+
+    def offline_fix_menu(self) -> MainReturnCode:
+        print(
+            Fore.YELLOW
+            + "Steam will fail to launch when you close it while in OFFLINE Mode. "
+            "Set it back to ONLINE to fix it." + Style.RESET_ALL
+        )
+        loginusers_file = self.steam_path / "config/loginusers.vdf"
+        if not loginusers_file.exists():
+            print(
+                "loginusers.vdf file can't be found. "
+                "Have you already logged in once through Steam?"
+            )
+            return MainReturnCode.LOOP_NO_PROMPT
+        vdf_data = vdf_load(loginusers_file, mapper=OrderedDict)
+
+        vdf_users = vdf_data.get("users")
+        if vdf_users is None:
+            print("There are no users on this Steam installation...")
+            return MainReturnCode.LOOP_NO_PROMPT
+        user_ids = vdf_users.keys()
+        users: list[LoggedInUser] = []
+        for user_id in user_ids:
+            x = vdf_users[user_id]
+            users.append(
+                LoggedInUser(
+                    user_id,
+                    x.get("PersonaName", "[MISSING]"),
+                    x.get("WantsOfflineMode", "[MISSING]"),
+                )
+            )
+        if len(users) == 0:
+            print("There are no users on this Steam installation")
+            return MainReturnCode.LOOP_NO_PROMPT
+        offline_converter: Callable[[str], str] = lambda x: (
+            "ONLINE" if x == "0" else "OFFLINE"
+        )
+        chosen_user: Optional[LoggedInUser] = prompt_select(
+            "Select a user: ",
+            [
+                (
+                    f"{x.PERSONA_NAME} - " + offline_converter(x.WANTS_OFFLINE_MODE),
+                    x,
+                )
+                for x in users
+            ],
+            cancellable=True,
+        )
+        if chosen_user is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+
+        new_value = "0" if chosen_user.WANTS_OFFLINE_MODE == "1" else "1"
+
+        vdf_data["users"][chosen_user.STEAM64_ID]["WantsOfflineMode"] = new_value
+        vdf_dump(loginusers_file, vdf_data)
+        print(f"{chosen_user.PERSONA_NAME} is now {offline_converter(new_value)}")
+        return MainReturnCode.LOOP
+
+    def applist_menu(self) -> MainReturnCode:
+        return self.app_list_man.display_menu(self.steam_client)
+
+    def select_steam_library(self):
+        """Returns success status"""
+        steam_libs = get_steam_libs(self.steam_path)
+        steam_lib_path: Optional[Path] = prompt_select(
+            "Select a Steam library location:",
+            steam_libs,
+            cancellable=True,
+            default=steam_libs[0],
+        )
+        return steam_lib_path
+
+    def handle_game(self, choice: GameSpecificChoices) -> MainReturnCode:
+        if (lib_path := self.select_steam_library()) is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+        cracker = GameCracker(lib_path, self.steam_client)
+        return cracker.execute_choice(choice)
+
+    def process_lua_choice(self) -> MainReturnCode:
+        lua_parser = LuaParser(self.steam_client, self.app_list_man, self.steam_path)
+        if (lib_path := self.select_steam_library()) is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+
+        lua_choice: Optional[LuaChoice] = prompt_select(
+            "Choose:", list(LuaChoice), cancellable=True
+        )
+
+        if lua_choice is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+
+        parsed_lua = lua_parser.get_lua_info(lua_choice)
+
+        lua_parser.backup_lua(parsed_lua)
+
+        lua_parser.write_acf(parsed_lua, lib_path)
+
+        manifest_ids = lua_parser.get_manifest_ids(parsed_lua)
+
+        lua_parser.download_manifests(parsed_lua, manifest_ids)
+        return MainReturnCode.LOOP

@@ -1,14 +1,21 @@
 """For managing Greenluma's AppList folder"""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
-from smd.prompts import prompt_dir, prompt_select
+from smd.prompts import prompt_dir, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import AppListFile, DepotOrAppID, OrganizedAppIDs, Settings
+from smd.structs import (
+    AppListChoice,
+    AppListFile,
+    DepotOrAppID,
+    MainReturnCode,
+    OrganizedAppIDs,
+    Settings,
+)
 from smd.utils import enter_path
 
 
@@ -174,3 +181,28 @@ class AppListManager:
             print("No IDs selected. Doing nothing")
             return
         self.remove_ids(ids_to_delete)
+
+    def display_menu(self, client: SteamClient) -> MainReturnCode:
+        applist_choice: Optional[AppListChoice] = prompt_select(
+            "Choose:", list(AppListChoice), cancellable=True
+        )
+        if applist_choice is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+        if applist_choice == AppListChoice.DELETE:
+            self.prompt_id_deletion(client)
+        elif applist_choice == AppListChoice.ADD:
+            validator: Callable[[str], bool] = lambda x: all(
+                [y.isdigit() for y in x.split()]
+            )
+            digit_filter: Callable[[str], list[int]] = lambda x: [
+                int(y) for y in x.split()
+            ]
+            ids_str: list[int] = prompt_text(
+                "Input IDs that you would like to add (separate them with spaces)",
+                validator=validator,
+                filter=digit_filter,
+            )
+            for id in ids_str:
+                self.add_id(id)
+
+        return MainReturnCode.LOOP_NO_PROMPT

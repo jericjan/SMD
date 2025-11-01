@@ -12,7 +12,13 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.prompts import prompt_file, prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import GenEmuMode, Settings
+from smd.structs import (
+    GameSpecificChoices,
+    GenEmuMode,
+    MainMenu,
+    MainReturnCode,
+    Settings,
+)
 from smd.utils import enter_path, root_folder
 
 
@@ -259,3 +265,22 @@ class GameCracker:
 
         chosen = prompt_select("Choose the exe:", windows_exes)
         return app_info.path / chosen
+
+    def execute_choice(self, choice: GameSpecificChoices) -> MainReturnCode:
+        app_info = self.get_game()
+        if app_info is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+        if choice == MainMenu.CRACK_GAME:
+            dll = self.find_steam_dll(app_info.path)
+            if dll is None:
+                print(
+                    "Could not find steam_api DLL. "
+                    "Maybe you haven't downloaded the game yet..."
+                )
+            else:
+                self.crack_dll(app_info.app_id, dll)
+        elif choice == MainMenu.REMOVE_DRM:
+            self.apply_steamless(app_info)
+        elif choice == MainMenu.DL_USER_GAME_STATS:
+            self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
+        return MainReturnCode.LOOP
