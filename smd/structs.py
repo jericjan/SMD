@@ -130,6 +130,7 @@ class AppIDInfo(AppIDInfoRequired, total=False):
 
 
 OrganizedAppIDs = dict[int, AppIDInfo]
+"A dict of IDs where Depot IDs are organized inside their parent App IDs"
 
 
 class AppListFile(NamedTuple):
@@ -137,20 +138,26 @@ class AppListFile(NamedTuple):
     app_id: int
 
 
-AppId = str
-DepotId = str
-DecryptionKey = str
-DepotKeyMapping = list[tuple[DepotId, DecryptionKey]]
+class DepotKeyPair(NamedTuple):
+    depot_id: str
+    "Depot ID"
+    decryption_key: str
+    "Decryption Key of the Depot"
 
 
 class LuaParsedInfo(NamedTuple):
-    id: AppId
-    depots: DepotKeyMapping
+    id: str
+    "The base app ID"
+    depots: list[DepotKeyPair]
     path: Path
     contents: str
 
 
-NamedIDs = dict[str, str]
+NamedIDs = NewType("NamedIDs", dict[str, str])
 "A dict of App IDs mapped to game names"
 
 ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])
+"The dict returned by get_product_info"
+
+DepotManifestMap = NewType("DepotManifestMap",  dict[str, str])
+"Depot IDs mapped to Manifest IDs"

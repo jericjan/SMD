@@ -24,7 +24,7 @@ from smd.lua_downloader import download_lua
 from smd.manifest_crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.storage.vdf import vdf_dump
-from smd.structs import LuaChoice, LuaParsedInfo  # type: ignore
+from smd.structs import DepotManifestMap, LuaChoice, LuaParsedInfo  # type: ignore
 from smd.utils import get_product_info
 
 
@@ -122,7 +122,7 @@ class LuaParser:
 
     def get_manifest_ids(
         self, lua: LuaParsedInfo
-    ):
+    ) -> DepotManifestMap:
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[str, str] = {}
 
@@ -163,12 +163,12 @@ class LuaParser:
                 manifest_ids[depot_id] = latest
             else:
                 break  # User did not give a blank, end the loop
-        return manifest_ids
+        return DepotManifestMap(manifest_ids)
 
     def download_manifests(
         self,
         lua: LuaParsedInfo,
-        manifest_ids: dict[str, str],
+        manifest_ids: DepotManifestMap,
     ):
         cdn = CDNClient(self.client)
         # Download and decrypt manifests

@@ -118,7 +118,7 @@ def get_game_name(app_id: str):
 
 def load_named_ids(file: Path) -> NamedIDs:
     if not file.exists():
-        return {}
+        return NamedIDs({})
     with file.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -141,7 +141,7 @@ def get_named_ids(folder: Path) -> NamedIDs:
     """
     if not folder.exists():
         folder.mkdir()
-        return {}
+        return NamedIDs({})
 
     id_names_file = folder / "names.json"
     named_ids: NamedIDs = load_named_ids(id_names_file)
