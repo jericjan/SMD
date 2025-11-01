@@ -7,10 +7,9 @@ from pathlib import Path
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
-
 from steam.protobufs.content_manifest_pb2 import (
-    ContentManifestPayload,
     ContentManifestMetadata,
+    ContentManifestPayload,
 )
 
 # Magic numbers

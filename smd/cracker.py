@@ -1,3 +1,5 @@
+"""gbe_fork and Steamless stuff in here"""
+
 import hashlib
 import os
 import shutil
@@ -8,17 +10,10 @@ from typing import Any, Literal, NamedTuple, Optional, overload
 import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
-from structs import GenEmuMode, Settings
-from utils import (
-    enter_path,
-    get_setting,
-    prompt_file,
-    prompt_secret,
-    prompt_select,
-    prompt_text,
-    root_folder,
-    set_setting,
-)
+from smd.prompts import prompt_file, prompt_secret, prompt_select, prompt_text
+from smd.storage.settings import get_setting, set_setting
+from smd.structs import GenEmuMode, Settings
+from smd.utils import enter_path, root_folder
 
 
 class AppInfo(NamedTuple):

@@ -1,9 +1,12 @@
+"""Basically machine-specific encryption/decryption so that users
+don't accidentally share the sensitive information stored in settings.bin"""
+
 import base64
 import os
 
 import keyring
-from nacl.secret import SecretBox
 from nacl.exceptions import CryptoError
+from nacl.secret import SecretBox
 
 SERVICE = "smd_tool"
 KEYNAME = "master_key"
@@ -21,6 +24,7 @@ def get_secret_box():
 
 
 def keyring_encrypt(data: str):
+    """Encrypts text"""
     box = get_secret_box()
     blob = box.encrypt(data.encode())  # type: ignore
     return blob

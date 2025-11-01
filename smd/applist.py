@@ -6,8 +6,10 @@ from typing import Any, Optional
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
-from structs import AppListFile, DepotOrAppID, OrganizedAppIDs, Settings
-from utils import enter_path, get_setting, prompt_dir, prompt_select, set_setting
+from smd.prompts import prompt_dir, prompt_select
+from smd.storage.settings import get_setting, set_setting
+from smd.structs import AppListFile, DepotOrAppID, OrganizedAppIDs, Settings
+from smd.utils import enter_path
 
 
 class AppListManager:

@@ -1,3 +1,5 @@
+"""Aliases, Enums, NamedTuples, etc go here"""
+
 from enum import Enum
 from pathlib import Path
 from typing import NamedTuple, Optional, TypedDict
