@@ -29,13 +29,11 @@ class LuaManager:
     def __init__(
         self,
         client: SteamClient,
-        app_list_man: AppListManager,
         steam_path: Path,
     ):
         self.client = client
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
-        self.app_list_man = app_list_man
         self.steam_path = steam_path
 
     def get_lua_info(self, choice: LuaChoice) -> LuaParsedInfo:
@@ -69,14 +67,10 @@ class LuaManager:
 
             app_id = app_id_match.group(1)
             print(f"App ID is {app_id}")
-            self.app_list_man.add_id(int(app_id))
 
             if not (depot_dec_key := depot_dec_key_regex.findall(lua_contents)):
                 print("Decryption keys not found. Try again.")
                 continue
-
-            for depot_id, _ in depot_dec_key:
-                self.app_list_man.add_id(int(depot_id))
 
             vdf_file = self.steam_path / "config/config.vdf"
             shutil.copyfile(vdf_file, (self.steam_path / "config/config.vdf.backup"))

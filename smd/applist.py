@@ -1,7 +1,7 @@
 """For managing Greenluma's AppList folder"""
 
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
@@ -57,26 +57,31 @@ class AppListManager:
             ids.sort(key=lambda x: int(x.path.stem))
         return ids
 
-    def add_id(self, id: int):
-        local_ids = [x.app_id for x in self.get_local_ids()]
-        if id not in local_ids:
-            new_idx = self.last_idx + 1
-            with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
-                f.write(str(id))
-            self.last_idx = new_idx
-            print(
-                f"{id} added to AppList. "
-                f"There are now {len(local_ids) + 1} IDs stored."
-            )
-            if (len(local_ids) + 1) > self.max_id_limit:
+    def add_ids(self, app_ids: Union[int, list[int]]):
+        if isinstance(app_ids, int):
+            app_ids = [app_ids]
+
+        for app_id in app_ids:
+            local_ids = [x.app_id for x in self.get_local_ids()]
+            if app_id not in local_ids:
+                new_idx = self.last_idx + 1
+                with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
+                    f.write(str(app_id))
+                self.last_idx = new_idx
                 print(
-                    Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
-                    "for Greenluma. "
-                    "I haven't implemented anything to deal with this yet."
-                    + Style.RESET_ALL
+                    f"{app_id} added to AppList. "
+                    f"There are now {len(local_ids) + 1} IDs stored."
                 )
-        else:
-            print(f"{id} already in AppList")
+                if (len(local_ids) + 1) > self.max_id_limit:
+                    print(
+                        Fore.RED
+                        + f"WARNING: You've hit the {self.max_id_limit} ID limit "
+                        "for Greenluma. "
+                        "I haven't implemented anything to deal with this yet."
+                        + Style.RESET_ALL
+                    )
+            else:
+                print(f"{app_id} already in AppList")
 
     def remove_ids(self, ids_to_delete: list[int]):
         local_ids = self.get_local_ids(sort=True)
@@ -201,7 +206,6 @@ class AppListManager:
                 validator=validator,
                 filter=digit_filter,
             )
-            for id in ids:
-                self.add_id(id)
+            self.add_ids(ids)
 
         return MainReturnCode.LOOP_NO_PROMPT

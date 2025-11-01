@@ -152,8 +152,12 @@ class UI:
         if lua_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_manager = LuaManager(self.steam_client, self.app_list_man, self.steam_path)
+        lua_manager = LuaManager(self.steam_client, self.steam_path)
         parsed_lua = lua_manager.get_lua_info(lua_choice)
+        self.app_list_man.add_ids(
+            [int(parsed_lua.id), *[int(x.depot_id) for x in parsed_lua.depots]]
+        )
+
         lua_manager.backup_lua(parsed_lua)
         write_acf(parsed_lua, lib_path)
         lua_manager.download_manifests(parsed_lua)
