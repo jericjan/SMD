@@ -5,6 +5,9 @@ from typing import Any, Optional, TypeVar, overload
 
 import vdf  # type: ignore
 
+from smd.structs import DepotKeyPair
+from smd.utils import enter_path
+
 _DictType = TypeVar("_DictType", bound=dict[Any, Any])
 
 
@@ -53,3 +56,44 @@ class VDFLoadAndDumper:
     ):
         if exc_type is None:
             vdf_dump(self.path, self.data)
+
+
+def get_steam_libs(steam_path: Path):
+    """Get list of Steam library paths by the user
+
+    Args:
+        steam_path (Path): Steam install path
+
+    Returns:
+        list[Path]: list of Steam library paths
+    """
+    lib_folders = steam_path / "config/libraryfolders.vdf"
+
+    vdf_data = vdf_load(lib_folders)
+    paths: list[Path] = []
+    for library in vdf_data["libraryfolders"].values():
+        if (path := Path(library["path"])).exists():
+            paths.append(path)
+
+    return paths
+
+
+def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[DepotKeyPair]):
+    """Adds decryption keys to config.vdf"""
+    with VDFLoadAndDumper(vdf_file) as vdf_data:
+        for depot_id, dec_key in depot_dec_key:
+            print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
+            depots = enter_path(
+                vdf_data,
+                "InstallConfigStore",
+                "Software",
+                "Valve",
+                "Steam",
+                "depots",
+                mutate=True,
+            )
+            if depot_id not in depots:
+                depots[depot_id] = {"DecryptionKey": dec_key}
+                print("Added to config.vdf succesfully.")
+            else:
+                print("Already in config.vdf.")

@@ -7,11 +7,10 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
-from smd.file_access import get_steam_libs
 from smd.lua_parser import LuaParser
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
-from smd.storage.vdf import vdf_dump, vdf_load
+from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.structs import (
     GameSpecificChoices,
     LoggedInUser,
