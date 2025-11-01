@@ -1,25 +1,13 @@
-import asyncio
-import io
 import re
 import shutil
-import time
-import zipfile
 from pathlib import Path
-from typing import Any, Literal, cast
-from urllib.parse import urljoin
 
-import httpx
 from steam.client import SteamClient  # type: ignore
-from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.http_utils import get_gmrc
 from smd.lua_downloader import download_lua
 from smd.lua_selection import add_new_lua, select_from_saved_luas
-from smd.manifest_crypto import decrypt_manifest
-from smd.prompts import prompt_select, prompt_text
 from smd.storage.named_ids import get_named_ids
-from smd.structs import DepotManifestMap, LuaChoice, LuaParsedInfo  # type: ignore
-from smd.utils import get_product_info
+from smd.structs import LuaChoice, LuaParsedInfo  # type: ignore
 
 
 class LuaManager:
@@ -79,86 +67,4 @@ class LuaManager:
         elif not (self.saved_lua / lua.path.name).exists():
             shutil.copyfile(lua.path, self.saved_lua / lua.path.name)
 
-    def get_manifest_ids(
-        self, lua: LuaParsedInfo
-    ) -> DepotManifestMap:
-        # A dict of Depot IDs mapped to Manifest IDs
-        manifest_ids: dict[str, str] = {}
 
-        # Get manifest IDs. The official API doesn't return these,
-        # so using steam module instead
-        while True:
-            manifest_mode: Literal["Auto", "Manual"] = prompt_select(
-                "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
-            )
-            app_info = (
-                get_product_info(self.client, [int(lua.id)])  # type: ignore
-                if manifest_mode == "Auto"
-                else None
-            )
-            depots_dict: dict[str, Any] = (
-                app_info.get("apps", {}).get(int(lua.id), {}).get("depots", {})
-                if app_info
-                else {}
-            )
-
-            for depot_id, _ in lua.depots:
-                latest = (
-                    depots_dict.get(str(depot_id), {})
-                    .get("manifests", {})
-                    .get("public", {})
-                    .get("gid")
-                )
-                if latest is None:
-                    if manifest_mode == "Auto":
-                        print(
-                            "API failed. I need the latest manifest ID for this depot. "
-                            "Blank if you want to try the request again."
-                        )
-                    if not (latest := prompt_text(f"Depot {depot_id}: ")):
-                        print("Blank entered. Let's try this again.")
-                        break
-                print(f"Depot {depot_id} has manifest {latest}")
-                manifest_ids[depot_id] = latest
-            else:
-                break  # User did not give a blank, end the loop
-        return DepotManifestMap(manifest_ids)
-
-    def download_manifests(
-        self,
-        lua: LuaParsedInfo,
-    ):
-        cdn = CDNClient(self.client)
-        manifest_ids = self.get_manifest_ids(lua)
-        # Download and decrypt manifests
-        for depot_id, dec_key in lua.depots:
-            manifest_id = manifest_ids[depot_id]
-
-            while True:
-                print("Getting request code...")
-                req_code = asyncio.run(get_gmrc(manifest_id))
-                print(f"Request code is: {req_code}")
-                if req_code is not None:
-                    break
-                print("openst.top died. Trying again in 1s")
-                time.sleep(1)
-
-            # You can get cdn urls by running download_sources in steam console
-            cdn_server = cast(ContentServer, cdn.get_content_server())
-            cdn_server_name = (
-                f"http{'s' if cdn_server.https else ''}://{cdn_server.host}"
-            )
-            manifest_url = urljoin(
-                cdn_server_name, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
-            )
-
-            r = httpx.get(manifest_url, timeout=None)
-            r.raise_for_status()
-
-            with zipfile.ZipFile(io.BytesIO(r.content)) as f:
-                encrypted = io.BytesIO(f.read("z"))
-
-            output_file = (
-                self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
-            )
-            decrypt_manifest(encrypted, output_file, dec_key)
