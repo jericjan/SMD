@@ -6,7 +6,7 @@ from typing import Optional
 
 from smd.prompts import prompt_file, prompt_select
 from smd.storage.vdf import VDFLoadAndDumper, vdf_load
-from smd.structs import LuaChoice, LuaResult
+from smd.structs import DepotKeyMapping, LuaChoice, LuaResult
 from smd.utils import enter_path
 
 
@@ -93,7 +93,7 @@ def add_new_lua() -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
-def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[tuple[str, str]]):
+def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: DepotKeyMapping):
     """Adds decryption keys to config.vdf"""
     with VDFLoadAndDumper(vdf_file) as vdf_data:
         for depot_id, dec_key in depot_dec_key:

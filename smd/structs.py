@@ -148,3 +148,7 @@ class LuaParsedInfo(NamedTuple):
     depots: DepotKeyMapping
     path: Path
     contents: str
+
+
+NamedIDs = dict[str, str]
+"A dict of App IDs mapped to game names"

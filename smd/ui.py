@@ -6,7 +6,7 @@ from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
-from smd.cracker import GameCracker
+from smd.game_specific import GameHandler
 from smd.file_access import get_steam_libs
 from smd.lua_parser import LuaParser
 from smd.prompts import prompt_secret, prompt_select, prompt_text
@@ -136,11 +136,11 @@ class UI:
         )
         return steam_lib_path
 
-    def handle_game(self, choice: GameSpecificChoices) -> MainReturnCode:
+    def handle_game_specific(self, choice: GameSpecificChoices) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
-        cracker = GameCracker(self.steam_path, lib_path, self.steam_client)
-        return cracker.execute_choice(choice)
+        handler = GameHandler(self.steam_path, lib_path, self.steam_client)
+        return handler.execute_choice(choice)
 
     def process_lua_choice(self) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:

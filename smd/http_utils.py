@@ -7,6 +7,7 @@ from typing import Any, Literal, Union, overload
 import httpx
 
 from smd.prompts import prompt_text
+from smd.structs import NamedIDs
 
 
 @overload
@@ -115,19 +116,19 @@ def get_game_name(app_id: str):
     return app_name
 
 
-def load_named_ids(file: Path) -> dict[str, str]:
+def load_named_ids(file: Path) -> NamedIDs:
     if not file.exists():
         return {}
     with file.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def save_named_ids(file: Path, data: dict[str, str]):
+def save_named_ids(file: Path, data: NamedIDs):
     with file.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 
-def get_named_ids(folder: Path) -> dict[str, str]:
+def get_named_ids(folder: Path) -> NamedIDs:
     """Gets names of games from lua files.
     Try to read saved names first, then request names of newer files.
     If there are untracked files, update `names.json` accordingly
@@ -143,7 +144,7 @@ def get_named_ids(folder: Path) -> dict[str, str]:
         return {}
 
     id_names_file = folder / "names.json"
-    named_ids: dict[str, str] = load_named_ids(id_names_file)
+    named_ids: NamedIDs = load_named_ids(id_names_file)
 
     new_ids = False
     saved_ids = [x.stem for x in folder.glob("*.lua")]

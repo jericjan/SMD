@@ -22,19 +22,22 @@ from smd.structs import (
 from smd.utils import enter_path, root_folder
 
 
-class AppInfo(NamedTuple):
+class ACFInfo(NamedTuple):
     app_id: str
     path: Path
 
 
-class GameCracker:
+AppName = str
+
+
+class GameHandler:
     def __init__(self, steam_root: Path, library_path: Path, client: SteamClient):
         self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps"
         self.client = client
 
-    def get_game(self) -> Optional[AppInfo]:
-        games: list[tuple[str, AppInfo]] = []
+    def get_game(self) -> Optional[ACFInfo]:
+        games: list[tuple[AppName, ACFInfo]] = []
         for path in self.steamapps_path.glob("*.acf"):
             with path.open(encoding="utf-8") as f:
                 app_acf: dict[Any, Any] = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
@@ -43,7 +46,7 @@ class GameCracker:
             installdir = app_state.get("installdir")
             app_id = app_state.get("appid")
             games.append(
-                (name, AppInfo(app_id, self.steamapps_path / "common" / installdir))
+                (name, ACFInfo(app_id, self.steamapps_path / "common" / installdir))
             )
         return prompt_select("Select a game", games, fuzzy=True, cancellable=True)
 
@@ -210,7 +213,7 @@ class GameCracker:
                 app_id, GenEmuMode.STEAM_SETTINGS, dll_path.parent / "steam_settings"
             )
 
-    def apply_steamless(self, app_info: AppInfo):
+    def apply_steamless(self, app_info: ACFInfo):
         game_exe = self.select_executable(app_info)
 
         steamless_exe = root_folder() / "third_party/steamless/Steamless.CLI.exe"
@@ -230,7 +233,7 @@ class GameCracker:
             print(output.stdout)
             print("Steamtools failed...")
 
-    def _prompt_manual_exe(self, app_info: AppInfo):
+    def _prompt_manual_exe(self, app_info: ACFInfo):
         subprocess.run(["explorer", app_info.path])
         game_exe = prompt_file(
             "Drag the game .exe here and press Enter:",
@@ -245,7 +248,7 @@ class GameCracker:
             if enter_path(launch, "config", "oslist") == "windows"
         ]
 
-    def select_executable(self, app_info: AppInfo) -> Path:
+    def select_executable(self, app_info: ACFInfo) -> Path:
         """Selects EXE to get used for Steamless"""
         if not self.client.logged_on:
             print("Logging in to Steam anonymously...")

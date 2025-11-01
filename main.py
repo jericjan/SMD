@@ -35,7 +35,7 @@ def main() -> MainReturnCode:
         return ui.applist_menu()
 
     if menu_choice in GAME_SPECIFIC_CHOICES:
-        return ui.handle_game(menu_choice)
+        return ui.handle_game_specific(menu_choice)
 
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841

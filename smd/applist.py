@@ -1,7 +1,7 @@
 """For managing Greenluma's AppList folder"""
 
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, NewType, Optional
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
@@ -17,6 +17,8 @@ from smd.structs import (
     Settings,
 )
 from smd.utils import enter_path
+
+ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])
 
 
 class AppListManager:
@@ -101,9 +103,9 @@ class AppListManager:
         while True:
             info = client.get_product_info(ids)  # type: ignore
             if info is not None:
-                return info
+                return ProductInfo(info)
 
-    def update_depot_info(self, product_info: dict[str, Any]):
+    def update_depot_info(self, product_info: ProductInfo):
         apps_data = enter_path(product_info, "apps")
 
         for app_id, app_details in apps_data.items():
@@ -197,12 +199,12 @@ class AppListManager:
             digit_filter: Callable[[str], list[int]] = lambda x: [
                 int(y) for y in x.split()
             ]
-            ids_str: list[int] = prompt_text(
+            ids: list[int] = prompt_text(
                 "Input IDs that you would like to add (separate them with spaces)",
                 validator=validator,
                 filter=digit_filter,
             )
-            for id in ids_str:
+            for id in ids:
                 self.add_id(id)
 
         return MainReturnCode.LOOP_NO_PROMPT
