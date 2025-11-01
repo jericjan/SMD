@@ -7,7 +7,7 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
-from smd.lua_parser import LuaParser
+from smd.lua_manager import LuaManager
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
@@ -152,7 +152,7 @@ class UI:
         if lua_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_parser = LuaParser(self.steam_client, self.app_list_man, self.steam_path)
+        lua_parser = LuaManager(self.steam_client, self.app_list_man, self.steam_path)
         parsed_lua = lua_parser.get_lua_info(lua_choice)
         lua_parser.backup_lua(parsed_lua)
         lua_parser.write_acf(parsed_lua, lib_path)

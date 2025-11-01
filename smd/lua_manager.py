@@ -25,7 +25,7 @@ from smd.structs import DepotManifestMap, LuaChoice, LuaParsedInfo  # type: igno
 from smd.utils import get_product_info
 
 
-class LuaParser:
+class LuaManager:
     def __init__(
         self,
         client: SteamClient,
