@@ -28,7 +28,8 @@ class AppInfo(NamedTuple):
 
 
 class GameCracker:
-    def __init__(self, library_path: Path, client: SteamClient):
+    def __init__(self, steam_root: Path, library_path: Path, client: SteamClient):
+        self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps"
         self.client = client
 
@@ -119,8 +120,7 @@ class GameCracker:
         backup_folder = tools_folder / f"backup/{app_id}"
         src_steam_settings = tools_folder / f"output/{app_id}/steam_settings"
 
-        steam_root = self.steamapps_path.parent
-        steam_stats_folder = steam_root / "appcache/stats"
+        steam_stats_folder = self.steam_root / "appcache/stats"
 
         if mode == GenEmuMode.USER_GAME_STATS or mode == GenEmuMode.ALL:
             bin_files = backup_folder.glob("*.bin")

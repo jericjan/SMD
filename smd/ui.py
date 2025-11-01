@@ -140,11 +140,10 @@ class UI:
     def handle_game(self, choice: GameSpecificChoices) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
-        cracker = GameCracker(lib_path, self.steam_client)
+        cracker = GameCracker(self.steam_path, lib_path, self.steam_client)
         return cracker.execute_choice(choice)
 
     def process_lua_choice(self) -> MainReturnCode:
-        lua_parser = LuaParser(self.steam_client, self.app_list_man, self.steam_path)
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
@@ -155,13 +154,11 @@ class UI:
         if lua_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
+        lua_parser = LuaParser(self.steam_client, self.app_list_man, self.steam_path)
         parsed_lua = lua_parser.get_lua_info(lua_choice)
-
         lua_parser.backup_lua(parsed_lua)
-
         lua_parser.write_acf(parsed_lua, lib_path)
-
         manifest_ids = lua_parser.get_manifest_ids(parsed_lua)
-
         lua_parser.download_manifests(parsed_lua, manifest_ids)
+
         return MainReturnCode.LOOP
