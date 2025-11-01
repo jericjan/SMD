@@ -1,9 +1,12 @@
 """Miscellaneous stuff used across various files"""
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import vdf  # type: ignore
+from steam.client import SteamClient  # type: ignore
+
+from smd.structs import ProductInfo  # type: ignore
 
 
 def root_folder():
@@ -26,3 +29,13 @@ def enter_path(
         else:
             current = current.get(key, {})  # type: ignore
     return current  # type: ignore
+
+
+def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
+    if not client.logged_on:
+        print("Logging in anonymously...")
+        client.anonymous_login()
+    info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
+    if info:
+        return ProductInfo(info)
+    return None

@@ -1,7 +1,7 @@
 """For managing Greenluma's AppList folder"""
 
 from pathlib import Path
-from typing import Any, Callable, NewType, Optional
+from typing import Callable, Optional
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
@@ -14,11 +14,10 @@ from smd.structs import (
     DepotOrAppID,
     MainReturnCode,
     OrganizedAppIDs,
+    ProductInfo,
     Settings,
 )
-from smd.utils import enter_path
-
-ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])
+from smd.utils import enter_path, get_product_info
 
 
 class AppListManager:
@@ -101,11 +100,12 @@ class AppListManager:
         if not ids:
             raise ValueError("`ids` should not be empty")
         while True:
-            info = client.get_product_info(ids)  # type: ignore
+            info = get_product_info(client, ids)  # type: ignore
             if info is not None:
-                return ProductInfo(info)
+                return info
 
     def update_depot_info(self, product_info: ProductInfo):
+        """Updates `self.id_map` with data from `product_info`"""
         apps_data = enter_path(product_info, "apps")
 
         for app_id, app_details in apps_data.items():
@@ -122,9 +122,6 @@ class AppListManager:
 
     def prompt_id_deletion(self, client: SteamClient):
         ids = [int(x.app_id) for x in self.get_local_ids()]
-        if not client.logged_on:
-            print("Logging in anonymously")
-            client.anonymous_login()
         info = self.get_product_info_with_retry(client, ids)
         self.update_depot_info(info)
 

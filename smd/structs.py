@@ -2,7 +2,7 @@
 
 from enum import Enum, auto
 from pathlib import Path
-from typing import Literal, NamedTuple, Optional, TypedDict
+from typing import Any, Literal, NamedTuple, NewType, Optional, TypedDict
 
 
 class LuaChoice(Enum):
@@ -152,3 +152,5 @@ class LuaParsedInfo(NamedTuple):
 
 NamedIDs = dict[str, str]
 "A dict of App IDs mapped to game names"
+
+ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])

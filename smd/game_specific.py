@@ -17,9 +17,10 @@ from smd.structs import (
     GenEmuMode,
     MainMenu,
     MainReturnCode,
+    ProductInfo,
     Settings,
 )
-from smd.utils import enter_path, root_folder
+from smd.utils import enter_path, get_product_info, root_folder
 
 
 class ACFInfo(NamedTuple):
@@ -240,7 +241,7 @@ class GameHandler:
         )
         return game_exe
 
-    def _get_windows_execs(self, info: dict[str, Any], app_id: int) -> list[str]:
+    def _get_windows_execs(self, info: ProductInfo, app_id: int) -> list[str]:
         launches = enter_path(info, "apps", app_id, "config", "launch")
         return [
             launch["executable"]
@@ -250,11 +251,7 @@ class GameHandler:
 
     def select_executable(self, app_info: ACFInfo) -> Path:
         """Selects EXE to get used for Steamless"""
-        if not self.client.logged_on:
-            print("Logging in to Steam anonymously...")
-            self.client.anonymous_login()
-
-        info = self.client.get_product_info([int(app_info.app_id)])  # type: ignore
+        info = get_product_info(self.client, [int(app_info.app_id)])
         if not info:
             print("Failed to get app info...")
             return self._prompt_manual_exe(app_info)

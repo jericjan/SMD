@@ -25,6 +25,7 @@ from smd.manifest_crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.storage.vdf import vdf_dump
 from smd.structs import LuaChoice, LuaParsedInfo  # type: ignore
+from smd.utils import get_product_info
 
 
 class LuaParser:
@@ -131,11 +132,8 @@ class LuaParser:
             manifest_mode: Literal["Auto", "Manual"] = prompt_select(
                 "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
             )
-            if manifest_mode == "Auto" and not self.client.logged_on:
-                print("Logging in to Steam anonymously...")
-                self.client.anonymous_login()
             app_info = (
-                self.client.get_product_info([int(lua.id)])  # type: ignore
+                get_product_info(self.client, [int(lua.id)])  # type: ignore
                 if manifest_mode == "Auto"
                 else None
             )
