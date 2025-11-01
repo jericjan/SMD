@@ -9,11 +9,7 @@ from steam.client import SteamClient  # type: ignore
 from smd.applist import AppListManager
 from smd.prompts import prompt_select
 from smd.registry_access import get_steam_path
-from smd.structs import (
-    GAME_SPECIFIC_CHOICES,
-    MainMenu,
-    MainReturnCode,
-)
+from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
 
 VERSION = "2.3.1"

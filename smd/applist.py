@@ -148,7 +148,7 @@ class AppListManager:
                         item.parent_id,
                         mutate=True,
                     )
-                    app.setdefault("children", []).append(item.id)
+                    app.setdefault("depots", []).append(item.id)
                     if 'exists' not in app:
                         app['exists'] = False
                         app['name'] = item.name
@@ -165,7 +165,7 @@ class AppListManager:
             ext = '(MISSING)' if not val.get('exists') else ''
             name = f"{app_id} - {val.get('name')} {ext}"
             menu_items.append((name, app_id))
-            depots = val.get("children")
+            depots = val.get("depots")
             if depots:
                 for depot in depots:
                     menu_items.append((f"└──>{depot}", int(depot)))

@@ -5,7 +5,6 @@ from typing import Callable, Optional
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
-
 from smd.applist import AppListManager
 from smd.cracker import GameCracker
 from smd.file_access import get_steam_libs
@@ -106,7 +105,7 @@ class UI:
             "Select a user: ",
             [
                 (
-                    f"{x.PERSONA_NAME} - " + offline_converter(x.WANTS_OFFLINE_MODE),
+                    f"{x.persona_name} - " + offline_converter(x.wants_offline_mode),
                     x,
                 )
                 for x in users
@@ -116,11 +115,11 @@ class UI:
         if chosen_user is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        new_value = "0" if chosen_user.WANTS_OFFLINE_MODE == "1" else "1"
+        new_value = "0" if chosen_user.wants_offline_mode == "1" else "1"
 
-        vdf_data["users"][chosen_user.STEAM64_ID]["WantsOfflineMode"] = new_value
+        vdf_data["users"][chosen_user.steam64_id]["WantsOfflineMode"] = new_value
         vdf_dump(loginusers_file, vdf_data)
-        print(f"{chosen_user.PERSONA_NAME} is now {offline_converter(new_value)}")
+        print(f"{chosen_user.persona_name} is now {offline_converter(new_value)}")
         return MainReturnCode.LOOP
 
     def applist_menu(self) -> MainReturnCode:

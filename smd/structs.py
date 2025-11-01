@@ -1,6 +1,6 @@
 """Aliases, Enums, NamedTuples, etc go here"""
 
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Literal, NamedTuple, Optional, TypedDict
 
@@ -46,15 +46,18 @@ class LuaEndpoint(Enum):
 
 
 class MainReturnCode(Enum):
-    LOOP = 0
-    LOOP_NO_PROMPT = 1
-    EXIT = 2
+    LOOP = auto()
+    LOOP_NO_PROMPT = auto()
+    EXIT = auto()
 
 
 class SettingItem(NamedTuple):
     key_name: str
+    "The key name of the setting (used in the savefile)"
     clean_name: str
-    hidden: bool  # Whether the item is hidden when inputting the data
+    "The name of the setting as displayed in the Settings menu"
+    hidden: bool
+    "Whether the item is hidden (e.g. sensitive info)"
 
 
 # Note: values are only obtained through get_setting() in utils.py
@@ -67,50 +70,63 @@ class Settings(Enum):
 
     @property
     def key_name(self) -> str:
+        "The key name of the setting (used in the savefile)"
         return self.value.key_name
 
     @property
     def clean_name(self) -> str:
+        "The name of the setting as displayed in the Settings menu"
         return self.value.clean_name
 
     @property
     def hidden(self) -> bool:
+        "Whether the item is hidden (e.g. sensitive info)"
         return self.value.hidden
 
 
 class LoggedInUser(NamedTuple):
     """A user in loginusers.vdf"""
-
-    STEAM64_ID: str
-    PERSONA_NAME: str
-    WANTS_OFFLINE_MODE: str
+    steam64_id: str
+    persona_name: str
+    wants_offline_mode: str
+    "Either 0 or 1 (str)"
 
 
 class LuaResult(NamedTuple):
-    path: Optional[Path]  # path on disk if file exists
-    contents: Optional[str]  # string contents of file (e.g., from zip read)
+    path: Optional[Path]
+    "The lua file's path if it exists"
+    contents: Optional[str]
+    "The string contents of the lua file"
     switch_choice: Optional["LuaChoice"]
+    "A LuaChoice to switch to"
 
 
 class GenEmuMode(Enum):
-    USER_GAME_STATS = 0
-    STEAM_SETTINGS = 1
-    ALL = 2  # idk why i have this, it's there if i ever need it
+    USER_GAME_STATS = auto()
+    STEAM_SETTINGS = auto()
+    ALL = auto()  # idk why i have this, it's there if i ever need it
 
 
 class DepotOrAppID(NamedTuple):
     name: str
-    id: str  # app id
-    parent_id: Optional[str]  # The parent app ID if it's a depot
+    "Name of the app"
+    id: str
+    "The App/Depot ID"
+    parent_id: Optional[str]
+    "The parent App ID (if it's a depot)"
 
 
 class AppIDInfoRequired(TypedDict):
     exists: bool
+    """Whether this App ID exists in AppList
+    (Sometimes a Depot ID is inside the folder but without an App ID)"""
     name: str
+    "Name of the app"
 
 
 class AppIDInfo(AppIDInfoRequired, total=False):
-    children: list[str]
+    depots: list[str]
+    "(Optional) A list of Depot IDs under this app"
 
 
 OrganizedAppIDs = dict[int, AppIDInfo]
