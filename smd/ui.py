@@ -10,7 +10,7 @@ from smd.game_specific import GameHandler
 from smd.lua_manager import LuaManager
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
-from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
+from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load, write_acf
 from smd.structs import (
     GameSpecificChoices,
     LoggedInUser,
@@ -155,7 +155,7 @@ class UI:
         lua_manager = LuaManager(self.steam_client, self.app_list_man, self.steam_path)
         parsed_lua = lua_manager.get_lua_info(lua_choice)
         lua_manager.backup_lua(parsed_lua)
-        lua_manager.write_acf(parsed_lua, lib_path)
+        write_acf(parsed_lua, lib_path)
         lua_manager.download_manifests(parsed_lua)
 
         return MainReturnCode.LOOP

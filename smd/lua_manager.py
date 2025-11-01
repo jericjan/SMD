@@ -92,31 +92,6 @@ class LuaManager:
         elif not (self.saved_lua / lua.path.name).exists():
             shutil.copyfile(lua.path, self.saved_lua / lua.path.name)
 
-    def write_acf(self, lua: LuaParsedInfo, steam_lib_path: Path):
-        acf_file = steam_lib_path / f"steamapps/appmanifest_{lua.id}.acf"
-        do_write_acf = True
-        if acf_file.exists():
-            do_write_acf = prompt_select(
-                ".acf file found. Is this an update?",
-                [("Yes", False), ("No", True)],
-            )
-
-        if do_write_acf:
-            app_name = get_game_name(lua.id)
-            acf_contents: dict[str, dict[str, str]] = {
-                "AppState": {
-                    "AppID": lua.id,
-                    "Universe": "1",
-                    "name": app_name,
-                    "installdir": sanitize_filename(app_name),
-                    "StateFlags": "4",
-                }
-            }
-            vdf_dump(acf_file, acf_contents)
-            print(f"Wrote .acf file to {acf_file}")
-        else:
-            print("Skipped writing to .acf file")
-
     def get_manifest_ids(
         self, lua: LuaParsedInfo
     ) -> DepotManifestMap:

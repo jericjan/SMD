@@ -3,9 +3,12 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Optional, TypeVar, overload
 
+from pathvalidate import sanitize_filename
 import vdf  # type: ignore
 
-from smd.structs import DepotKeyPair
+from smd.http_utils import get_game_name
+from smd.prompts import prompt_select
+from smd.structs import DepotKeyPair, LuaParsedInfo
 from smd.utils import enter_path
 
 _DictType = TypeVar("_DictType", bound=dict[Any, Any])
@@ -97,3 +100,29 @@ def add_decryption_key_to_config(vdf_file: Path, depot_dec_key: list[DepotKeyPai
                 print("Added to config.vdf succesfully.")
             else:
                 print("Already in config.vdf.")
+
+
+def write_acf(lua: LuaParsedInfo, steam_lib_path: Path):
+    acf_file = steam_lib_path / f"steamapps/appmanifest_{lua.id}.acf"
+    do_write_acf = True
+    if acf_file.exists():
+        do_write_acf = prompt_select(
+            ".acf file found. Is this an update?",
+            [("Yes", False), ("No", True)],
+        )
+
+    if do_write_acf:
+        app_name = get_game_name(lua.id)
+        acf_contents: dict[str, dict[str, str]] = {
+            "AppState": {
+                "AppID": lua.id,
+                "Universe": "1",
+                "name": app_name,
+                "installdir": sanitize_filename(app_name),
+                "StateFlags": "4",
+            }
+        }
+        vdf_dump(acf_file, acf_contents)
+        print(f"Wrote .acf file to {acf_file}")
+    else:
+        print("Skipped writing to .acf file")

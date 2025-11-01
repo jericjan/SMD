@@ -5,13 +5,13 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, overload
+from typing import Literal, NamedTuple, Optional, overload
 
-import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
 from smd.prompts import prompt_file, prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
+from smd.storage.vdf import vdf_load
 from smd.structs import (
     GameSpecificChoices,
     GenEmuMode,
@@ -40,8 +40,7 @@ class GameHandler:
     def get_game(self) -> Optional[ACFInfo]:
         games: list[tuple[AppName, ACFInfo]] = []
         for path in self.steamapps_path.glob("*.acf"):
-            with path.open(encoding="utf-8") as f:
-                app_acf: dict[Any, Any] = vdf.load(f, mapper=vdf.VDFDict)  # type: ignore
+            app_acf = vdf_load(path)        
             app_state = app_acf.get("AppState", {})
             name = app_state.get("name")
             installdir = app_state.get("installdir")
