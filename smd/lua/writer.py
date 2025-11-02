@@ -50,7 +50,9 @@ class ConfigVDFWriter:
         vdf_file = self.steam_path / "config/config.vdf"
         shutil.copyfile(vdf_file, (self.steam_path / "config/config.vdf.backup"))
         with VDFLoadAndDumper(vdf_file) as vdf_data:
-            for depot_id, dec_key in lua.depots:
+            for pair in lua.depots:
+                depot_id = pair.depot_id
+                dec_key = pair.decryption_key
                 print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
                 depots = enter_path(
                     vdf_data,

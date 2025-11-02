@@ -43,7 +43,8 @@ class ManifestDownloader():
                 else {}
             )
 
-            for depot_id, _ in lua.depots:
+            for pair in lua.depots:
+                depot_id = pair.depot_id
                 latest = (
                     depots_dict.get(str(depot_id), {})
                     .get("manifests", {})
@@ -73,7 +74,9 @@ class ManifestDownloader():
         cdn = CDNClient(self.client)
         manifest_ids = self.get_manifest_ids(lua)
         # Download and decrypt manifests
-        for depot_id, dec_key in lua.depots:
+        for pair in lua.depots:
+            depot_id = pair.depot_id
+            dec_key = pair.decryption_key
             manifest_id = manifest_ids[depot_id]
 
             while True:

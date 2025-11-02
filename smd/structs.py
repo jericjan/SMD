@@ -139,7 +139,8 @@ class AppListFile(NamedTuple):
     app_id: int
 
 
-class DepotKeyPair(NamedTuple):
+@dataclass
+class DepotKeyPair():
     depot_id: str
     "Depot ID"
     decryption_key: str

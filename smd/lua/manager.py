@@ -2,9 +2,9 @@ import re
 import shutil
 from pathlib import Path
 
-from smd.lua.choices import add_new_lua, select_from_saved_luas, download_lua
+from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
 from smd.storage.named_ids import get_named_ids
-from smd.structs import LuaChoice, LuaParsedInfo, RawLua  # type: ignore
+from smd.structs import DepotKeyPair, LuaChoice, LuaParsedInfo, RawLua  # type: ignore
 
 
 class LuaManager:
@@ -55,6 +55,7 @@ class LuaManager:
                 print("Decryption keys not found. Try again.")
                 continue
             break
+        depot_dec_key = [DepotKeyPair(*x) for x in depot_dec_key]
         return LuaParsedInfo(lua.path, lua.contents, app_id, depot_dec_key)
 
     def backup_lua(self, lua: LuaParsedInfo):
