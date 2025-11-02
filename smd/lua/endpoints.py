@@ -3,7 +3,6 @@
 import asyncio
 import io
 import json
-import re
 import zipfile
 from pathlib import Path
 from tempfile import TemporaryFile
@@ -12,9 +11,9 @@ import httpx
 from colorama import Fore, Style
 
 from smd.http_utils import get_request
-from smd.prompts import prompt_secret, prompt_select, prompt_text
+from smd.prompts import prompt_secret
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import LuaChoice, LuaEndpoint, LuaResult, Settings
+from smd.structs import Settings
 
 
 def get_oureverday(dest: Path, app_id: str):
@@ -91,43 +90,3 @@ def get_manilua(dest: Path, app_id: str):
         with lua_path.open("wb") as f:
             f.write(lua_bytes)
         return lua_path
-
-
-def download_lua(dest: Path) -> LuaResult:
-    """Downloads a lua file from the available endpoints"""
-
-    reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
-
-    def validate_app_id(x: str) -> bool:
-        return bool(reg.search(x))
-
-    def filter_app_id(x: str) -> str:
-        match = reg.search(x)
-        assert match is not None  # lmao
-        return match.group()
-
-    source: LuaEndpoint = prompt_select("Select an endpoint:", list(LuaEndpoint))
-
-    app_id = prompt_text(
-        "Enter the App ID or Store link:",
-        validator=validate_app_id,
-        invalid_msg="Not a valid format.",
-        filter=filter_app_id,
-    )
-
-    if source == LuaEndpoint.OUREVERYDAY:
-        lua_path = get_oureverday(dest, app_id)
-    elif source == LuaEndpoint.MANILUA:
-        lua_path = get_manilua(dest, app_id)
-
-    if lua_path is None:
-        restart = prompt_select(
-            "Could not find it. Try again?",
-            [("Yes", True), ("No (Add a .lua instead)", False)],
-        )
-        if restart:
-            return LuaResult(None, None, None)
-        print("Switching to manual .lua selection...")
-        return LuaResult(None, None, LuaChoice.ADD_LUA)
-
-    return LuaResult(lua_path, None, None)

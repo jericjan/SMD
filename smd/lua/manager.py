@@ -2,8 +2,7 @@ import re
 import shutil
 from pathlib import Path
 
-from smd.lua.downloader import download_lua
-from smd.lua.selection import add_new_lua, select_from_saved_luas
+from smd.lua.choices import add_new_lua, select_from_saved_luas, download_lua
 from smd.storage.named_ids import get_named_ids
 from smd.structs import LuaChoice, LuaParsedInfo, RawLua  # type: ignore
 

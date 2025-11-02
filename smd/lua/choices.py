@@ -1,14 +1,16 @@
 
 
+import re
 import zipfile
 from pathlib import Path
 from typing import Optional
 
-from smd.prompts import prompt_file, prompt_select
-from smd.structs import LuaChoice, LuaResult, NamedIDs
+from smd.lua.endpoints import get_manilua, get_oureverday
+from smd.prompts import prompt_file, prompt_select, prompt_text
+from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
 
 
-def find_lua_in_zip(path: Path):
+def read_lua_from_zip(path: Path):
     """Given a zip path, return the string contents,
     blank if it can't be found"""
     lua_contents = ""
@@ -63,9 +65,49 @@ def add_new_lua() -> LuaResult:
         return LuaResult(None, None, LuaChoice.SELECT_SAVED_LUA)
 
     if lua_path.suffix == ".zip":
-        lua_contents = find_lua_in_zip(lua_path)
+        lua_contents = read_lua_from_zip(lua_path)
         if lua_contents == "":
             print("Could not find .lua in ZIP file.")
             return LuaResult(None, None, None)
         return LuaResult(lua_path, lua_contents, None)
+    return LuaResult(lua_path, None, None)
+
+
+def download_lua(dest: Path) -> LuaResult:
+    """Downloads a lua file from the available endpoints"""
+
+    reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
+
+    def validate_app_id(x: str) -> bool:
+        return bool(reg.search(x))
+
+    def filter_app_id(x: str) -> str:
+        match = reg.search(x)
+        assert match is not None  # lmao
+        return match.group()
+
+    source: LuaEndpoint = prompt_select("Select an endpoint:", list(LuaEndpoint))
+
+    app_id = prompt_text(
+        "Enter the App ID or Store link:",
+        validator=validate_app_id,
+        invalid_msg="Not a valid format.",
+        filter=filter_app_id,
+    )
+
+    if source == LuaEndpoint.OUREVERYDAY:
+        lua_path = get_oureverday(dest, app_id)
+    elif source == LuaEndpoint.MANILUA:
+        lua_path = get_manilua(dest, app_id)
+
+    if lua_path is None:
+        restart = prompt_select(
+            "Could not find it. Try again?",
+            [("Yes", True), ("No (Add a .lua instead)", False)],
+        )
+        if restart:
+            return LuaResult(None, None, None)
+        print("Switching to manual .lua selection...")
+        return LuaResult(None, None, LuaChoice.ADD_LUA)
+
     return LuaResult(lua_path, None, None)
