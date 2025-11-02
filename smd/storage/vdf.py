@@ -1,16 +1,10 @@
-import shutil
 from collections import OrderedDict
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Optional, TypeVar, overload
 
 import vdf  # type: ignore
-from pathvalidate import sanitize_filename
 
-from smd.http_utils import get_game_name
-from smd.prompts import prompt_select
-from smd.structs import LuaParsedInfo
-from smd.utils import enter_path
 
 _DictType = TypeVar("_DictType", bound=dict[Any, Any])
 
@@ -80,52 +74,3 @@ def get_steam_libs(steam_path: Path):
             paths.append(path)
 
     return paths
-
-
-def add_decryption_keys_to_config(steam_path: Path, lua: LuaParsedInfo):
-    """Adds decryption keys from parsed lua to config.vdf"""
-    vdf_file = steam_path / "config/config.vdf"
-    shutil.copyfile(vdf_file, (steam_path / "config/config.vdf.backup"))
-    with VDFLoadAndDumper(vdf_file) as vdf_data:
-        for depot_id, dec_key in lua.depots:
-            print(f"Depot {depot_id} has decryption key {dec_key}...", end="")
-            depots = enter_path(
-                vdf_data,
-                "InstallConfigStore",
-                "Software",
-                "Valve",
-                "Steam",
-                "depots",
-                mutate=True,
-            )
-            if depot_id not in depots:
-                depots[depot_id] = {"DecryptionKey": dec_key}
-                print("Added to config.vdf succesfully.")
-            else:
-                print("Already in config.vdf.")
-
-
-def write_acf(lua: LuaParsedInfo, steam_lib_path: Path):
-    acf_file = steam_lib_path / f"steamapps/appmanifest_{lua.app_id}.acf"
-    do_write_acf = True
-    if acf_file.exists():
-        do_write_acf = prompt_select(
-            ".acf file found. Is this an update?",
-            [("Yes", False), ("No", True)],
-        )
-
-    if do_write_acf:
-        app_name = get_game_name(lua.app_id)
-        acf_contents: dict[str, dict[str, str]] = {
-            "AppState": {
-                "AppID": lua.app_id,
-                "Universe": "1",
-                "name": app_name,
-                "installdir": sanitize_filename(app_name),
-                "StateFlags": "4",
-            }
-        }
-        vdf_dump(acf_file, acf_contents)
-        print(f"Wrote .acf file to {acf_file}")
-    else:
-        print("Skipped writing to .acf file")

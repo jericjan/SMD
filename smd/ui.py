@@ -8,16 +8,11 @@ from steam.client import SteamClient  # type: ignore
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
+from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
-from smd.storage.vdf import (
-    add_decryption_keys_to_config,
-    get_steam_libs,
-    vdf_dump,
-    vdf_load,
-    write_acf,
-)
+from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.structs import (
     GameSpecificChoices,
     LoggedInUser,
@@ -161,11 +156,14 @@ class UI:
 
         lua_manager = LuaManager(self.steam_client, self.steam_path)
         downloader = ManifestDownloader(self.steam_client, self.steam_path)
+        config = ConfigVDFWriter(self.steam_path)
+        acf = ACFWriter(lib_path)
+
         parsed_lua = lua_manager.fetch_lua(lua_choice)
         self.app_list_man.add_ids(parsed_lua)
-        add_decryption_keys_to_config(self.steam_path, parsed_lua)
+        config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)
-        write_acf(parsed_lua, lib_path)
+        acf.write_acf(parsed_lua)
         downloader.download_manifests(parsed_lua)
 
         return MainReturnCode.LOOP
