@@ -165,5 +165,9 @@ class UI:
         lua_manager.backup_lua(parsed_lua)
         acf.write_acf(parsed_lua)
         downloader.download_manifests(parsed_lua)
-
+        print(
+            Fore.GREEN + "Success! Close Steam and Run DLLInjector again. "
+            'Your game should show up in the library ready to "update"'
+            + Style.RESET_ALL
+        )
         return MainReturnCode.LOOP
