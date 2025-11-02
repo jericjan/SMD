@@ -1,6 +1,6 @@
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-import shutil
 
 from pathvalidate import sanitize_filename
 

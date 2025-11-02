@@ -154,7 +154,7 @@ class UI:
         if lua_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_manager = LuaManager(self.steam_client, self.steam_path)
+        lua_manager = LuaManager()
         downloader = ManifestDownloader(self.steam_client, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)

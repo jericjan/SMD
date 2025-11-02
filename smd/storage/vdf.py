@@ -5,7 +5,6 @@ from typing import Any, Optional, TypeVar, overload
 
 import vdf  # type: ignore
 
-
 _DictType = TypeVar("_DictType", bound=dict[Any, Any])
 
 

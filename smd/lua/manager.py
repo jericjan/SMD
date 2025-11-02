@@ -2,8 +2,6 @@ import re
 import shutil
 from pathlib import Path
 
-from steam.client import SteamClient  # type: ignore
-
 from smd.lua.downloader import download_lua
 from smd.lua.selection import add_new_lua, select_from_saved_luas
 from smd.storage.named_ids import get_named_ids
@@ -13,13 +11,9 @@ from smd.structs import LuaChoice, LuaParsedInfo, RawLua  # type: ignore
 class LuaManager:
     def __init__(
         self,
-        client: SteamClient,
-        steam_path: Path,
     ):
-        self.client = client
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
-        self.steam_path = steam_path
 
     def get_raw_lua(self, choice: LuaChoice) -> RawLua:
         """Return the lua path and contents"""
