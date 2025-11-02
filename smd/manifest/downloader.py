@@ -1,7 +1,5 @@
 import asyncio
-import io
 import time
-import zipfile
 from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import urljoin
@@ -99,10 +97,7 @@ class ManifestDownloader():
             r = httpx.get(manifest_url, timeout=None)
             r.raise_for_status()
 
-            with zipfile.ZipFile(io.BytesIO(r.content)) as f:
-                encrypted = io.BytesIO(f.read("z"))
-
             output_file = (
                 self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
             )
-            decrypt_manifest(encrypted, output_file, dec_key)
+            decrypt_manifest(r.content, output_file, dec_key)

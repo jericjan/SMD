@@ -3,7 +3,6 @@
 import asyncio
 import io
 import json
-import zipfile
 from pathlib import Path
 from tempfile import TemporaryFile
 
@@ -14,6 +13,7 @@ from smd.http_utils import get_request
 from smd.prompts import prompt_secret
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import Settings
+from smd.zip import read_lua_from_zip
 
 
 def get_oureverday(dest: Path, app_id: str):
@@ -67,26 +67,17 @@ def get_manilua(dest: Path, app_id: str):
 
             f.seek(0)
             data = f.read()
-    lua_bytes = b""
-    try:
-        with zipfile.ZipFile(io.BytesIO(data)) as zf:
-            files = zf.filelist
-            for file in files:
-                if file.filename.endswith("lua"):
-                    lua_bytes = zf.read(file.filename)
-                    break
-            else:  # lua not found
-                print("Could not find the lua in the ZIP")
-                return
-    except zipfile.BadZipFile:
-        f.seek(0)
-        try:
-            print(Fore.RED + json.dumps(json.load(f)) + Style.RESET_ALL)
-        except json.JSONDecodeError:
-            print("Did not receive a ZIP file or JSON: \n" + f.read().decode())
+
+            lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
+            if lua_bytes is None:
+                f.seek(0)
+                try:
+                    print(Fore.RED + json.dumps(json.load(f)) + Style.RESET_ALL)
+                except json.JSONDecodeError:
+                    print("Did not receive a ZIP file or JSON: \n" + f.read().decode())
 
     lua_path = dest / f"{app_id}.lua"
-    if len(lua_bytes) > 0:
+    if lua_bytes:
         with lua_path.open("wb") as f:
             f.write(lua_bytes)
         return lua_path

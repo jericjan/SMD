@@ -1,26 +1,13 @@
 
 
 import re
-import zipfile
 from pathlib import Path
 from typing import Optional
 
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_file, prompt_select, prompt_text
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
-
-
-def read_lua_from_zip(path: Path):
-    """Given a zip path, return the string contents,
-    blank if it can't be found"""
-    lua_contents = ""
-    with zipfile.ZipFile(path) as zf:
-        for file in zf.filelist:
-            if file.filename.endswith(".lua"):
-                print(f".lua found: {file.filename}")
-                lua_contents = zf.read(file).decode(encoding="utf-8")
-                break  # lua found in ZIP, stop searching
-    return lua_contents
+from smd.zip import read_lua_from_zip
 
 
 def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
@@ -66,7 +53,7 @@ def add_new_lua() -> LuaResult:
 
     if lua_path.suffix == ".zip":
         lua_contents = read_lua_from_zip(lua_path)
-        if lua_contents == "":
+        if lua_contents is None:
             print("Could not find .lua in ZIP file.")
             return LuaResult(None, None, None)
         return LuaResult(lua_path, lua_contents, None)

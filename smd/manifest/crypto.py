@@ -1,7 +1,6 @@
 import base64
 import io
 import struct
-import zipfile
 import zlib
 from pathlib import Path
 
@@ -11,6 +10,8 @@ from steam.protobufs.content_manifest_pb2 import (
     ContentManifestMetadata,
     ContentManifestPayload,
 )
+
+from smd.zip import read_nth_file_from_zip_bytes
 
 # Magic numbers
 PROTOBUF_PAYLOAD_MAGIC = 0x71F617D0
@@ -52,7 +53,7 @@ def decrypt_filename(b64_encrypted_name: str, key_bytes: bytes) -> str:
         return b64_encrypted_name
 
 
-def decrypt_manifest(encrypted_file: io.BytesIO, output_filepath: Path, dec_key: str):
+def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str):
     """Decrypts a manifest file, given a decryption key
 
     Args:
@@ -60,14 +61,11 @@ def decrypt_manifest(encrypted_file: io.BytesIO, output_filepath: Path, dec_key:
         output_filepath (Path): Where you want the decrypted file to go
         dec_key (str): The decryption key as a hex string
     """
-    data = encrypted_file.read()
-    try:
-        with zipfile.ZipFile(io.BytesIO(data)) as zf:
-            data = zf.read(zf.filelist[0].filename)
-    except zipfile.BadZipFile:
-        pass
-
-    stream = io.BytesIO(data)
+    # Check if it's a ZIP file, then extract the first file
+    if x := read_nth_file_from_zip_bytes(0, encrypted_file):
+        stream = x
+    else:
+        stream = io.BytesIO(encrypted_file)
 
     magic, payload_length = struct.unpack("<II", stream.read(8))
     if magic != PROTOBUF_PAYLOAD_MAGIC:
