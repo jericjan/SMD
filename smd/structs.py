@@ -1,5 +1,6 @@
 """Aliases, Enums, NamedTuples, etc go here"""
 
+from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, NewType, Optional, TypedDict
@@ -145,12 +146,17 @@ class DepotKeyPair(NamedTuple):
     "Decryption Key of the Depot"
 
 
-class LuaParsedInfo(NamedTuple):
-    id: str
-    "The base app ID"
-    depots: list[DepotKeyPair]
+@dataclass
+class RawLua:
     path: Path
     contents: str
+
+
+@dataclass
+class LuaParsedInfo(RawLua):
+    app_id: str
+    "The base app ID"
+    depots: list[DepotKeyPair]
 
 
 NamedIDs = NewType("NamedIDs", dict[str, str])

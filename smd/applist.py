@@ -63,7 +63,7 @@ class AppListManager:
         if isinstance(app_ids, int):
             app_ids = [app_ids]
         if isinstance(app_ids, LuaParsedInfo):
-            app_ids = [int(app_ids.id), *[int(x.depot_id) for x in app_ids.depots]]
+            app_ids = [int(app_ids.app_id), *[int(x.depot_id) for x in app_ids.depots]]
         for app_id in app_ids:
             local_ids = [x.app_id for x in self.get_local_ids()]
             if app_id not in local_ids:

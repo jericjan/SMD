@@ -106,7 +106,7 @@ def add_decryption_keys_to_config(steam_path: Path, lua: LuaParsedInfo):
 
 
 def write_acf(lua: LuaParsedInfo, steam_lib_path: Path):
-    acf_file = steam_lib_path / f"steamapps/appmanifest_{lua.id}.acf"
+    acf_file = steam_lib_path / f"steamapps/appmanifest_{lua.app_id}.acf"
     do_write_acf = True
     if acf_file.exists():
         do_write_acf = prompt_select(
@@ -115,10 +115,10 @@ def write_acf(lua: LuaParsedInfo, steam_lib_path: Path):
         )
 
     if do_write_acf:
-        app_name = get_game_name(lua.id)
+        app_name = get_game_name(lua.app_id)
         acf_contents: dict[str, dict[str, str]] = {
             "AppState": {
-                "AppID": lua.id,
+                "AppID": lua.app_id,
                 "Universe": "1",
                 "name": app_name,
                 "installdir": sanitize_filename(app_name),

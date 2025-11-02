@@ -1,10 +1,10 @@
 import asyncio
 import io
-from pathlib import Path
 import time
+import zipfile
+from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import urljoin
-import zipfile
 
 import httpx
 from steam.client import SteamClient  # type: ignore
@@ -35,12 +35,12 @@ class ManifestDownloader():
                 "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
             )
             app_info = (
-                get_product_info(self.client, [int(lua.id)])  # type: ignore
+                get_product_info(self.client, [int(lua.app_id)])  # type: ignore
                 if manifest_mode == "Auto"
                 else None
             )
             depots_dict: dict[str, Any] = (
-                app_info.get("apps", {}).get(int(lua.id), {}).get("depots", {})
+                app_info.get("apps", {}).get(int(lua.app_id), {}).get("depots", {})
                 if app_info
                 else {}
             )
