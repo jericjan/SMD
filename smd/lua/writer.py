@@ -62,6 +62,7 @@ class ConfigVDFWriter:
                     "Steam",
                     "depots",
                     mutate=True,
+                    ignore_case=True
                 )
                 if depot_id not in depots:
                     depots[depot_id] = {"DecryptionKey": dec_key}
