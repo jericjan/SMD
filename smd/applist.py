@@ -203,7 +203,21 @@ class AppListManager:
         if ids_to_delete is None:
             print("No IDs selected. Doing nothing")
             return
-        self.remove_ids(ids_to_delete)
+        unique_ids = set(ids_to_delete)
+        selected_base_ids = [x for x in unique_ids if x in organized]
+        if len(selected_base_ids) > 0:
+            for app_id in selected_base_ids:
+                name = organized[app_id]['name']
+                depots = organized[app_id].get("depots")
+                if depots:
+                    select_children: bool = prompt_select(
+                        f"Would you to select all Depot IDs related to {name}?",
+                        [("Yes", True), ("No", False)],
+                    )
+                    if select_children:
+                        for x in depots:
+                            unique_ids.add(int(x))
+        self.remove_ids(list(unique_ids))
 
     def display_menu(self, client: SteamClient) -> MainReturnCode:
         applist_choice: Optional[AppListChoice] = prompt_select(
