@@ -25,9 +25,9 @@ def enter_path(
     current = obj
     for key in paths:
         if mutate:
-            current = current.setdefault(key, {})  # type: ignore
+            current = current.setdefault(key, type(obj)())  # type: ignore
         else:
-            current = current.get(key, {})  # type: ignore
+            current = current.get(key, type(obj)())  # type: ignore
     return current  # type: ignore
 
 
