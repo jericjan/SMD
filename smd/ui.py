@@ -166,7 +166,8 @@ class UI:
         acf.write_acf(parsed_lua)
         downloader.download_manifests(parsed_lua)
         print(
-            Fore.GREEN + "Success! Close Steam and Run DLLInjector again. "
+            Fore.GREEN + "Success! Close Steam and run DLLInjector again "
+            "(or not depending on how you installed Greenluma). "
             'Your game should show up in the library ready to "update"'
             + Style.RESET_ALL
         )

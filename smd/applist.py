@@ -47,6 +47,12 @@ class AppListManager:
             )
             set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
 
+        if saved_applist:
+            colorized = (
+                Fore.YELLOW + str(self.applist_folder.resolve()) + Style.RESET_ALL
+            )
+            print(f"Your AppList folder is {colorized}")
+
     def get_local_ids(self, sort: bool = False) -> list[AppListFile]:
         ids: list[AppListFile] = []
         for file in self.applist_folder.glob("*.txt"):
@@ -133,6 +139,13 @@ class AppListManager:
 
     def prompt_id_deletion(self, client: SteamClient):
         ids = [int(x.app_id) for x in self.get_local_ids()]
+        if not ids:
+            print(
+                "There's nothing inside the AppList folder. "
+                "Try adding one manually or automatically when you "
+                "add a game with the tool."
+            )
+            return
         info = self.get_product_info_with_retry(client, ids)
         self.update_depot_info(info)
 

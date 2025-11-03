@@ -1,6 +1,7 @@
-
 import winreg
 from pathlib import Path
+
+from colorama import Fore, Style
 
 from smd.prompts import prompt_dir
 
@@ -31,5 +32,6 @@ def get_steam_path():
             "path here (The folder that has steam.exe)"
         )
     else:
-        print(f"Your steam path is {steam_path}")
+        colorized = Fore.YELLOW + str(steam_path.resolve()) + Style.RESET_ALL
+        print(f"Your Steam path is {colorized}")
     return steam_path

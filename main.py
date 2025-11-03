@@ -12,7 +12,7 @@ from smd.registry_access import get_steam_path
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
 
-VERSION = "2.3.1"
+VERSION = "3.0.0"
 
 
 def main() -> MainReturnCode:
