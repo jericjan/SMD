@@ -41,7 +41,10 @@ class AppListManager:
             )
             set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
         elif saved_applist is None:
-            print(f"AppsList folder automatically selected: {self.applist_folder}")
+            print(
+                f"AppsList folder automatically selected: {self.applist_folder}\n"
+                "Change this in settings if it's the wrong folder."
+            )
             set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
 
     def get_local_ids(self, sort: bool = False) -> list[AppListFile]:

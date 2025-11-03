@@ -80,7 +80,7 @@ class ManifestDownloader():
             manifest_id = manifest_ids[depot_id]
 
             while True:
-                print("Getting request code...")
+                print("Getting request code... ", end="")
                 req_code = asyncio.run(get_gmrc(manifest_id))
                 print(f"Request code is: {req_code}")
                 if req_code is not None:

@@ -80,10 +80,9 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
     original_payload = ContentManifestPayload()
     original_payload.ParseFromString(payload_bytes)
 
-    # --- PROCESSING LOGIC ---
-    print(f"\nFound {len(original_payload.mappings)} file mappings. " "Processing...")
+    print(f"\nFound {len(original_payload.mappings)} file mappings. Processing...")
 
-    # 1. Decrypt filenames
+    # Decrypt filenames
     key_bytes = bytes.fromhex(dec_key)
     new_mappings: list[ContentManifestPayload.FileMapping] = []
     for mapping in original_payload.mappings:
@@ -96,28 +95,28 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
             new_mapping.linktarget = decrypt_filename(mapping.linktarget, key_bytes)
 
         new_mappings.append(new_mapping)
-    print("✅ Decrypted all filenames.")
+    print("Decrypted all filenames.")
 
-    # 3. Create the new payload object with the sorted, decrypted data
+    # Create the new payload object with the sorted, decrypted data
     fixed_payload = ContentManifestPayload()
     fixed_payload.mappings.extend(new_mappings)
 
-    # 4. Serialize the new payload and recalculate crc_clear
+    # Serialize the new payload and recalculate crc_clear
     fixed_payload_bytes = fixed_payload.SerializeToString()
     length_bytes = struct.pack("<I", len(fixed_payload_bytes))
     data_to_checksum = length_bytes + fixed_payload_bytes
     new_crc = zlib.crc32(data_to_checksum) & 0xFFFFFFFF
-    print(f"✅ Recalculated crc_clear: {new_crc}")
+    print(f"Recalculated CRC-32 checksum of decrypted data: {hex(new_crc)[2:]}")
 
-    # 5. Update and re-serialize the metadata
+    # Update and re-serialize the metadata
     metadata = ContentManifestMetadata()
     metadata.ParseFromString(metadata_bytes)
     metadata.crc_clear = new_crc
     metadata.filenames_encrypted = False  # Mark the filenames as decrypted
     fixed_metadata_bytes = metadata.SerializeToString()
 
-    # 6. Write the new manifest file
-    print(f"\n--- Writing new manifest to '{output_filepath}' ---")
+    # Write the new manifest file
+    print(f"\nWriting new manifest to '{output_filepath}'...")
     with open(output_filepath, "wb") as f:
         f.write(struct.pack("<II", PROTOBUF_PAYLOAD_MAGIC, len(fixed_payload_bytes)))
         f.write(fixed_payload_bytes)
@@ -127,5 +126,3 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
 
         f.write(struct.pack("<II", PROTOBUF_SIGNATURE_MAGIC, 0))
         f.write(struct.pack("<I", PROTOBUF_ENDOFMANIFEST_MAGIC))
-
-    print("✅ Done.")
