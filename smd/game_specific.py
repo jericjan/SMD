@@ -236,14 +236,14 @@ class GameHandler:
             capture_output=True,
         )
         if "Successfully unpacked file!" in output.stdout:
-            print("Steamtools applied!")
+            print("Steamless applied!")
             unpacked = game_exe.parent / (game_exe.name + ".unpacked.exe")
             game_exe.unlink()
             unpacked.rename(game_exe)
 
         else:
             print(output.stdout)
-            print("Steamtools failed...")
+            print("Steamless failed...")
 
     def _prompt_manual_exe(self, app_info: ACFInfo):
         subprocess.run(["explorer", app_info.path])
