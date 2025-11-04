@@ -19,7 +19,7 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 │       └───generate_emu_config.exe
 └───steamless
 ```
-4. Either `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it
+4. Either run `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it. You can also build it with `build.bat` for convenience.
 
 # Pre-requisites
 This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but you'll have to specify the AppList folder location manually.
@@ -33,6 +33,7 @@ This program requires that **GreenLuma** is installed, preferably in normal mode
 - Via [gbe_fork_tools](https://github.com/Detanup01/gbe_fork_tools) :
   - `steam_settings` folder generation 
    - `Steam\appcache\stats` .bin file generation (for Steam achievements directly in the Steam overlay/library)
+- Basic AppList folder management (You can add and delete IDs for now)
 
 # Contributing
 
