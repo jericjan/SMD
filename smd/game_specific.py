@@ -204,14 +204,17 @@ class GameHandler:
             backup_name.unlink()
         dll_path.rename(backup_name)
 
-        shutil.copytree(gbe_fork_folder, api_folder, dirs_exist_ok=True)
-        (api_folder / "steam_appid.txt").write_text(app_id, "utf-8")
+        def ignore_other_dll(dir: str, files: list[str]) -> set[str]:
+            if dll_path.name in files:
+                api_files = {"steam_api.dll", "steam_api64.dll"}
+                api_files.remove(dll_path.name)
+                return api_files
+            return set()  # type: ignore
 
-        # TODO: this sucks btw
-        if "64" in dll_path.name:
-            (api_folder / "steam_api.dll").unlink()
-        else:  # 32
-            (api_folder / "steam_api64.dll").unlink()
+        shutil.copytree(
+            gbe_fork_folder, api_folder, dirs_exist_ok=True, ignore=ignore_other_dll
+        )
+        (api_folder / "steam_appid.txt").write_text(app_id, "utf-8")
 
     def crack_dll(self, app_id: str, dll_path: Path):
         self._crack_dll_core(app_id, dll_path)
