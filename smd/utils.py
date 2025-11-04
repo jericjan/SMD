@@ -11,7 +11,8 @@ from smd.structs import ProductInfo  # type: ignore
 
 def root_folder():
     """Returns the executable's root folder"""
-    return Path(__file__).resolve().parent
+    # Go up one more level cuz we in `smd` subfolder
+    return Path(__file__).resolve().parent.parent
 
 
 def enter_path(

@@ -1,7 +1,9 @@
 """gbe_fork and Steamless stuff in here"""
 
 import hashlib
+import logging
 import os
+import shlex
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,6 +23,8 @@ from smd.structs import (
     Settings,
 )
 from smd.utils import enter_path, get_product_info, root_folder
+
+logger = logging.getLogger(__name__)
 
 
 class ACFInfo(NamedTuple):
@@ -115,8 +119,10 @@ class GameHandler:
         extra_args: list[str] = []
         if mode == GenEmuMode.USER_GAME_STATS:
             extra_args.extend(["-skip_con", "-skip_inv"])
+        cmds = [str(config_exe.absolute()), "-clean", *extra_args, app_id]
+        logger.debug(f"Running {shlex.join(cmds)}")
         subprocess.run(
-            [str(config_exe.absolute()), "-clean", *extra_args, app_id],
+            cmds,
             env=env,
             cwd=str(tools_folder.absolute()),
         )
@@ -137,8 +143,14 @@ class GameHandler:
                 id_64 = prompt_text(
                     "No .bin files found. Go to https://steamladder.com/ and "
                     "find the game you want, "
-                    "then copy the Steam64 ID of a random user that owns that game"
+                    "then paste in here the Steam64 ID of a "
+                    "random user that owns that game:",
+                    long_instruction="Make sure the game actually HAS "
+                    "Steam achievements!!"
+                    " Type a blank if you want to exit",
                 ).strip()
+                if not id_64:
+                    return
                 with Path(
                     r"third_party\gbe_fork_tools\generate_emu_config\top_owners_ids.txt"
                 ).open("w", encoding="utf-8") as f:

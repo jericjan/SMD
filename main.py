@@ -1,3 +1,4 @@
+import logging
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -11,14 +12,21 @@ from smd.prompts import prompt_select
 from smd.registry_access import get_steam_path
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
+from smd.utils import root_folder
 
 VERSION = "3.0.0"
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG)
+
 
 def main() -> MainReturnCode:
+    logger.debug(f"Root folder is {root_folder()}")
     client = SteamClient()
     steam_path = get_steam_path()
+    logger.debug(f"Steam path is {steam_path.resolve()}")
     app_list_man = AppListManager(steam_path)
+    logger.debug(f"AppList path is {app_list_man.applist_folder.resolve()}")
     ui = UI(client, app_list_man, steam_path)
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
 
