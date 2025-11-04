@@ -13,16 +13,17 @@ from smd.manifest.crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.structs import DepotManifestMap, LuaParsedInfo  # type: ignore
 from smd.utils import get_product_info
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class ManifestDownloader():
+class ManifestDownloader:
     def __init__(self, client: SteamClient, steam_path: Path):
         self.client = client
         self.steam_path = steam_path
 
-    def get_manifest_ids(
-        self, lua: LuaParsedInfo
-    ) -> DepotManifestMap:
+    def get_manifest_ids(self, lua: LuaParsedInfo) -> DepotManifestMap:
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[str, str] = {}
 
@@ -97,6 +98,7 @@ class ManifestDownloader():
                 cdn_server_name, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
             )
 
+            logger.debug(f"Download manifest from {manifest_url}")
             r = httpx.get(manifest_url, timeout=None)
             r.raise_for_status()
 

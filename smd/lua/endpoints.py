@@ -3,6 +3,7 @@
 import asyncio
 import io
 import json
+import logging
 from pathlib import Path
 from tempfile import TemporaryFile
 
@@ -14,6 +15,8 @@ from smd.prompts import prompt_secret
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import Settings
 from smd.zip import read_lua_from_zip
+
+logger = logging.getLogger(__name__)
 
 
 def get_oureverday(dest: Path, app_id: str):
@@ -49,6 +52,7 @@ def get_manilua(dest: Path, app_id: str):
         "Authorization": f"Bearer {manilua_key}",
     }
 
+    logger.debug(f"Downloading lua files from {url}")
     with httpx.stream("GET", url, headers=headers) as response:
         try:
             total = int(response.headers.get("Content-Length", "0"))

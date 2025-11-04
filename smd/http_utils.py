@@ -1,10 +1,13 @@
 import asyncio
+import logging
 import msvcrt
 from typing import Any, Literal, Union, overload
 
 import httpx
 
 from smd.prompts import prompt_text
+
+logger = logging.getLogger(__name__)
 
 
 @overload
@@ -26,10 +29,12 @@ async def get_request(
 ) -> Union[str, dict[Any, Any], None]:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
+            logger.debug(f"Making request to {url}")
             response = await client.get(url)
 
         if response.status_code == 200:
             try:
+                logger.debug(f"Received {response.content}")
                 return response.text if type == "text" else response.json()
             except ValueError:
                 return

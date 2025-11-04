@@ -1,5 +1,7 @@
 """Miscellaneous stuff used across various files"""
 
+import json
+import logging
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -7,6 +9,8 @@ import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
 from smd.structs import ProductInfo  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 def root_folder():
@@ -60,5 +64,6 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
         client.anonymous_login()
     info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
     if info:
+        logger.debug(f"get_product_info retured: {json.dumps(info)}")
         return ProductInfo(info)
     return None

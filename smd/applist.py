@@ -59,10 +59,7 @@ class AppListManager:
             if file.stem.isdigit():
                 if int(file.stem) > self.last_idx:
                     self.last_idx = int(file.stem)
-            ids.append(AppListFile(
-                file,
-                int(file.read_text(encoding="utf-8").strip())
-            ))
+            ids.append(AppListFile(file, int(file.read_text(encoding="utf-8").strip())))
         if sort:
             ids.sort(key=lambda x: int(x.path.stem))
         return ids
@@ -172,20 +169,20 @@ class AppListManager:
                         mutate=True,
                     )
                     app.setdefault("depots", []).append(item.id)
-                    if 'exists' not in app:
-                        app['exists'] = False
-                        app['name'] = item.name
+                    if "exists" not in app:
+                        app["exists"] = False
+                        app["name"] = item.name
                 else:
                     app = enter_path(organized, app_id, mutate=True)
-                    app['exists'] = True
-                    app['name'] = item.name
+                    app["exists"] = True
+                    app["name"] = item.name
             else:
                 organized[app_id] = {"exists": True, "name": "UNKNOWN GAME"}
 
         menu_items: list[tuple[str, int]] = []
 
         for app_id, val in organized.items():
-            ext = '(MISSING)' if not val.get('exists') else ''
+            ext = "(MISSING)" if not val.get("exists") else ""
             name = f"{app_id} - {val.get('name')} {ext}"
             menu_items.append((name, app_id))
             depots = val.get("depots")
@@ -198,7 +195,7 @@ class AppListManager:
             multiselect=True,
             long_instruction="Press Space to select items, "
             "and Enter to confirm selections. Ctrl+Z to cancel.",
-            mandatory=False
+            mandatory=False,
         )
         if ids_to_delete is None:
             print("No IDs selected. Doing nothing")
@@ -207,7 +204,7 @@ class AppListManager:
         selected_base_ids = [x for x in unique_ids if x in organized]
         if len(selected_base_ids) > 0:
             for app_id in selected_base_ids:
-                name = organized[app_id]['name']
+                name = organized[app_id]["name"]
                 depots = organized[app_id].get("depots")
                 if depots:
                     select_children: bool = prompt_select(
