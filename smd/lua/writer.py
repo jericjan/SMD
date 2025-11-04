@@ -21,7 +21,7 @@ class ACFWriter:
         if acf_file.exists():
             do_write_acf = prompt_select(
                 ".acf file found. Is this an update?",
-                [("Yes", False), ("No", True)],
+                [("Yes", False), ("No (Overwrites the .acf file)", True)],
             )
 
         if do_write_acf:
