@@ -197,7 +197,7 @@ class GameHandler:
 
         if not gse_app_folder.exists():
             print("GSE Saves folder doesn't exist. Creating...")
-            gse_app_folder.mkdir()
+            gse_app_folder.mkdir(parents=True)
 
         backup_name = dll_path.parent / ("OG_" + dll_path.name)
         if backup_name.exists():
