@@ -8,11 +8,10 @@ import httpx
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.http_utils import get_gmrc
+from smd.http_utils import get_gmrc, get_product_info
 from smd.manifest.crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.structs import DepotManifestMap, LuaParsedInfo  # type: ignore
-from smd.utils import get_product_info
 import logging
 
 logger = logging.getLogger(__name__)

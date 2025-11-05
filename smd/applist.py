@@ -6,6 +6,7 @@ from typing import Callable, Optional, Union
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
+from smd.http_utils import get_product_info
 from smd.prompts import prompt_dir, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
@@ -18,7 +19,7 @@ from smd.structs import (
     ProductInfo,
     Settings,
 )
-from smd.utils import enter_path, get_product_info
+from smd.utils import enter_path
 
 
 class AppListManager:

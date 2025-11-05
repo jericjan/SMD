@@ -1,11 +1,14 @@
 import asyncio
+import json
 import logging
 import msvcrt
-from typing import Any, Literal, Union, overload
+from typing import Any, Literal, Optional, Union, overload
 
 import httpx
+from steam.client import SteamClient  # type: ignore
 
 from smd.prompts import prompt_text
+from smd.structs import ProductInfo  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +119,14 @@ def get_game_name(app_id: str):
     else:
         app_name = prompt_text("Request failed. Type the name of the game: ")
     return app_name
+
+
+def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
+    if not client.logged_on:
+        print("Logging in anonymously...")
+        client.anonymous_login()
+    info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
+    if info:
+        logger.debug(f"get_product_info retured: {json.dumps(info)}")
+        return ProductInfo(info)
+    return None

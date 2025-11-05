@@ -1,15 +1,10 @@
 """Miscellaneous stuff used across various files"""
 
-import json
 import logging
 from pathlib import Path
-from typing import Any, Optional, Union, TYPE_CHECKING
+from typing import Any, Union
 
 import vdf  # type: ignore
-from steam.client import SteamClient  # type: ignore
-
-if TYPE_CHECKING:
-    from smd.structs import ProductInfo  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -57,16 +52,3 @@ def enter_path(
             current = new_node
 
     return current  # pyright: ignore[reportUnknownVariableType]
-
-
-def get_product_info(
-    client: SteamClient, app_ids: list[int]
-) -> Optional["ProductInfo"]:
-    if not client.logged_on:
-        print("Logging in anonymously...")
-        client.anonymous_login()
-    info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
-    if info:
-        logger.debug(f"get_product_info retured: {json.dumps(info)}")
-        return ProductInfo(info)
-    return None

@@ -11,6 +11,7 @@ from typing import Literal, NamedTuple, Optional, overload
 
 from steam.client import SteamClient  # type: ignore
 
+from smd.http_utils import get_product_info
 from smd.prompts import prompt_file, prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.vdf import vdf_load
@@ -22,7 +23,7 @@ from smd.structs import (
     ProductInfo,
     Settings,
 )
-from smd.utils import enter_path, get_product_info, root_folder
+from smd.utils import enter_path, root_folder
 
 logger = logging.getLogger(__name__)
 
