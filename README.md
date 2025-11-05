@@ -92,8 +92,10 @@ This project includes the following third-party components:
 - [TinyMidiLoader](https://github.com/schellingb/TinySoundFont) (ZLIB)
 - [TinySoundFont](https://github.com/schellingb/TinySoundFont) (MIT)
 - [miniaudio](https://github.com/mackron/miniaudio) (MIT)
+
 Full license texts are available in the `third_party_licenses` directory.
 
 # Credit
 Credit to RedPaper for the Broken Moon MIDI cover, originally arranged by U2 Akiyama and used in Touhou 7.5: Immaterial and Missing Power.
 Touhou 7.5 and its related assets are owned by Team Shanghai Alice and Twilight Frontier. SMD is not affiliated with, endorsed by, or sponsored by either party. All trademarks belong to their respective owners.
+
