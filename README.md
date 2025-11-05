@@ -24,7 +24,7 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 Optional (Requires GCC Compiler):
 1. CD into the `c` folder and build the MIDI Player with:  
 ```gcc midi_player_lib.c -shared -fPIC -o midi_player_lib.dll```
-2. Download this [soundfont](https://musical-artifacts.com/artifacts/7352) and place it in the `c` folder. Any soundfont works but just note that bigger files will use more memory.
+2. Download this [soundfont](https://musical-artifacts.com/artifacts/7352) (WTFPL 2 License) and place it in the `c` folder. Any soundfont works but just note that bigger files will use more memory.
 3. Download this [MIDI](https://files.gamebanana.com/bitpit/th105_broken_moon_redpaper_.mid) and place it in the `c` folder.
 
 # Pre-requisites
@@ -94,4 +94,6 @@ This project includes the following third-party components:
 - [miniaudio](https://github.com/mackron/miniaudio) (MIT)
 Full license texts are available in the `third_party_licenses` directory.
 
-
+# Credit
+Credit to RedPaper for the Broken Moon MIDI cover, originally arranged by U2 Akiyama and used in Touhou 7.5: Immaterial and Missing Power.
+Touhou 7.5 and its related assets are owned by Team Shanghai Alice and Twilight Frontier. SMD is not affiliated with, endorsed by, or sponsored by either party. All trademarks belong to their respective owners.
