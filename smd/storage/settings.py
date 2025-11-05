@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Union, cast
 
 import msgpack  # type: ignore
 
@@ -25,8 +25,10 @@ def get_setting(key: Settings):
     return keyring_decrypt(value) if (value and key.hidden) else value
 
 
-def set_setting(key: Settings, value: str):
+def set_setting(key: Settings, value: Union[str, bool]):
     settings = load_all_settings()
-    settings[key.key_name] = keyring_encrypt(value) if key.hidden else value
+    settings[key.key_name] = (
+        keyring_encrypt(value) if key.hidden and isinstance(value, str) else value
+    )
     with SETTINGS_FILE.open("wb") as f:
         f.write(msgpack.packb(settings))  # type: ignore
