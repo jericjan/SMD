@@ -5,6 +5,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, NewType, Optional, TypedDict
 
+from smd.utils import root_folder
+
 
 class LuaChoice(Enum):
     ADD_LUA = "Add a .lua file"
@@ -168,3 +170,9 @@ ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])
 
 DepotManifestMap = NewType("DepotManifestMap",  dict[str, str])
 "Depot IDs mapped to Manifest IDs"
+
+
+class MidiFiles(Enum):
+    MIDI_PLAYER_DLL = root_folder() / "c/midi_player_lib.dll"
+    SOUNDFONT = root_folder() / "c/Extended_Super_Mario_64_Soundfont.sf2"
+    MIDI = root_folder() / "c/th105_broken_moon_redpaper_.mid"

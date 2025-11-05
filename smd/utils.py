@@ -3,12 +3,13 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TYPE_CHECKING
 
 import vdf  # type: ignore
 from steam.client import SteamClient  # type: ignore
 
-from smd.structs import ProductInfo  # type: ignore
+if TYPE_CHECKING:
+    from smd.structs import ProductInfo  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,9 @@ def enter_path(
     return current  # pyright: ignore[reportUnknownVariableType]
 
 
-def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
+def get_product_info(
+    client: SteamClient, app_ids: list[int]
+) -> Optional["ProductInfo"]:
     if not client.logged_on:
         print("Logging in anonymously...")
         client.anonymous_login()

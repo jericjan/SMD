@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import functools
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -10,6 +11,7 @@ from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
+from smd.midi import MidiPlayer
 from smd.prompts import prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
@@ -22,15 +24,41 @@ from smd.structs import (
 )
 
 
+def music_toggle_decorator(func):  # type: ignore
+    """
+    A decorator that mutes/unmutes channels before/after a method call.
+    The wrapper will receive the class instance as its first argument.
+    """
+
+    @functools.wraps(func)  # type: ignore
+    def wrapper(self: "UI", *args, **kwargs):  # type: ignore
+        if self.midi_player:
+            self.midi_player.toggle_range(0, 5)
+
+        result = func(self, *args, **kwargs)  # type: ignore
+        if self.midi_player:
+            self.midi_player.toggle_range(0, 5)
+
+        return result  # type: ignore
+
+    return wrapper  # type: ignore
+
+
 class UI:
 
     def __init__(
-        self, client: SteamClient, app_list_man: AppListManager, steam_path: Path
+        self,
+        client: SteamClient,
+        app_list_man: AppListManager,
+        steam_path: Path,
+        midi_player: Optional[MidiPlayer],
     ):
         self.steam_client = client
         self.steam_path = steam_path
         self.app_list_man = app_list_man
+        self.midi_player = midi_player
 
+    @music_toggle_decorator
     def edit_settings_menu(self) -> MainReturnCode:
         while True:
             saved_settings = load_all_settings()
@@ -66,6 +94,7 @@ class UI:
             set_setting(selected_key, new_value)
         return MainReturnCode.LOOP_NO_PROMPT
 
+    @music_toggle_decorator
     def offline_fix_menu(self) -> MainReturnCode:
         print(
             Fore.YELLOW
@@ -123,6 +152,7 @@ class UI:
         print(f"{chosen_user.persona_name} is now {offline_converter(new_value)}")
         return MainReturnCode.LOOP
 
+    @music_toggle_decorator
     def applist_menu(self) -> MainReturnCode:
         return self.app_list_man.display_menu(self.steam_client)
 
@@ -137,12 +167,14 @@ class UI:
         )
         return steam_lib_path
 
+    @music_toggle_decorator
     def handle_game_specific(self, choice: GameSpecificChoices) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
         handler = GameHandler(self.steam_path, lib_path, self.steam_client)
         return handler.execute_choice(choice)
 
+    @music_toggle_decorator
     def process_lua_choice(self) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT

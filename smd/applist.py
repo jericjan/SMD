@@ -41,8 +41,11 @@ class AppListManager:
             )
             set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))
         elif saved_applist is None:
+            colorized = (
+                Fore.YELLOW + str(self.applist_folder.resolve()) + Style.RESET_ALL
+            )
             print(
-                f"AppsList folder automatically selected: {self.applist_folder}\n"
+                f"AppsList folder automatically selected: {colorized}\n"
                 "Change this in settings if it's the wrong folder."
             )
             set_setting(Settings.APPLIST_FOLDER, str(self.applist_folder.absolute()))

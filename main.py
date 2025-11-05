@@ -8,9 +8,10 @@ from colorama import init as color_init
 from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
+from smd.midi import MidiPlayer
 from smd.prompts import prompt_select
 from smd.registry_access import get_steam_path
-from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
+from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode, MidiFiles
 from smd.ui import UI
 from smd.utils import root_folder
 
@@ -27,7 +28,14 @@ def main() -> MainReturnCode:
     logger.debug(f"Steam path is {steam_path.resolve()}")
     app_list_man = AppListManager(steam_path)
     logger.debug(f"AppList path is {app_list_man.applist_folder.resolve()}")
-    ui = UI(client, app_list_man, steam_path)
+
+    if any([not x.value.exists() for x in list(MidiFiles)]):
+        player = None
+    else:
+        player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
+        player.start()
+
+    ui = UI(client, app_list_man, steam_path, player)
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
 
     if menu_choice == MainMenu.EXIT:

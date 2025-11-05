@@ -21,6 +21,12 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 ```
 4. Either run `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it. You can also build it with `build.bat` for convenience.
 
+Optional (Requires GCC Compiler):
+1. CD into the `c` folder and build the MIDI Player with:  
+```gcc midi_player_lib.c -shared -fPIC -o midi_player_lib.dll```
+2. Download this [soundfont](https://musical-artifacts.com/artifacts/7352) and place it in the `c` folder. Any soundfont works but just note that bigger files will use more memory.
+3. Download this [MIDI](https://files.gamebanana.com/bitpit/th105_broken_moon_redpaper_.mid) and place it in the `c` folder.
+
 # Pre-requisites
 This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but you'll have to specify the AppList folder location manually.
 
@@ -82,7 +88,9 @@ This project includes the following third-party components:
 - [gbe_fork](https://github.com/Detanup01/gbe_fork/) (LGPL-3.0)
 - [gbe_fork_tools](https://github.com/Detanup01/gbe_fork_tools) (LGPL-3.0)
 - [Steamless](https://github.com/atom0s/Steamless/) (CC BY-NC-ND 4.0)
-
+- [TinyMidiLoader](https://github.com/schellingb/TinySoundFont) (ZLIB)
+- [TinySoundFont](https://github.com/schellingb/TinySoundFont) (MIT)
+- [miniaudio](https://github.com/mackron/miniaudio) (MIT)
 Full license texts are available in the `third_party_licenses` directory.
 
 

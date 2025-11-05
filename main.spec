@@ -36,6 +36,9 @@ a = Analysis(
         ("LICENSE", "."),
         ("third_party_licenses", "third_party_licenses"),
         ("static", "static"),
+        ("c/*.dll", "c"),
+        ("c/*.sf2", "c"),
+        ("c/*.mid", "c")
     ],
     hiddenimports=[],
     hookspath=[],

@@ -16,3 +16,7 @@ settings.bin
 third_party/gbe_fork_tools/**
 crash.log
 debug.log
+c/*.sf2
+c/*.dll
+c/*.mid
+test.py
