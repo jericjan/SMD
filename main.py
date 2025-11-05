@@ -25,10 +25,11 @@ from smd.utils import root_folder
 VERSION = "3.0.1"
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
 
 
 def main() -> MainReturnCode:
+    print("\n==========================================\n")
     logger.debug(f"Root folder is {root_folder()}")
     client = SteamClient()
     steam_path = get_steam_path()
@@ -40,7 +41,7 @@ def main() -> MainReturnCode:
         set_setting(Settings.PLAY_MUSIC, False)
         play_music = False
 
-    if any([not x.value.exists() for x in list(MidiFiles)]) or not play_music:        
+    if any([not x.value.exists() for x in list(MidiFiles)]) or not play_music:
         player = None
     else:
         player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
@@ -72,6 +73,7 @@ def main() -> MainReturnCode:
 
 if __name__ == "__main__":
     color_init()
+    version_txt = f"Version: {VERSION}"
     print(
         Fore.GREEN
         + f"""  ██████       ███▄ ▄███▓     ▓█████▄
@@ -83,7 +85,11 @@ if __name__ == "__main__":
 ░ ░▒  ░ ░ ░▒  ░  ░      ░ ░▒   ░ ▒  ▒  ░▒
 ░  ░  ░   ░   ░      ░    ░    ░ ░  ░  ░
       ░    ░         ░     ░     ░      ░
-           ░               ░   ░        ░ \nVersion: {VERSION}"""
+           ░               ░   ░        ░
+
+┌────────────────────────────────────────┐
+│{version_txt.center(40)}│
+└────────────────────────────────────────┘ """
         + Style.RESET_ALL
     )
     while True:
@@ -110,3 +116,4 @@ if __name__ == "__main__":
                 "Go back to the Main Menu?", [("Yes", False), ("No (Exit)", True)]
             ):
                 break
+    print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)

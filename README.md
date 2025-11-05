@@ -82,6 +82,7 @@ Usually happens when you don't have the manifest or your manifest file is outdat
 - [ ] keep track on if game was cracked / steamless'd before
   - [ ] prompt to automatically crack and steamless if so
 - [ ] if given a ZIP, use existing manifest instead of redownloading
+- [ ] Use gbe_fork_tools source code instead of using a compiled version
 
 # Licenses
 This project includes the following third-party components:
