@@ -33,11 +33,11 @@ def music_toggle_decorator(func):  # type: ignore
     @functools.wraps(func)  # type: ignore
     def wrapper(self: "UI", *args, **kwargs):  # type: ignore
         if self.midi_player:
-            self.midi_player.toggle_range(0, 5)
+            self.midi_player.set_range(0, 5, 0)
 
         result = func(self, *args, **kwargs)  # type: ignore
         if self.midi_player:
-            self.midi_player.toggle_range(0, 5)
+            self.midi_player.set_range(0, 5, 1)
 
         return result  # type: ignore
 

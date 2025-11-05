@@ -44,9 +44,8 @@ class MidiPlayer:
 
         logger.debug(f"MIDI file uses channels: {self.used_channels}")
 
-    def toggle_channel(self, inp: int):
+    def toggle_channel(self, channel_to_toggle: int):
         try:
-            channel_to_toggle = int(inp)
             if not (0 <= channel_to_toggle < 16):
                 raise ValueError("Channel out of range")
             if channel_to_toggle not in self.used_channels:
@@ -68,9 +67,12 @@ class MidiPlayer:
         except ValueError:
             print("Invalid input. Please enter a number between 0 and 15, or 'q'.")
 
-    def toggle_range(self, start: int, end: int):
+    def set_channel(self, channel_num: int, state: int):
+        self.player_lib.ToggleChannel(channel_num, state)
+
+    def set_range(self, start: int, end: int, state: int):
         for x in range(start, end + 1):
-            self.toggle_channel(x)
+            self.set_channel(x, state)
 
     def stop(self):
         self.player_lib.StopPlayback()
