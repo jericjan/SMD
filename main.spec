@@ -78,3 +78,19 @@ coll = COLLECT(
     upx_exclude=upx_excludes,
     name='main',
 )
+
+import zipfile
+from main import VERSION
+
+main_folder = Path.cwd() / "dist/main"
+zip_file = main_folder.parent / f"SMD_{VERSION}.zip"
+
+if zip_file.exists():
+    zip_file.unlink()
+
+with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    files = list(main_folder.rglob("*"))
+    count = len(files)
+    for idx, file in enumerate(files):
+        print(f"{idx+1} / {count}")
+        zf.write(file, file.relative_to(main_folder))
