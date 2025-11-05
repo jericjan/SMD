@@ -77,11 +77,11 @@ class UI:
             if not selected_key:
                 break
             value = get_setting(selected_key)
-            value = value if value else "(unset)"
+            value = value if value is not None else "(unset)"
             print(
                 f"{selected_key.clean_name} is set to "
                 + Fore.YELLOW
-                + ("[ENCRYPTED]" if selected_key.hidden else value)
+                + ("[ENCRYPTED]" if selected_key.hidden else str(value))
                 + Style.RESET_ALL
             )
             edit = prompt_select(
@@ -89,9 +89,17 @@ class UI:
             )
             if not edit:
                 continue
-            func = prompt_secret if selected_key.hidden else prompt_text
-            new_value = func("Enter the new value:")
+            if isinstance(value, bool):
+                new_value = prompt_select(
+                    "Select the new value:", [("Enabled", True), ("Disabled", False)]
+                )
+            else:
+                func = prompt_secret if selected_key.hidden else prompt_text
+                new_value = func("Enter the new value:")
             set_setting(selected_key, new_value)
+            if selected_key == Settings.PLAY_MUSIC:
+                if new_value is False and self.midi_player:
+                    self.midi_player.stop()
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator

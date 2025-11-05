@@ -11,7 +11,14 @@ from smd.applist import AppListManager
 from smd.midi import MidiPlayer
 from smd.prompts import prompt_select
 from smd.registry_access import get_steam_path
-from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode, MidiFiles
+from smd.storage.settings import get_setting, set_setting
+from smd.structs import (
+    GAME_SPECIFIC_CHOICES,
+    MainMenu,
+    MainReturnCode,
+    MidiFiles,
+    Settings,
+)
 from smd.ui import UI
 from smd.utils import root_folder
 
@@ -29,7 +36,11 @@ def main() -> MainReturnCode:
     app_list_man = AppListManager(steam_path)
     logger.debug(f"AppList path is {app_list_man.applist_folder.resolve()}")
 
-    if any([not x.value.exists() for x in list(MidiFiles)]):
+    if (play_music := get_setting(Settings.PLAY_MUSIC)) is None:
+        set_setting(Settings.PLAY_MUSIC, False)
+        play_music = False
+
+    if any([not x.value.exists() for x in list(MidiFiles)]) or not play_music:        
         player = None
     else:
         player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
