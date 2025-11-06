@@ -20,6 +20,7 @@ from smd.structs import (
     LoggedInUser,
     LuaChoice,
     MainReturnCode,
+    MidiFiles,
     Settings,
 )
 
@@ -49,14 +50,21 @@ class UI:
     def __init__(
         self,
         client: SteamClient,
-        app_list_man: AppListManager,
         steam_path: Path,
-        midi_player: Optional[MidiPlayer],
     ):
         self.steam_client = client
         self.steam_path = steam_path
-        self.app_list_man = app_list_man
-        self.midi_player = midi_player
+        self.app_list_man = AppListManager(steam_path)
+
+        if (play_music := get_setting(Settings.PLAY_MUSIC)) is None:
+            set_setting(Settings.PLAY_MUSIC, False)
+            play_music = False
+
+        if any([not x.value.exists() for x in list(MidiFiles)]) or not play_music:
+            self.midi_player = None
+        else:
+            self.midi_player = MidiPlayer(MidiFiles.MIDI_PLAYER_DLL.value)
+            self.midi_player.start()
 
     @music_toggle_decorator
     def edit_settings_menu(self) -> MainReturnCode:
@@ -97,9 +105,19 @@ class UI:
                 func = prompt_secret if selected_key.hidden else prompt_text
                 new_value = func("Enter the new value:")
             set_setting(selected_key, new_value)
+
             if selected_key == Settings.PLAY_MUSIC:
-                if new_value is False and self.midi_player:
+                if value is True and new_value is False and self.midi_player:
                     self.midi_player.stop()
+                    del self.midi_player
+                    self.midi_player = None  # Deallocate from memory
+                elif value is False and new_value is True:
+                    if self.midi_player is None:
+                        self.midi_player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
+                    self.midi_player.start()
+
+            if selected_key == Settings.APPLIST_FOLDER:
+                self.app_list_man = AppListManager(self.steam_path)
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator
