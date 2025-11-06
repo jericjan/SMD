@@ -15,6 +15,7 @@ dependencies = [
     "isort>=6.1.0",
     "keyring>=25.6.0",
     "msgpack>=1.1.2",
+    "objgraph>=3.6.2",
     "pathvalidate>=3.3.1",
     "protobuf>=3.20.3",
     "pycryptodome>=3.23.0",
