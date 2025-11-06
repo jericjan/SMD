@@ -1,14 +1,29 @@
+import gc
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from InquirerPy import inquirer
+from InquirerPy.base import BaseComplexPrompt, BaseListPrompt
 from InquirerPy.base.control import Choice
+from InquirerPy.prompts.input import InputPrompt
 from InquirerPy.utils import InquirerPyValidate
 
 
 def convert_to_path(x: str):
     return Path(x.strip("\"' "))
+
+
+def _clean_prompt(prompt: Union[BaseComplexPrompt, InputPrompt]):
+    """Dark voodoo I cooked that actually works??? `prompt_select` leaks way less now"""
+    if isinstance(prompt, BaseComplexPrompt):
+        prompt.application.reset()  # pyright: ignore[reportUnknownMemberType]
+        prompt.application = None  # type: ignore
+    if isinstance(prompt, BaseListPrompt):
+        prompt.content_control.reset()
+        prompt.content_control = None  # type: ignore
+    del prompt
+    gc.collect()
 
 
 def prompt_select(
@@ -33,7 +48,10 @@ def prompt_select(
     if cancellable:
         new_choices.append(Choice(value=None, name="[Back]"))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
-    return cmd(message=msg, choices=new_choices, default=default, **kwargs).execute()
+    obj = cmd(message=msg, choices=new_choices, default=default, **kwargs)
+    result = obj.execute()
+    _clean_prompt(obj)
+    return result
 
 
 def prompt_dir(msg: str) -> Path:
@@ -68,14 +86,17 @@ def prompt_text(
     long_instruction: str = "",
     filter: Optional[Callable[[str], Any]] = None,
 ):
-    return inquirer.text(
+    obj = inquirer.text(
         msg,
         validate=validator,
         invalid_message=invalid_msg,
         instruction=instruction,
         long_instruction=long_instruction,
         filter=filter,
-    ).execute()
+    )
+    res = obj.execute()
+    _clean_prompt(obj)
+    return res
 
 
 def prompt_secret(
@@ -85,11 +106,14 @@ def prompt_secret(
     instruction: str = "",
     long_instruction: str = "",
 ):
-    return inquirer.secret(
+    obj = inquirer.secret(
         message=msg,
         transformer=lambda _: "[hidden]",
         validate=validator,
         invalid_message=invalid_msg,
         instruction=instruction,
         long_instruction=long_instruction,
-    ).execute()
+    )
+    res = obj.execute()
+    _clean_prompt(obj)
+    return res

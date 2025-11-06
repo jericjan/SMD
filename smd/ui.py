@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import functools
+from collections import OrderedDict
 from pathlib import Path
 from typing import Callable, Optional
 

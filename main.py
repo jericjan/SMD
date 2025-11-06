@@ -29,7 +29,7 @@ def main(ui: UI) -> MainReturnCode:
 
     logger.debug(f"AppList path is {ui.app_list_man.applist_folder.resolve()}")
 
-    print("\n==========================================\n")    
+    print("\n==========================================\n")
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
 
     if menu_choice == MainMenu.EXIT:
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     ui = UI(client, steam_path)
 
     while True:
-        # Re-initialize AppListManager in case setting is changed        
+        # Re-initialize AppListManager in case setting is changed
         try:
             return_code = main(ui)
         except Exception:
