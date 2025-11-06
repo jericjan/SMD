@@ -1,10 +1,8 @@
-import functools
-import logging
 from collections import OrderedDict
+import functools
 from pathlib import Path
 from typing import Callable, Optional
 
-import objgraph
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
@@ -26,7 +24,6 @@ from smd.structs import (
     Settings,
 )
 
-logger = logging.getLogger(__name__)
 
 def music_toggle_decorator(func):  # type: ignore
     """
@@ -36,12 +33,12 @@ def music_toggle_decorator(func):  # type: ignore
 
     @functools.wraps(func)  # type: ignore
     def wrapper(self: "UI", *args, **kwargs):  # type: ignore
-        # if self.midi_player:
-        #     self.midi_player.set_range(0, 5, 0)
+        if self.midi_player:
+            self.midi_player.set_range(0, 5, 0)
 
-        result = func(self, *args, **kwargs)  # type: ignore    
-        # if self.midi_player:
-        #     self.midi_player.set_range(0, 5, 1)
+        result = func(self, *args, **kwargs)  # type: ignore
+        if self.midi_player:
+            self.midi_player.set_range(0, 5, 1)
 
         return result  # type: ignore
 
@@ -111,17 +108,16 @@ class UI:
 
             if selected_key == Settings.PLAY_MUSIC:
                 if value is True and new_value is False and self.midi_player:
-                    logger.debug("Player stopped")
                     self.midi_player.stop()
+                    del self.midi_player
+                    self.midi_player = None  # Deallocate from memory
                 elif value is False and new_value is True:
                     if self.midi_player is None:
-                        logger.debug("Player reinitialized")
                         self.midi_player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
-                    logger.debug("Player started")
                     self.midi_player.start()
+
             if selected_key == Settings.APPLIST_FOLDER:
                 self.app_list_man = AppListManager(self.steam_path)
-            objgraph.show_growth()
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator
