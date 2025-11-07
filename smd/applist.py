@@ -7,7 +7,7 @@ from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
 from smd.http_utils import get_product_info
-from smd.prompts import prompt_dir, prompt_select, prompt_text
+from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
     AppListChoice,
@@ -211,9 +211,8 @@ class AppListManager:
                 name = organized[app_id]["name"]
                 depots = organized[app_id].get("depots")
                 if depots:
-                    select_children: bool = prompt_select(
+                    select_children: bool = prompt_confirm(
                         f"Would you to select all Depot IDs related to {name}?",
-                        [("Yes", True), ("No", False)],
                     )
                     if select_children:
                         for x in depots:

@@ -5,7 +5,7 @@ from pathlib import Path
 from pathvalidate import sanitize_filename
 
 from smd.http_utils import get_game_name
-from smd.prompts import prompt_select
+from smd.prompts import prompt_confirm
 from smd.storage.vdf import VDFLoadAndDumper, vdf_dump
 from smd.structs import LuaParsedInfo
 from smd.utils import enter_path
@@ -19,9 +19,9 @@ class ACFWriter:
         acf_file = self.steam_lib_path / f"steamapps/appmanifest_{lua.app_id}.acf"
         do_write_acf = True
         if acf_file.exists():
-            do_write_acf = prompt_select(
+            do_write_acf = not prompt_confirm(
                 ".acf file found. Is this an update?",
-                [("Yes", False), ("No (Overwrites the .acf file)", True)],
+                false_msg="No (Overwrites the .acf file)"
             )
 
         if do_write_acf:

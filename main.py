@@ -7,7 +7,7 @@ from colorama import Fore, Style
 from colorama import init as color_init
 from steam.client import SteamClient  # type: ignore
 
-from smd.prompts import prompt_select
+from smd.prompts import prompt_confirm, prompt_select
 from smd.registry_access import get_steam_path
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
@@ -107,8 +107,8 @@ if __name__ == "__main__":
         elif return_code == MainReturnCode.LOOP_NO_PROMPT:
             continue
         elif return_code == MainReturnCode.LOOP:
-            if exit := prompt_select(
-                "Go back to the Main Menu?", [("Yes", False), ("No (Exit)", True)]
+            if not prompt_confirm(
+                "Go back to the Main Menu?", false_msg="No (Exit)"
             ):
                 break
     print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)

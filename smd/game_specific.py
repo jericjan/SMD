@@ -12,7 +12,13 @@ from typing import Literal, NamedTuple, Optional, overload
 from steam.client import SteamClient  # type: ignore
 
 from smd.http_utils import get_product_info
-from smd.prompts import prompt_file, prompt_secret, prompt_select, prompt_text
+from smd.prompts import (
+    prompt_confirm,
+    prompt_file,
+    prompt_secret,
+    prompt_select,
+    prompt_text,
+)
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
@@ -219,10 +225,9 @@ class GameHandler:
 
     def crack_dll(self, app_id: str, dll_path: Path):
         self._crack_dll_core(app_id, dll_path)
-        gen_achievements = prompt_select(
+        gen_achievements = prompt_confirm(
             "Would you like to generate config files for gbe_fork? "
-            "(Contains achievement data)",
-            [("Yes", True), ("No", False)],
+            "(Contains achievement data)"
         )
         if gen_achievements:
             self.run_gen_emu(

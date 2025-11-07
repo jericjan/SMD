@@ -1,11 +1,9 @@
-
-
 import re
 from pathlib import Path
 from typing import Optional
 
 from smd.lua.endpoints import get_manilua, get_oureverday
-from smd.prompts import prompt_file, prompt_select, prompt_text
+from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
 from smd.zip import read_lua_from_zip
 
@@ -88,11 +86,9 @@ def download_lua(dest: Path) -> LuaResult:
         lua_path = get_manilua(dest, app_id)
 
     if lua_path is None:
-        restart = prompt_select(
-            "Could not find it. Try again?",
-            [("Yes", True), ("No (Add a .lua instead)", False)],
-        )
-        if restart:
+        if prompt_confirm(
+            "Could not find it. Try again?", false_msg="No (Add a .lua instead)"
+        ):
             return LuaResult(None, None, None)
         print("Switching to manual .lua selection...")
         return LuaResult(None, None, LuaChoice.ADD_LUA)

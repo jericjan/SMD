@@ -12,7 +12,7 @@ from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.midi import MidiPlayer
-from smd.prompts import prompt_secret, prompt_select, prompt_text
+from smd.prompts import prompt_confirm, prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.structs import (
@@ -92,10 +92,7 @@ class UI:
                 + ("[ENCRYPTED]" if selected_key.hidden else str(value))
                 + Style.RESET_ALL
             )
-            edit = prompt_select(
-                "Do you want to edit this setting?", [("Yes", True), ("No", False)]
-            )
-            if not edit:
+            if not prompt_confirm("Do you want to edit this setting?"):
                 continue
             if isinstance(value, bool):
                 new_value = prompt_select(

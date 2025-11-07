@@ -121,7 +121,7 @@ def prompt_secret(
 
 def prompt_confirm(
     msg: str, true_msg: Optional[str] = None, false_msg: Optional[str] = None
-):
+) -> bool:
     # inquirer.confirm exists but I prefer this
     return prompt_select(
         msg,
