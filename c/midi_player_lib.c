@@ -40,29 +40,36 @@ static void AudioCallback(ma_device *pDevice, void *pOutput, const void *pInput,
              g_Player->midi_current && g_Player->msec_time >= g_Player->midi_current->time;
              g_Player->midi_current = g_Player->midi_current->next)
         {
-            switch (g_Player->midi_current->type)
+            tml_message *msg = g_Player->midi_current;
+
+            switch (msg->type)
             {
+            // NOTE: tsf doesn't have support for TML_KEY_PRESSURR and TML_CHANNEL_PRESSURE
+
             // Sets the instrument.
             case TML_PROGRAM_CHANGE:
-                tsf_channel_set_presetnumber(g_Player->soundfont, g_Player->midi_current->channel, g_Player->midi_current->program, (g_Player->midi_current->channel == 9));
+                boolean is_drums = msg->channel == 9;
+                tsf_channel_set_presetnumber(g_Player->soundfont, msg->channel, msg->program, is_drums);
                 break;
 
-            // These produce sound.
+            // Channel-specific
             case TML_NOTE_ON:
-                if (g_Player->channel_active[g_Player->midi_current->channel])
-                    tsf_channel_note_on(g_Player->soundfont, g_Player->midi_current->channel, g_Player->midi_current->key, g_Player->midi_current->velocity / 127.0f);
+                // Normalize to range (-1 to 1)
+                float velocity = msg->velocity / 127.0f;
+                if (g_Player->channel_active[msg->channel])
+                    tsf_channel_note_on(g_Player->soundfont, msg->channel, msg->key, velocity);
                 break;
             case TML_NOTE_OFF:
-                if (g_Player->channel_active[g_Player->midi_current->channel])
-                    tsf_channel_note_off(g_Player->soundfont, g_Player->midi_current->channel, g_Player->midi_current->key);
+                if (g_Player->channel_active[msg->channel])
+                    tsf_channel_note_off(g_Player->soundfont, msg->channel, msg->key);
                 break;
             case TML_PITCH_BEND:
-                if (g_Player->channel_active[g_Player->midi_current->channel])
-                    tsf_channel_set_pitchwheel(g_Player->soundfont, g_Player->midi_current->channel, g_Player->midi_current->pitch_bend);
+                if (g_Player->channel_active[msg->channel])
+                    tsf_channel_set_pitchwheel(g_Player->soundfont, msg->channel, msg->pitch_bend);
                 break;
             case TML_CONTROL_CHANGE:
-                if (g_Player->channel_active[g_Player->midi_current->channel])
-                    tsf_channel_midi_control(g_Player->soundfont, g_Player->midi_current->channel, g_Player->midi_current->control, g_Player->midi_current->control_value);
+                if (g_Player->channel_active[msg->channel])
+                    tsf_channel_midi_control(g_Player->soundfont, msg->channel, msg->control, msg->control_value);
                 break;
             }
         }
