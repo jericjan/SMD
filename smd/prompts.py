@@ -126,9 +126,7 @@ def prompt_confirm(
     return prompt_select(
         msg,
         [
-            true_msg if true_msg else "Yes",
-            True,
-            false_msg if false_msg else "No",
-            False,
+            (true_msg if true_msg else "Yes", True),
+            (false_msg if false_msg else "No", False),
         ],
     )
