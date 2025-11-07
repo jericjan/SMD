@@ -18,6 +18,7 @@ class MidiPlayer:
         self.CIntArray16 = ctypes.c_int * 16
         self.soundfont = str(MidiFiles.SOUNDFONT.value.resolve()).encode()
         self.midi = str(MidiFiles.MIDI.value.resolve()).encode()
+        logger.debug("MidiPlayer initialized")
 
     def start(self):
         # All channels on by default
@@ -43,6 +44,7 @@ class MidiPlayer:
         }
 
         logger.debug(f"MIDI file uses channels: {self.used_channels}")
+        logger.debug("MidiPlayer started")
 
     def toggle_channel(self, channel_to_toggle: int):
         try:
@@ -76,3 +78,4 @@ class MidiPlayer:
 
     def stop(self):
         self.player_lib.StopPlayback()
+        logger.debug("MidiPlayer stopped")

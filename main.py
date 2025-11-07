@@ -15,10 +15,17 @@ from smd.utils import root_folder
 
 VERSION = "3.1.1"
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
+logger = logging.getLogger("smd")
+logger.setLevel(logging.DEBUG)
 
-refs = []
+fh = logging.FileHandler("debug.log")
+fh.setFormatter(
+    logging.Formatter(
+        "%(asctime)s::%(name)s::%(levelname)s::%(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
+)
+logger.addHandler(fh)
 
 
 def main(ui: UI) -> MainReturnCode:
