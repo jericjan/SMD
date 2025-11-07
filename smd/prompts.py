@@ -48,7 +48,7 @@ def prompt_select(
     if cancellable:
         new_choices.append(Choice(value=None, name="[Back]"))
     cmd = inquirer.fuzzy if fuzzy else inquirer.select  # type: ignore
-    obj = cmd(message=msg, choices=new_choices, default=default, **kwargs)
+    obj = cmd(message=msg, choices=new_choices, default=default, vi_mode=True, **kwargs)
     result = obj.execute()
     _clean_prompt(obj)
     return result
