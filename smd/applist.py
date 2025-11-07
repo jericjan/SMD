@@ -26,7 +26,6 @@ class AppListManager:
     def __init__(self, steam_path: Path):
         self.max_id_limit = 168
         self.steam_path = steam_path
-        self.last_idx = 0
 
         # App ID / Depot IDs mapped to their name and type
         self.id_map: dict[int, DepotOrAppID] = {}
@@ -56,24 +55,32 @@ class AppListManager:
                 Fore.YELLOW + str(self.applist_folder.resolve()) + Style.RESET_ALL
             )
             print(f"Your AppList folder is {colorized}")
+        self.fix_names()
 
     def get_local_ids(self, sort: bool = False) -> list[AppListFile]:
+        """Returns a list of tuple(path, app_id) and
+        updates self.last_idx to the filename with the largest number"""
+        self.last_idx = -1
         ids: list[AppListFile] = []
         for file in self.applist_folder.glob("*.txt"):
             if file.stem.isdigit():
-                if int(file.stem) > self.last_idx:
-                    self.last_idx = int(file.stem)
+                file_idx = int(file.stem) if file.stem.isnumeric() else -1
+                if file_idx > self.last_idx:
+                    self.last_idx = file_idx
             ids.append(AppListFile(file, int(file.read_text(encoding="utf-8").strip())))
         if sort:
             ids.sort(key=lambda x: int(x.path.stem))
         return ids
 
-    def add_ids(self, app_ids: Union[int, list[int], LuaParsedInfo]):
+    def add_ids(self, data: Union[int, list[int], LuaParsedInfo]):
         """Adds IDs to the AppList folder"""
-        if isinstance(app_ids, int):
-            app_ids = [app_ids]
-        if isinstance(app_ids, LuaParsedInfo):
-            app_ids = [int(app_ids.app_id), *[int(x.depot_id) for x in app_ids.depots]]
+        if isinstance(data, int):
+            app_ids = [data]
+        elif isinstance(data, LuaParsedInfo):
+            app_ids = [int(data.app_id), *[int(x.depot_id) for x in data.depots]]
+        else:
+            app_ids = data
+
         for app_id in app_ids:
             local_ids = [x.app_id for x in self.get_local_ids()]
             if app_id not in local_ids:
@@ -108,6 +115,14 @@ class AppListManager:
             new_name = remaining_id.path.parent / f"{new_idx}.txt"
             if remaining_id.path.name != new_name.name:
                 remaining_id.path.rename(new_name)
+
+    def fix_names(self):
+        """Fixes filenames if they're wrong (e.g. 0.txt is missing, gap in numbering)"""
+        ids = [x.path for x in self.get_local_ids(sort=True)]
+        for new_idx, old_path in enumerate(ids):
+            new_name = old_path.parent / f"{new_idx}.txt"
+            if new_name.name != old_path.name:
+                old_path.rename(new_name)
 
     def tweak_last_digit(self, app_id: int):
         chars = list(str(app_id))
