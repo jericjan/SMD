@@ -218,13 +218,17 @@ class UI:
         acf = ACFWriter(lib_path)
 
         parsed_lua = lua_manager.fetch_lua(lua_choice)
+        print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
+        print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
         config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)
+        print(Fore.YELLOW + "\nACF Writing:" + Style.RESET_ALL)
         acf.write_acf(parsed_lua)
+        print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         downloader.download_manifests(parsed_lua)
         print(
-            Fore.GREEN + "Success! Close Steam and run DLLInjector again "
+            Fore.GREEN + "\nSuccess! Close Steam and run DLLInjector again "
             "(or not depending on how you installed Greenluma). "
             'Your game should show up in the library ready to "update"'
             + Style.RESET_ALL

@@ -117,3 +117,18 @@ def prompt_secret(
     res = obj.execute()
     _clean_prompt(obj)
     return res
+
+
+def prompt_confirm(
+    msg: str, true_msg: Optional[str] = None, false_msg: Optional[str] = None
+):
+    # inquirer.confirm exists but I prefer this
+    return prompt_select(
+        msg,
+        [
+            true_msg if true_msg else "Yes",
+            True,
+            false_msg if false_msg else "No",
+            False,
+        ],
+    )

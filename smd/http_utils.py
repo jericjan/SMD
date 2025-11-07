@@ -1,14 +1,20 @@
 import asyncio
+from contextlib import contextmanager
 import json
 import logging
 import msvcrt
-from typing import Any, Literal, Optional, Union, overload
+from tempfile import TemporaryFile
+from typing import Any, Generator, Literal, Optional, Union, overload, TYPE_CHECKING
 
 import httpx
 from steam.client import SteamClient  # type: ignore
+from tqdm import tqdm  # type: ignore
 
-from smd.prompts import prompt_text
+from smd.prompts import prompt_confirm, prompt_text
 from smd.structs import ProductInfo  # type: ignore
+
+if TYPE_CHECKING:
+    from tempfile import _TemporaryFileWrapper  # pyright: ignore[reportPrivateUsage]
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +52,21 @@ async def get_request(
             print(f"Response: {response.text}")
 
     except httpx.RequestError as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {repr(e)}")
+
+
+def get_request_raw(url: str):
+    resp = None
+    while True:
+        try:
+            resp = httpx.get(url, timeout=None)
+        except httpx.HTTPError as e:
+            print(f"Network error: {repr(e)}")
+            if prompt_confirm("Try again?"):
+                continue
+        break
+    if resp:
+        return resp.content
 
 
 async def _wait_for_enter():
@@ -60,6 +80,8 @@ async def _wait_for_enter():
         await asyncio.sleep(0.05)
 
 
+# Lowkey don't remember why i wrote it like this.
+# It uses a default timeout of 10s but i think it still got stuck?
 async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     """Gets a manifest request code, given a manifest ID
 
@@ -70,7 +92,7 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
         str: The request code
     """
     url = f"http://gmrc.openst.top/manifest/{manifest_id}"
-    print(f"Requesting from URL: {url}")
+    print(f"Getting request code from: {url}")
 
     request_task = asyncio.create_task(get_request(url))
     cancel_task = asyncio.create_task(_wait_for_enter())
@@ -130,3 +152,39 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
         logger.debug(f"get_product_info retured: {json.dumps(info)}")
         return ProductInfo(info)
     return None
+
+
+@contextmanager
+def download_to_tempfile(
+    url: str, headers: Optional[dict[str, str]] = None, chunk_size: int = (1024**2) // 2
+) -> Generator[Union["_TemporaryFileWrapper[bytes]", None], None, None]:
+    """Downloads and yields a tempfile, Defaults to 0.5MiB for chunk size"""
+    temp_f = TemporaryFile()
+    try:
+        with httpx.stream(
+            "GET", url, headers=headers, follow_redirects=True
+        ) as response:
+
+            try:
+                total = int(response.headers.get("Content-Length", "0"))
+            except Exception as e:
+                print(f"Could not parse Content-Length header: {e}")
+                total = 0
+
+            with tqdm(
+                desc="Downloading",
+                total=total,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as pbar:
+                for chunk in response.iter_bytes(chunk_size=chunk_size):
+                    temp_f.write(chunk)
+                    pbar.update(len(chunk))
+        temp_f.seek(0)
+        yield temp_f
+    except httpx.HTTPError as e:
+        print(f"Network error: {repr(e)}")
+        yield None
+    finally:
+        temp_f.close()

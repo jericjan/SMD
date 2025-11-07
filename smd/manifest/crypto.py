@@ -4,6 +4,7 @@ import struct
 import zlib
 from pathlib import Path
 
+from colorama import Fore, Style
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from steam.protobufs.content_manifest_pb2 import (
@@ -80,7 +81,7 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
     original_payload = ContentManifestPayload()
     original_payload.ParseFromString(payload_bytes)
 
-    print(f"\nFound {len(original_payload.mappings)} file mappings. Processing...")
+    print(f"Decrypting {len(original_payload.mappings)} file mappings... ", end="")
 
     # Decrypt filenames
     key_bytes = bytes.fromhex(dec_key)
@@ -95,7 +96,7 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
             new_mapping.linktarget = decrypt_filename(mapping.linktarget, key_bytes)
 
         new_mappings.append(new_mapping)
-    print("Decrypted all filenames.")
+    print("Done!")
 
     # Create the new payload object with the sorted, decrypted data
     fixed_payload = ContentManifestPayload()
@@ -116,7 +117,6 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
     fixed_metadata_bytes = metadata.SerializeToString()
 
     # Write the new manifest file
-    print(f"\nWriting new manifest to '{output_filepath}'...")
     with open(output_filepath, "wb") as f:
         f.write(struct.pack("<II", PROTOBUF_PAYLOAD_MAGIC, len(fixed_payload_bytes)))
         f.write(fixed_payload_bytes)
@@ -126,3 +126,8 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
 
         f.write(struct.pack("<II", PROTOBUF_SIGNATURE_MAGIC, 0))
         f.write(struct.pack("<I", PROTOBUF_ENDOFMANIFEST_MAGIC))
+    print(
+        Fore.BLUE
+        + f"Manifest created at: {output_filepath.resolve()}"
+        + Style.RESET_ALL
+    )

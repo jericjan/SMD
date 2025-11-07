@@ -5,13 +5,11 @@ import io
 import json
 import logging
 from pathlib import Path
-from tempfile import TemporaryFile
 
-import httpx
 from colorama import Fore, Style
 
-from smd.http_utils import get_request
-from smd.prompts import prompt_secret
+from smd.http_utils import download_to_tempfile, get_request
+from smd.prompts import prompt_confirm, prompt_secret
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import Settings
 from smd.zip import read_lua_from_zip
@@ -35,7 +33,6 @@ def get_oureverday(dest: Path, app_id: str):
 
 def get_manilua(dest: Path, app_id: str):
     url = f"https://www.piracybound.com/api/game/{app_id}"
-    chunk_size = (1024**2) // 2  # 0.5 MiB
 
     if (manilua_key := get_setting(Settings.MANILUA_KEY)) is None:
         manilua_key = prompt_secret(
@@ -53,32 +50,25 @@ def get_manilua(dest: Path, app_id: str):
     }
 
     logger.debug(f"Downloading lua files from {url}")
-    with httpx.stream("GET", url, headers=headers) as response:
-        try:
-            total = int(response.headers.get("Content-Length", "0"))
-        except Exception as e:
-            print(f"Could not parse Content-Length header: {e}")
-            total = 0
-
-        bytes_downloaded = 0
-        with TemporaryFile(buffering=chunk_size) as f:
-            for chunk in response.iter_bytes(chunk_size=chunk_size):
-                if not chunk:
+    lua_bytes = b''
+    while True:
+        with download_to_tempfile(url, headers) as tf:
+            if tf is None:
+                if prompt_confirm("Try again?"):
                     continue
-                f.write(chunk)
-                bytes_downloaded += len(chunk)
-                print(f"Downloaded {bytes_downloaded} / {total}")
+                break
 
-            f.seek(0)
-            data = f.read()
-
+            data = tf.read()
             lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
             if lua_bytes is None:
-                f.seek(0)
+                tf.seek(0)
                 try:
-                    print(Fore.RED + json.dumps(json.load(f)) + Style.RESET_ALL)
+                    print(Fore.RED + json.dumps(json.load(tf)) + Style.RESET_ALL)
                 except json.JSONDecodeError:
-                    print("Did not receive a ZIP file or JSON: \n" + f.read().decode())
+                    print(
+                        "Did not receive a ZIP file or JSON: \n" + tf.read().decode()
+                    )
+        break
 
     lua_path = dest / f"{app_id}.lua"
     if lua_bytes:

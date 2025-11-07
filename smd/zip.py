@@ -28,7 +28,7 @@ def read_lua_from_zip(path: Union[Path, BytesIO], decode: bool = True):
         with zipfile.ZipFile(path) as f:
             for file in f.filelist:
                 if file.filename.endswith(".lua"):
-                    print(f".lua found: {file.filename}")
+                    print(f".lua found in ZIP: {file.filename}")
                     lua_contents = f.read(file)
                     break  # lua found in ZIP, stop searching
             else:

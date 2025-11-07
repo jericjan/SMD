@@ -1,18 +1,18 @@
 import asyncio
+import logging
 import time
 from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import urljoin
 
-import httpx
+from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.http_utils import get_gmrc, get_product_info
+from smd.http_utils import get_gmrc, get_product_info, get_request_raw
 from smd.manifest.crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
 from smd.structs import DepotManifestMap, LuaParsedInfo  # type: ignore
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -73,14 +73,19 @@ class ManifestDownloader:
         """Gets latest manifest IDs and downloads respective manifests"""
         cdn = CDNClient(self.client)
         manifest_ids = self.get_manifest_ids(lua)
+
         # Download and decrypt manifests
         for pair in lua.depots:
             depot_id = pair.depot_id
             dec_key = pair.decryption_key
             manifest_id = manifest_ids[depot_id]
+            print(
+                Fore.CYAN
+                + f"\nDepot {depot_id} - Manifest {manifest_id}"
+                + Style.RESET_ALL
+            )
 
             while True:
-                print("Getting request code... ", end="")
                 req_code = asyncio.run(get_gmrc(manifest_id))
                 print(f"Request code is: {req_code}")
                 if req_code is not None:
@@ -98,10 +103,10 @@ class ManifestDownloader:
             )
 
             logger.debug(f"Download manifest from {manifest_url}")
-            r = httpx.get(manifest_url, timeout=None)
-            r.raise_for_status()
+            manifest = get_request_raw(manifest_url)
 
-            output_file = (
-                self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
-            )
-            decrypt_manifest(r.content, output_file, dec_key)
+            if manifest:
+                output_file = (
+                    self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
+                )
+                decrypt_manifest(manifest, output_file, dec_key)
