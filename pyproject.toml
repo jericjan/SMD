@@ -22,6 +22,7 @@ dependencies = [
     "pynacl>=1.6.0",
     "pyperclip>=1.11.0",
     "steam[client]>=1.4.4",
+    "tqdm>=4.67.1",
     "vdf>=3.4",
 ]
 
