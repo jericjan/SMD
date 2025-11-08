@@ -155,6 +155,7 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
             )
         except gevent.Timeout:
             print("Request timed out. Trying again")
+            client.anonymous_login()  # might fix the endless timeout loop
             continue
         break
     if info:
