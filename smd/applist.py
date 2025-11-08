@@ -14,6 +14,7 @@ from smd.structs import (
     AppIDInfo,
     AppListChoice,
     AppListFile,
+    DLCTypes,
     DepotOrAppID,
     LuaParsedInfo,
     MainReturnCode,
@@ -133,6 +134,7 @@ class AppListManager:
         chars[-1] = "0"
         return int("".join(chars))
 
+    # TODO: move this to http_utils.py?
     def get_product_info_with_retry(self, client: SteamClient, ids: list[int]):
         if not ids:
             raise ValueError("`ids` should not be empty")
@@ -244,6 +246,46 @@ class AppListManager:
                         for x in depots:
                             unique_ids.add(x)
         self.remove_ids(list(unique_ids))
+
+    def get_non_depot_dlcs(self, client: SteamClient, base_id: int):
+        info = self.get_product_info_with_retry(client, [base_id])
+        dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
+        logger.debug(f"listofdlc: {dlcs}")
+        if not dlcs:
+            print("No DLC found.")
+        else:
+            assert isinstance(dlcs, str)
+            dlcs = [int(x) for x in dlcs.split(",")]
+            dlc_info = self.get_product_info_with_retry(client, dlcs)
+            if dlc_info:
+                if apps := dlc_info.get("apps"):
+                    non_depot_dlcs: list[int] = []
+                    for depot_id, data in apps.items():
+                        name = enter_path(data, 'common', 'name')
+                        depots = enter_path(data, 'depots')
+                        release_state = enter_path(data, 'common', 'releasestate')
+                        dlc_type = (
+                            (DLCTypes.DEPOT if depots else DLCTypes.NOT_DEPOT)
+                            if release_state == "released"
+                            else DLCTypes.UNRELEASED
+                        )
+                        if dlc_type == DLCTypes.NOT_DEPOT:
+                            non_depot_dlcs.append(int(depot_id))
+                        print(
+                            (Fore.GREEN if dlc_type == DLCTypes.NOT_DEPOT else Fore.RED)
+                            + f"{depot_id} -> {name} ({dlc_type.value})"
+                            + Style.RESET_ALL
+                        )
+                    if len(non_depot_dlcs) > 0:
+                        print("This game has DLCs that aren't depots!")
+                        if prompt_confirm("Do you want to add these to the AppList?"):
+                            self.add_ids(non_depot_dlcs)
+                    else:
+                        print(
+                            "This game has no DLCs that aren't depots. :(\n"
+                            "You'll have to find a lua that has "
+                            "decryption keys for them."
+                        )
 
     def display_menu(self, client: SteamClient) -> MainReturnCode:
         applist_choice: Optional[AppListChoice] = prompt_select(

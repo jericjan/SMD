@@ -180,3 +180,9 @@ class MidiFiles(Enum):
 class ManifestGetModes(Enum):
     AUTO = "Auto"
     MANUAL = "Manual"
+
+
+class DLCTypes(Enum):
+    DEPOT = "DEPOT"
+    NOT_DEPOT = "NOT A DEPOT"
+    UNRELEASED = "UNRELEASED"
