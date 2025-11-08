@@ -46,7 +46,6 @@ def music_toggle_decorator(func):  # type: ignore
 
 
 class UI:
-
     def __init__(
         self,
         client: SteamClient,
@@ -182,6 +181,8 @@ class UI:
     def select_steam_library(self):
         """Returns success status"""
         steam_libs = get_steam_libs(self.steam_path)
+        if len(steam_libs) == 1:
+            return steam_libs[0]
         steam_lib_path: Optional[Path] = prompt_select(
             "Select a Steam library location:",
             steam_libs,
