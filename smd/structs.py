@@ -114,9 +114,9 @@ class GenEmuMode(Enum):
 class DepotOrAppID(NamedTuple):
     name: str
     "Name of the app"
-    id: str
+    id: int
     "The App/Depot ID"
-    parent_id: Optional[str]
+    parent_id: Optional[int]
     "The parent App ID (if it's a depot)"
 
 
@@ -129,7 +129,7 @@ class AppIDInfoRequired(TypedDict):
 
 
 class AppIDInfo(AppIDInfoRequired, total=False):
-    depots: list[str]
+    depots: list[int]
     "(Optional) A list of Depot IDs under this app"
 
 
@@ -177,3 +177,8 @@ class MidiFiles(Enum):
     MIDI_PLAYER_DLL = root_folder() / "c/midi_player_lib.dll"
     SOUNDFONT = root_folder() / "c/Extended_Super_Mario_64_Soundfont.sf2"
     MIDI = root_folder() / "c/th105_broken_moon_redpaper_.mid"
+
+
+class ManifestGetModes(Enum):
+    AUTO = "Auto"
+    MANUAL = "Manual"

@@ -142,15 +142,18 @@ class AppListManager:
         apps_data = enter_path(product_info, "apps")
 
         for app_id, app_details in apps_data.items():
+            assert isinstance(app_id, int)
             app_name = enter_path(app_details, "common", "name")
             depots = enter_path(app_details, "depots")
 
-            self.id_map[int(app_id)] = DepotOrAppID(app_name, app_id, None)
+            self.id_map[app_id] = DepotOrAppID(app_name, app_id, None)
 
             for depot_id in depots.keys():
                 if depot_id.isdigit():
+                    depot_id = int(depot_id)
+                    parent_id = app_id if app_id != depot_id else None
                     self.id_map[int(depot_id)] = DepotOrAppID(
-                        app_name, depot_id, app_id
+                        app_name, int(depot_id), parent_id
                     )
 
     def prompt_id_deletion(self, client: SteamClient):
@@ -189,7 +192,10 @@ class AppListManager:
                     )
                     app.setdefault("depots", []).append(item.id)
                     if "exists" not in app:
-                        app["exists"] = False
+                        if item.id == item.parent_id:
+                            app["exists"] = True
+                        else:
+                            app["exists"] = False
                         app["name"] = item.name
                 else:
                     app = enter_path(organized, app_id, mutate=True)
@@ -207,7 +213,7 @@ class AppListManager:
             depots = val.get("depots")
             if depots:
                 for depot in depots:
-                    menu_items.append((f"└──>{depot}", int(depot)))
+                    menu_items.append((f"└──>{depot}", depot))
         ids_to_delete: Optional[list[int]] = prompt_select(
             "Select IDs to delete from AppList:",
             menu_items,
@@ -231,7 +237,7 @@ class AppListManager:
                     )
                     if select_children:
                         for x in depots:
-                            unique_ids.add(int(x))
+                            unique_ids.add(x)
         self.remove_ids(list(unique_ids))
 
     def display_menu(self, client: SteamClient) -> MainReturnCode:
