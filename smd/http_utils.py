@@ -6,6 +6,7 @@ import msvcrt
 from tempfile import TemporaryFile
 from typing import Any, Generator, Literal, Optional, Union, overload, TYPE_CHECKING
 
+import gevent
 import httpx
 from steam.client import SteamClient  # type: ignore
 from tqdm import tqdm  # type: ignore
@@ -147,7 +148,13 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
     if not client.logged_on:
         print("Logging in anonymously...")
         client.anonymous_login()
-    info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
+    while True:
+        try:
+            info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
+        except gevent.Timeout:
+            print("Request timed out. Trying again")
+            continue
+        break
     if info:
         logger.debug(f"get_product_info retured: {json.dumps(info)}")
         return ProductInfo(info)
