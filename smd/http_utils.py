@@ -150,7 +150,9 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
         client.anonymous_login()
     while True:
         try:
-            info = client.get_product_info(app_ids)  # pyright: ignore[reportUnknownMemberType]
+            info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
+                app_ids
+            )
         except gevent.Timeout:
             print("Request timed out. Trying again")
             continue

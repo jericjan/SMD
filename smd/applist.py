@@ -1,5 +1,6 @@
 """For managing Greenluma's AppList folder"""
 
+import logging
 from pathlib import Path
 from typing import Callable, Optional, Union
 
@@ -10,6 +11,7 @@ from smd.http_utils import get_product_info
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
+    AppIDInfo,
     AppListChoice,
     AppListFile,
     DepotOrAppID,
@@ -20,6 +22,8 @@ from smd.structs import (
     Settings,
 )
 from smd.utils import enter_path
+
+logger = logging.getLogger(__name__)
 
 
 class AppListManager:
@@ -157,7 +161,8 @@ class AppListManager:
                     )
 
     def prompt_id_deletion(self, client: SteamClient):
-        ids = [int(x.app_id) for x in self.get_local_ids()]
+        # i'm not using set() cuz that doesn't preserve insertion order lmao
+        ids = list(dict.fromkeys([int(x.app_id) for x in self.get_local_ids()]))
         if not ids:
             print(
                 "There's nothing inside the AppList folder. "
@@ -165,7 +170,7 @@ class AppListManager:
                 "add a game with the tool."
             )
             return
-        info = self.get_product_info_with_retry(client, ids)
+        info = self.get_product_info_with_retry(client, list(ids))
         self.update_depot_info(info)
 
         still_missing: list[int] = []
@@ -185,35 +190,36 @@ class AppListManager:
             if app_id in self.id_map:
                 item = self.id_map[app_id]
                 if item.parent_id is not None:  # is a depot
-                    app = enter_path(
-                        organized,
-                        item.parent_id,
-                        mutate=True,
-                    )
-                    app.setdefault("depots", []).append(item.id)
-                    if "exists" not in app:
-                        if item.id == item.parent_id:
-                            app["exists"] = True
-                        else:
-                            app["exists"] = False
-                        app["name"] = item.name
+                    if item.parent_id in organized:
+                        info = organized[item.parent_id]
+                    else:
+                        info = AppIDInfo(False, item.name)
+                        organized[item.parent_id] = info
+                    info.depots.append(item.id)
+                    if item.id == item.parent_id:
+                        info.exists = True
                 else:
-                    app = enter_path(organized, app_id, mutate=True)
-                    app["exists"] = True
-                    app["name"] = item.name
+                    if app_id in organized:
+                        info = organized[app_id]
+                        info.exists = True
+                    else:
+                        organized[app_id] = AppIDInfo(True, item.name)
             else:
-                organized[app_id] = {"exists": True, "name": "UNKNOWN GAME"}
+                organized[app_id] = AppIDInfo(True, "UNKNOWN GAME")
 
         menu_items: list[tuple[str, int]] = []
 
-        for app_id, val in organized.items():
-            ext = "(MISSING)" if not val.get("exists") else ""
-            name = f"{app_id} - {val.get('name')} {ext}"
+        for app_id, info in organized.items():
+            ext = "(MISSING)" if not info.exists else ""
+            name = f"{app_id} - {info.name} {ext}"
             menu_items.append((name, app_id))
-            depots = val.get("depots")
-            if depots:
-                for depot in depots:
-                    menu_items.append((f"└──>{depot}", depot))
+            depots = info.depots
+            for depot in depots:
+                menu_items.append((f"└──>{depot}", depot))
+
+        if len(menu_items) < len(ids):
+            logger.warning("There are less menu items than actual IDs inside AppList.")
+
         ids_to_delete: Optional[list[int]] = prompt_select(
             "Select IDs to delete from AppList:",
             menu_items,
@@ -229,13 +235,12 @@ class AppListManager:
         selected_base_ids = [x for x in unique_ids if x in organized]
         if len(selected_base_ids) > 0:
             for app_id in selected_base_ids:
-                name = organized[app_id]["name"]
-                depots = organized[app_id].get("depots")
-                if depots:
-                    select_children: bool = prompt_confirm(
+                name = organized[app_id].name
+                depots = organized[app_id].depots
+                if len(depots) > 0:
+                    if prompt_confirm(
                         f"Would you to select all Depot IDs related to {name}?",
-                    )
-                    if select_children:
+                    ):
                         for x in depots:
                             unique_ids.add(x)
         self.remove_ids(list(unique_ids))

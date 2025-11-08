@@ -1,9 +1,9 @@
 """Aliases, Enums, NamedTuples, etc go here"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, NewType, Optional, TypedDict
+from typing import Any, Literal, NamedTuple, NewType, Optional
 
 from smd.utils import root_folder
 
@@ -120,16 +120,14 @@ class DepotOrAppID(NamedTuple):
     "The parent App ID (if it's a depot)"
 
 
-class AppIDInfoRequired(TypedDict):
+@dataclass
+class AppIDInfo():
     exists: bool
     """Whether this App ID exists in AppList
     (Sometimes a Depot ID is inside the folder but without an App ID)"""
     name: str
     "Name of the app"
-
-
-class AppIDInfo(AppIDInfoRequired, total=False):
-    depots: list[int]
+    depots: list[int] = field(default_factory=list[int])
     "(Optional) A list of Depot IDs under this app"
 
 
