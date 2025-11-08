@@ -49,7 +49,7 @@ async def get_request(
             except ValueError:
                 return
         else:
-            print(f"❌ Request failed with status code: {response.status_code}")
+            print(f"Error {response.status_code}")
             print(f"Response: {response.text}")
 
     except httpx.RequestError as e:
@@ -171,7 +171,7 @@ def download_to_tempfile(
     temp_f = TemporaryFile()
     try:
         with httpx.stream(
-            "GET", url, headers=headers, follow_redirects=True
+            "GET", url, headers=headers, follow_redirects=True, timeout=None
         ) as response:
 
             try:

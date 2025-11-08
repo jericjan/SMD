@@ -63,7 +63,9 @@ def get_manilua(dest: Path, app_id: str):
             if lua_bytes is None:
                 tf.seek(0)
                 try:
-                    print(Fore.RED + json.dumps(json.load(tf)) + Style.RESET_ALL)
+                    print(
+                        Fore.RED + json.dumps(json.load(tf), indent=2) + Style.RESET_ALL
+                    )
                 except json.JSONDecodeError:
                     print(
                         "Did not receive a ZIP file or JSON: \n" + tf.read().decode()

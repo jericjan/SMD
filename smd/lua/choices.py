@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from colorama import Fore, Style
+
 from smd.utils import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
@@ -69,7 +71,11 @@ def search_game() -> Optional[str]:
     if all_games_file.exists():
         mtime = all_games_file.stat().st_mtime
         mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %I:%M %p")
-        download = prompt_confirm(f"Do you want to update the list of every Game ID? (Last Modified: {mtime_str})", default=False)
+        download = prompt_confirm(
+            "Do you want to update the list of every Game ID? "
+            f"(Last Modified: {mtime_str})",
+            default=False,
+        )
     else:
         download = True
     if download:
@@ -91,7 +97,9 @@ def search_game() -> Optional[str]:
     if selection:
         match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection)
         assert match is not None
-        return match.group()
+        res = match.group()
+        print(f"{Fore.YELLOW + selection + Style.RESET_ALL} has been selected")
+        return res
 
 
 def download_lua(dest: Path) -> LuaResult:
