@@ -1,15 +1,14 @@
 import json
 import re
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 
-from pyfzf.pyfzf import FzfPrompt  # type: ignore
-
+from smd.fzf import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
-from smd.utils import enter_path, root_folder
+from smd.utils import enter_path
 from smd.zip import read_lua_from_zip
 
 
@@ -73,13 +72,11 @@ def search_game() -> Optional[str]:
             resp = json.load(tf)
         break
     games = enter_path(resp, "applist", "apps", "app")
-    games = (x.get("name") + f" [ID={x.get('appid')}]" for x in games)
-    fzf = FzfPrompt(root_folder() / "third_party/fzf/fzf.exe")
-    selection = cast(
-        list[str], fzf.prompt(games)  # pyright: ignore[reportUnknownMemberType]
-    )
+    games = [x.get("name") + f" [ID={x.get('appid')}]" for x in games]
+
+    selection = run_fzf(games)
     if selection:
-        match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection[0])
+        match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection)
         assert match is not None
         return match.group()
 

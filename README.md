@@ -94,7 +94,7 @@ This project includes the following third-party components:
 - [miniaudio](https://github.com/mackron/miniaudio) (MIT)
 - [fzf](https://github.com/junegunn/fzf) (MIT)
 
-Full license texts are available in the `third_party_licenses` directory.
+Full license texts are available in the `third_party_licenses` directory or as comments in the respective module file.
 
 # Credit
 Credit to RedPaper for the Broken Moon MIDI cover, originally arranged by U2 Akiyama and used in Touhou 7.5: Immaterial and Missing Power.
