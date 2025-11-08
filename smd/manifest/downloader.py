@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 from urllib.parse import urljoin
 
 from colorama import Fore, Style
@@ -12,7 +12,12 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 from smd.http_utils import get_gmrc, get_product_info, get_request_raw
 from smd.manifest.crypto import decrypt_manifest
 from smd.prompts import prompt_select, prompt_text
-from smd.structs import DepotManifestMap, LuaParsedInfo  # type: ignore
+from smd.structs import (  # type: ignore
+    DepotKeyPair,
+    DepotManifestMap,
+    LuaParsedInfo,
+    ManifestGetModes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +27,21 @@ class ManifestDownloader:
         self.client = client
         self.steam_path = steam_path
 
-    def get_manifest_ids(self, lua: LuaParsedInfo) -> DepotManifestMap:
+    def get_manifest_ids(
+        self, lua: LuaParsedInfo, depth: int = 0, auto: bool = False
+    ) -> DepotManifestMap:
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[str, str] = {}
 
         # Get manifest IDs. The official API doesn't return these,
         # so using steam module instead
         while True:
-            manifest_mode: Literal["Auto", "Manual"] = prompt_select(
-                "How would you like to obtain the manifest ID?", ["Auto", "Manual"]
-            )
+            manifest_mode: ManifestGetModes = prompt_select(
+                "How would you like to obtain the manifest ID?", list(ManifestGetModes)
+            ) if not auto else ManifestGetModes.AUTO
             app_info = (
                 get_product_info(self.client, [int(lua.app_id)])  # type: ignore
-                if manifest_mode == "Auto"
+                if manifest_mode == ManifestGetModes.AUTO
                 else None
             )
             depots_dict: dict[str, Any] = (
@@ -45,23 +52,41 @@ class ManifestDownloader:
 
             for pair in lua.depots:
                 depot_id = pair.depot_id
-                latest = (
+                manifest = (
                     depots_dict.get(str(depot_id), {})
                     .get("manifests", {})
                     .get("public", {})
                     .get("gid")
                 )
-                if latest is None:
-                    if manifest_mode == "Auto":
-                        print(
-                            "API failed. I need the latest manifest ID for this depot. "
-                            "Blank if you want to try the request again."
-                        )
-                    if not (latest := prompt_text(f"Depot {depot_id}: ")):
+                sub_manifest = None
+                if manifest is None:
+                    if manifest_mode == ManifestGetModes.AUTO:
+                        if depth < 1:
+                            sub = LuaParsedInfo(
+                                lua.path, lua.contents, lua.app_id, lua.depots
+                            )
+                            sub.app_id = depot_id
+                            # decryption key not needed
+                            sub.depots = [DepotKeyPair(depot_id, "")]
+                            print("This might be an inner depot...")
+                            sub_manifest = self.get_manifest_ids(
+                                sub, depth + 1, True
+                            ).get(depot_id)
+                        if sub_manifest is None:
+                            print(
+                                "API failed. "
+                                "I need the latest manifest ID for this depot. "
+                                "Blank if you want to try the request again."
+                            )
+                    if sub_manifest is None and not (
+                        manifest := prompt_text(f"Depot {depot_id}: ")
+                    ):
                         print("Blank entered. Let's try this again.")
-                        break
-                print(f"Depot {depot_id} has manifest {latest}")
-                manifest_ids[depot_id] = latest
+                        break                
+                if manifest is not None:
+                    print(f"Depot {depot_id} has manifest {manifest}")
+                manifest = sub_manifest if sub_manifest else manifest
+                manifest_ids[depot_id] = manifest
             else:
                 break  # User did not give a blank, end the loop
         return DepotManifestMap(manifest_ids)
