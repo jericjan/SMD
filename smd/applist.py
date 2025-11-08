@@ -164,7 +164,9 @@ class AppListManager:
 
     def prompt_id_deletion(self, client: SteamClient):
         # i'm not using set() cuz that doesn't preserve insertion order lmao
-        ids = list(dict.fromkeys([int(x.app_id) for x in self.get_local_ids()]))
+        ids = list(
+            dict.fromkeys([int(x.app_id) for x in self.get_local_ids(sort=True)])
+        )
         if not ids:
             print(
                 "There's nothing inside the AppList folder. "

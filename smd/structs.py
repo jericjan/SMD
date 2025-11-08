@@ -39,8 +39,8 @@ GAME_SPECIFIC_CHOICES = (
 
 
 class AppListChoice(Enum):
-    ADD = "Add an ID"
-    DELETE = "Delete an ID"
+    ADD = "Add IDs"
+    DELETE = "View/Delete IDs"
 
 
 class LuaEndpoint(Enum):
