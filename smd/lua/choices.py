@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -8,7 +9,7 @@ from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
-from smd.utils import enter_path
+from smd.utils import enter_path, root_folder
 from smd.zip import read_lua_from_zip
 
 
@@ -63,17 +64,29 @@ def add_new_lua() -> LuaResult:
 
 
 def search_game() -> Optional[str]:
-    while True:
-        with download_to_tempfile(
-            "https://api.steampowered.com/ISteamApps/GetAppList/v1/"
-        ) as tf:
-            if tf is None:
-                continue
-            resp = json.load(tf)
-        break
-    games = enter_path(resp, "applist", "apps", "app")
-    games = [x.get("name") + f" [ID={x.get('appid')}]" for x in games]
-
+    """Using fzf, lets a user search for a game, then returns game ID"""
+    all_games_file = (root_folder() / "all_games.txt")
+    if all_games_file.exists():
+        mtime = all_games_file.stat().st_mtime
+        mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %I:%M %p")
+        download = prompt_confirm(f"Do you want to update the list of every Game ID? (Last Modified: {mtime_str})", default=False)
+    else:
+        download = True
+    if download:
+        while True:
+            with download_to_tempfile(
+                "https://api.steampowered.com/ISteamApps/GetAppList/v1/"
+            ) as tf:
+                if tf is None:
+                    continue
+                resp = json.load(tf)
+            break
+        games = enter_path(resp, "applist", "apps", "app")
+        games = [x.get("name") + f" [ID={x.get('appid')}]" for x in games]
+        with all_games_file.open("w", encoding="utf=-8") as f:
+            f.write('\n'.join(games))
+    else:
+        games = all_games_file
     selection = run_fzf(games)
     if selection:
         match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection)

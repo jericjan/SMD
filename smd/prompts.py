@@ -120,7 +120,10 @@ def prompt_secret(
 
 
 def prompt_confirm(
-    msg: str, true_msg: Optional[str] = None, false_msg: Optional[str] = None
+    msg: str,
+    true_msg: Optional[str] = None,
+    false_msg: Optional[str] = None,
+    default: bool = True,
 ) -> bool:
     # inquirer.confirm exists but I prefer this
     return prompt_select(
@@ -129,4 +132,5 @@ def prompt_confirm(
             (true_msg if true_msg else "Yes", True),
             (false_msg if false_msg else "No", False),
         ],
+        default=default
     )
