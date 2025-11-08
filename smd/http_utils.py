@@ -1,10 +1,10 @@
 import asyncio
-from contextlib import contextmanager
 import json
 import logging
 import msvcrt
+from contextlib import contextmanager
 from tempfile import TemporaryFile
-from typing import Any, Generator, Literal, Optional, Union, overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
 
 import gevent
 import httpx
@@ -179,13 +179,14 @@ def download_to_tempfile(
             except Exception as e:
                 print(f"Could not parse Content-Length header: {e}")
                 total = 0
-
+            logger.debug(f"Total size is {total}")
             with tqdm(
                 desc="Downloading",
                 total=total,
                 unit="B",
                 unit_scale=True,
                 unit_divisor=1024,
+                miniters=1
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=chunk_size):
                     temp_f.write(chunk)

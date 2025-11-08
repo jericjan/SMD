@@ -1,10 +1,15 @@
+import json
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
+from pyfzf.pyfzf import FzfPrompt  # type: ignore
+
+from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
+from smd.utils import enter_path, root_folder
 from smd.zip import read_lua_from_zip
 
 
@@ -58,27 +63,56 @@ def add_new_lua() -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
+def search_game() -> Optional[str]:
+    while True:
+        with download_to_tempfile(
+            "https://api.steampowered.com/ISteamApps/GetAppList/v1/"
+        ) as tf:
+            if tf is None:
+                continue
+            resp = json.load(tf)
+        break
+    games = enter_path(resp, "applist", "apps", "app")
+    games = (x.get("name") + f" [ID={x.get('appid')}]" for x in games)
+    fzf = FzfPrompt(root_folder() / "third_party/fzf/fzf.exe")
+    selection = cast(
+        list[str], fzf.prompt(games)  # pyright: ignore[reportUnknownMemberType]
+    )
+    if selection:
+        match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection[0])
+        assert match is not None
+        return match.group()
+
+
 def download_lua(dest: Path) -> LuaResult:
     """Downloads a lua file from the available endpoints"""
 
     reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
 
     def validate_app_id(x: str) -> bool:
-        return bool(reg.search(x))
+        return bool(reg.search(x)) or x == ''
 
     def filter_app_id(x: str) -> str:
+        if x == "":
+            return x
         match = reg.search(x)
         assert match is not None  # lmao
         return match.group()
 
     source: LuaEndpoint = prompt_select("Select an endpoint:", list(LuaEndpoint))
 
-    app_id = prompt_text(
-        "Enter the App ID or Store link:",
+    app_id: str = prompt_text(
+        "Enter the App ID or Store link. Leave it blank to search for games:",
         validator=validate_app_id,
         invalid_msg="Not a valid format.",
         filter=filter_app_id,
     )
+
+    if not app_id:
+        if x := search_game():
+            app_id = x
+        else:
+            return LuaResult(None, None, None)
 
     if source == LuaEndpoint.OUREVERYDAY:
         lua_path = get_oureverday(dest, app_id)
