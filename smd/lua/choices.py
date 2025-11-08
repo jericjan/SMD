@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from smd.fzf import run_fzf
+from smd.utils import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
