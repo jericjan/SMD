@@ -13,7 +13,7 @@ from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
 from smd.utils import root_folder
 
-VERSION = "3.2.0"
+VERSION = "3.3.0"
 
 logger = logging.getLogger("smd")
 logger.setLevel(logging.DEBUG)
