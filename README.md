@@ -92,6 +92,7 @@ This project includes the following third-party components:
 - [TinyMidiLoader](https://github.com/schellingb/TinySoundFont) (ZLIB)
 - [TinySoundFont](https://github.com/schellingb/TinySoundFont) (MIT)
 - [miniaudio](https://github.com/mackron/miniaudio) (MIT)
+- [fzf](https://github.com/junegunn/fzf) (MIT)
 
 Full license texts are available in the `third_party_licenses` directory.
 
