@@ -1,9 +1,11 @@
 import asyncio
 import functools
 from collections import OrderedDict
+import os
 from pathlib import Path
 import subprocess
 from typing import Callable, Optional
+import zipfile
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
@@ -256,9 +258,11 @@ class UI:
             print(Fore.GREEN + "You're up to date!" + Style.RESET_ALL)
             return MainReturnCode.LOOP_NO_PROMPT
         print(Fore.RED + "Your SMD is outdated." + Style.RESET_ALL)
+        if not prompt_confirm("Would you like to update?"):
+            return MainReturnCode.LOOP_NO_PROMPT
         download_url = enter_path(resp, "assets", 0, "browser_download_url")
         if not download_url:
-            print("Couldn't find the download URL :()")
+            print("Couldn't find the download URL :(")
             return MainReturnCode.LOOP_NO_PROMPT
         print(f"Download URL: {download_url}")
         aria2c_exe = root_folder() / "third_party/aria2c/aria2c.exe"
@@ -276,10 +280,40 @@ class UI:
                 download_url,
             ]
         )
+        zip_name = Path(download_url).name
         print(
             Fore.GREEN +
-            "\n\nDone! Delete _internal and SMD.exe and replace "
-            f"it with the new ones from {Path(download_url).name}"
+            "\n\nThe cursed update is about to begin. Prepare yourself."
             + Style.RESET_ALL
         )
+        tmp_dir = Path.cwd() / 'tmp'
+        zip_path = Path.cwd() / zip_name
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(tmp_dir)
+        zip_path.unlink(missing_ok=True)
+        updater = Path.cwd() / "tmp_updater.bat"
+        with updater.open("w", encoding="utf-8") as f:
+            nul = [">", "NUL"]
+            internal_dir = str(Path.cwd() / "_internal")
+            smd_exe = str(Path.cwd() / "SMD.exe")
+            tmp_dir = str(Path.cwd() / "tmp")
+            convert = subprocess.list2cmdline
+            f.writelines(
+                [
+                    "@echo off\n",
+                    "echo Killing SMD...\n",
+                    f"taskkill /F /PID {os.getpid()}\n",
+                    "echo SMD killed. Deleting old files...\n",
+                    convert(["rmdir", "/s", "/q", internal_dir, *nul]) + "\n",
+                    convert(["del", "/q", smd_exe, *nul]) + "\n",
+                    "echo Old files deleted. Moving in new files...\n",
+                    convert(["robocopy", "/E", "/MOVE", tmp_dir, str(Path.cwd()), *nul])
+                    + "\n",
+                    convert(["rmdir", "/s", "/q", tmp_dir, *nul]) + "\n",
+                    "echo UPDATE COMPLETE!!!! You can close this now\n",
+                    '(goto) 2>nul & del "%~f0"',
+                ]
+            )
+        command = convert(["cmd", "/k", str(updater.resolve())])
+        subprocess.Popen(command, creationflags=subprocess.DETACHED_PROCESS, shell=True)
         return MainReturnCode.LOOP_NO_PROMPT
