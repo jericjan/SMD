@@ -21,6 +21,7 @@ class MainMenu(Enum):
     DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
     OFFLINE_FIX = "Offline Mode Fix"
     MANAGE_APPLIST = "Manage AppList IDs"
+    CHECK_UPDATES = "Check for updates"
     SETTINGS = "Settings"
     EXIT = "Exit"
 

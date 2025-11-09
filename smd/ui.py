@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from collections import OrderedDict
 from pathlib import Path
@@ -6,8 +7,10 @@ from typing import Callable, Optional
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
+from smd.strings import VERSION
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
+from smd.http_utils import get_request
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
@@ -23,6 +26,7 @@ from smd.structs import (
     MidiFiles,
     Settings,
 )
+from smd.utils import enter_path
 
 
 def music_toggle_decorator(func):  # type: ignore
@@ -233,3 +237,28 @@ class UI:
             + Style.RESET_ALL
         )
         return MainReturnCode.LOOP
+
+    def check_updates(self) -> MainReturnCode:
+        print("Making request to github...", end="")
+        resp = None
+        while resp is None:
+            resp = asyncio.run(
+                get_request(
+                    "https://api.github.com/repos/jericjan/smd/releases/latest", "json"
+                )
+            )
+        print("Done!")
+        remote_version = resp.get('tag_name')
+        print(f"Local Version: {VERSION}")
+        print(f"Remote Version: {remote_version}")
+        if VERSION == remote_version:
+            print(Fore.GREEN + "You're up to date!" + Style.RESET_ALL)
+            return MainReturnCode.LOOP_NO_PROMPT
+        print(Fore.RED + "Your SMD is outdated." + Style.RESET_ALL)
+        download_url = enter_path(resp, "assets", 0, "browser_download_url")
+        if not download_url:
+            print("Couldn't find the download URL :()")
+            return MainReturnCode.LOOP_NO_PROMPT
+        print(f"Download URL: {download_url}")
+        print("Open this in your browser to get the new update")
+        return MainReturnCode.LOOP_NO_PROMPT

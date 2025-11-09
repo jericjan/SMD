@@ -9,6 +9,7 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_select
 from smd.registry_access import get_steam_path
+from smd.strings import VERSION
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
 from smd.utils import root_folder
@@ -51,7 +52,10 @@ def main(ui: UI) -> MainReturnCode:
 
     if menu_choice in GAME_SPECIFIC_CHOICES:
         return ui.handle_game_specific(menu_choice)
-
+    
+    if menu_choice == MainMenu.CHECK_UPDATES:
+        return ui.check_updates()
+    
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
