@@ -27,9 +27,15 @@ def enter_path(
     """
     current = obj
     for key in paths:
+        if isinstance(key, int):
+            try:
+                current = current[key]  # pyright: ignore[reportUnknownVariableType]
+            except IndexError:
+                return
+            continue
         # try normal case, then lower if ignore_case is True
         original_key = key
-        if isinstance(key, str) and ignore_case:
+        if ignore_case:
             key = key.lower()
 
         key_map = {}
