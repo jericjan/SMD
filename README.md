@@ -21,7 +21,8 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 │       └───generate_emu_config.exe
 └───steamless
 ```
-4. Either run `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it. You can also build it with `build.bat` for convenience.
+4. Download my version of [aria2](https://github.com/jericjan/aria2) (has increased limits) and place it in `third_party\aria2c\aria2c.exe`.
+5. Either run `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it. You can also build it with `build.bat` for convenience.
 
 Optional (Requires GCC Compiler):
 1. CD into the `c` folder and build the MIDI Player with:  
@@ -95,6 +96,7 @@ This project includes the following third-party components:
 - [TinySoundFont](https://github.com/schellingb/TinySoundFont) (MIT)
 - [miniaudio](https://github.com/mackron/miniaudio) (MIT)
 - [fzf](https://github.com/junegunn/fzf) (MIT)
+- [aria2](https://github.com/aria2/aria2) (GPL-3.0)
 
 Full license texts are available in the `third_party_licenses` directory or as comments in the respective module file.
 

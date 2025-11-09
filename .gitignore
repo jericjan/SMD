@@ -21,3 +21,4 @@ c/*.dll
 c/*.mid
 test.py
 all_games.txt
+third_party/aria2c/*

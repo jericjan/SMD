@@ -2,12 +2,12 @@ import asyncio
 import functools
 from collections import OrderedDict
 from pathlib import Path
+import subprocess
 from typing import Callable, Optional
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 
-from smd.strings import VERSION
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
 from smd.http_utils import get_request
@@ -18,6 +18,7 @@ from smd.midi import MidiPlayer
 from smd.prompts import prompt_confirm, prompt_secret, prompt_select, prompt_text
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
+from smd.strings import VERSION
 from smd.structs import (
     GameSpecificChoices,
     LoggedInUser,
@@ -26,7 +27,7 @@ from smd.structs import (
     MidiFiles,
     Settings,
 )
-from smd.utils import enter_path
+from smd.utils import enter_path, root_folder
 
 
 def music_toggle_decorator(func):  # type: ignore
@@ -238,7 +239,7 @@ class UI:
         )
         return MainReturnCode.LOOP
 
-    def check_updates(self) -> MainReturnCode:
+    def check_updates(self, test: bool = False) -> MainReturnCode:
         print("Making request to github...", end="")
         resp = None
         while resp is None:
@@ -248,10 +249,10 @@ class UI:
                 )
             )
         print("Done!")
-        remote_version = resp.get('tag_name')
+        remote_version = resp.get("tag_name")
         print(f"Local Version: {VERSION}")
         print(f"Remote Version: {remote_version}")
-        if VERSION == remote_version:
+        if VERSION == remote_version and test is False:
             print(Fore.GREEN + "You're up to date!" + Style.RESET_ALL)
             return MainReturnCode.LOOP_NO_PROMPT
         print(Fore.RED + "Your SMD is outdated." + Style.RESET_ALL)
@@ -260,5 +261,25 @@ class UI:
             print("Couldn't find the download URL :()")
             return MainReturnCode.LOOP_NO_PROMPT
         print(f"Download URL: {download_url}")
-        print("Open this in your browser to get the new update")
+        aria2c_exe = root_folder() / "third_party/aria2c/aria2c.exe"
+        subprocess.run(
+            [
+                aria2c_exe,
+                "-x",
+                "64",
+                "-k",
+                "1K",
+                "-s",
+                "64",
+                "-d",
+                str(Path.cwd().resolve()),
+                download_url,
+            ]
+        )
+        print(
+            Fore.GREEN +
+            "\n\nDone! Delete _internal and SMD.exe and replace "
+            f"it with the new ones from {Path(download_url).name}"
+            + Style.RESET_ALL
+        )
         return MainReturnCode.LOOP_NO_PROMPT
