@@ -52,10 +52,10 @@ def main(ui: UI) -> MainReturnCode:
 
     if menu_choice in GAME_SPECIFIC_CHOICES:
         return ui.handle_game_specific(menu_choice)
-    
+
     if menu_choice == MainMenu.CHECK_UPDATES:
         return ui.check_updates()
-    
+
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
@@ -109,8 +109,6 @@ if __name__ == "__main__":
         elif return_code == MainReturnCode.LOOP_NO_PROMPT:
             continue
         elif return_code == MainReturnCode.LOOP:
-            if not prompt_confirm(
-                "Go back to the Main Menu?", false_msg="No (Exit)"
-            ):
+            if not prompt_confirm("Go back to the Main Menu?", false_msg="No (Exit)"):
                 break
     print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)

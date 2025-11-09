@@ -3,6 +3,8 @@ from typing import Literal, Union, overload
 import zipfile
 from pathlib import Path
 
+from colorama import Fore, Style
+
 
 @overload
 def read_lua_from_zip(path: Union[Path, BytesIO]) -> Union[str, None]: ...
@@ -32,7 +34,7 @@ def read_lua_from_zip(path: Union[Path, BytesIO], decode: bool = True):
                     lua_contents = f.read(file)
                     break  # lua found in ZIP, stop searching
             else:
-                print("Could not find the lua in the ZIP")
+                print(Fore.RED + "Could not find the lua in the ZIP" + Style.RESET_ALL)
     except zipfile.BadZipFile:
         return
     if decode and lua_contents:

@@ -70,6 +70,8 @@ def get_manilua(dest: Path, app_id: str):
                     print(
                         "Did not receive a ZIP file or JSON: \n" + tf.read().decode()
                     )
+                except UnicodeDecodeError:
+                    pass
         break
 
     lua_path = dest / f"{app_id}.lua"
