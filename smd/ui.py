@@ -62,6 +62,9 @@ class UI:
         self.steam_path = steam_path
         self.app_list_man = AppListManager(steam_path)
 
+        self.init_midi_player()
+
+    def init_midi_player(self):
         if (play_music := get_setting(Settings.PLAY_MUSIC)) is None:
             set_setting(Settings.PLAY_MUSIC, False)
             play_music = False
@@ -72,6 +75,11 @@ class UI:
             self.midi_player = MidiPlayer(MidiFiles.MIDI_PLAYER_DLL.value)
             self.midi_player.start()
 
+    def kill_midi_player(self):
+        if self.midi_player:
+            self.midi_player.stop()
+            del self.midi_player
+            self.midi_player = None  # prolly does nothing but whatever
     @music_toggle_decorator
     def edit_settings_menu(self) -> MainReturnCode:
         while True:
@@ -110,14 +118,10 @@ class UI:
             set_setting(selected_key, new_value)
 
             if selected_key == Settings.PLAY_MUSIC:
-                if value is True and new_value is False and self.midi_player:
-                    self.midi_player.stop()
-                    del self.midi_player
-                    self.midi_player = None  # Deallocate from memory
+                if value is True and new_value is False:
+                    self.kill_midi_player()
                 elif value is False and new_value is True:
-                    if self.midi_player is None:
-                        self.midi_player = MidiPlayer((MidiFiles.MIDI_PLAYER_DLL.value))
-                    self.midi_player.start()
+                    self.init_midi_player()
 
             if selected_key == Settings.APPLIST_FOLDER:
                 self.app_list_man = AppListManager(self.steam_path)
