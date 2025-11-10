@@ -77,7 +77,9 @@ class AppListManager:
             ids.sort(key=lambda x: int(x.path.stem))
         return ids
 
-    def add_ids(self, data: Union[int, list[int], LuaParsedInfo]):
+    def add_ids(
+        self, data: Union[int, list[int], LuaParsedInfo], skip_check: bool = False
+    ):
         """Adds IDs to the AppList folder"""
         if isinstance(data, int):
             app_ids = [data]
@@ -86,8 +88,8 @@ class AppListManager:
         else:
             app_ids = data
 
+        local_ids = [] if skip_check else [x.app_id for x in self.get_local_ids()]
         for app_id in app_ids:
-            local_ids = [x.app_id for x in self.get_local_ids()]
             if app_id in local_ids:
                 print(f"{app_id} already in AppList")
                 continue
@@ -95,11 +97,12 @@ class AppListManager:
             with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
                 f.write(str(app_id))
             self.last_idx = new_idx
+            id_count = new_idx + 1
             print(
                 f"{app_id} added to AppList. "
-                f"There are now {len(local_ids) + 1} IDs stored."
+                f"There are now {id_count} IDs stored."
             )
-            if (len(local_ids) + 1) > self.max_id_limit:
+            if id_count > self.max_id_limit:
                 print(
                     Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
                     "for Greenluma. "
