@@ -303,4 +303,6 @@ class GameHandler:
             self.apply_steamless(app_info)
         elif choice == MainMenu.DL_USER_GAME_STATS:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
+        elif choice == MainMenu.DLC_CHECK:
+            pass
         return MainReturnCode.LOOP

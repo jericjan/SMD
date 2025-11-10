@@ -88,25 +88,24 @@ class AppListManager:
 
         for app_id in app_ids:
             local_ids = [x.app_id for x in self.get_local_ids()]
-            if app_id not in local_ids:
-                new_idx = self.last_idx + 1
-                with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
-                    f.write(str(app_id))
-                self.last_idx = new_idx
-                print(
-                    f"{app_id} added to AppList. "
-                    f"There are now {len(local_ids) + 1} IDs stored."
-                )
-                if (len(local_ids) + 1) > self.max_id_limit:
-                    print(
-                        Fore.RED
-                        + f"WARNING: You've hit the {self.max_id_limit} ID limit "
-                        "for Greenluma. "
-                        "I haven't implemented anything to deal with this yet."
-                        + Style.RESET_ALL
-                    )
-            else:
+            if app_id in local_ids:
                 print(f"{app_id} already in AppList")
+                continue
+            new_idx = self.last_idx + 1
+            with (self.applist_folder / f"{new_idx}.txt").open("w") as f:
+                f.write(str(app_id))
+            self.last_idx = new_idx
+            print(
+                f"{app_id} added to AppList. "
+                f"There are now {len(local_ids) + 1} IDs stored."
+            )
+            if (len(local_ids) + 1) > self.max_id_limit:
+                print(
+                    Fore.RED + f"WARNING: You've hit the {self.max_id_limit} ID limit "
+                    "for Greenluma. "
+                    "I haven't implemented anything to deal with this yet."
+                    + Style.RESET_ALL
+                )
 
     def remove_ids(self, ids_to_delete: list[int]):
         local_ids = self.get_local_ids(sort=True)
@@ -263,9 +262,9 @@ class AppListManager:
                 if apps := dlc_info.get("apps"):
                     non_depot_dlcs: list[int] = []
                     for depot_id, data in apps.items():
-                        name = enter_path(data, 'common', 'name')
-                        depots = enter_path(data, 'depots')
-                        release_state = enter_path(data, 'common', 'releasestate')
+                        name = enter_path(data, "common", "name")
+                        depots = enter_path(data, "depots")
+                        release_state = enter_path(data, "common", "releasestate")
                         dlc_type = (
                             (DLCTypes.DEPOT if depots else DLCTypes.NOT_DEPOT)
                             if release_state == "released"

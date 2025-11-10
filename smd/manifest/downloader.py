@@ -36,9 +36,14 @@ class ManifestDownloader:
         # Get manifest IDs. The official API doesn't return these,
         # so using steam module instead
         while True:
-            manifest_mode: ManifestGetModes = prompt_select(
-                "How would you like to obtain the manifest ID?", list(ManifestGetModes)
-            ) if not auto else ManifestGetModes.AUTO
+            manifest_mode: ManifestGetModes = (
+                prompt_select(
+                    "How would you like to obtain the manifest ID?",
+                    list(ManifestGetModes),
+                )
+                if not auto
+                else ManifestGetModes.AUTO
+            )
             app_info = (
                 get_product_info(self.client, [int(lua.app_id)])  # type: ignore
                 if manifest_mode == ManifestGetModes.AUTO
@@ -82,7 +87,7 @@ class ManifestDownloader:
                         manifest := prompt_text(f"Depot {depot_id}: ")
                     ):
                         print("Blank entered. Let's try this again.")
-                        break                
+                        break
                 if manifest is not None:
                     print(f"Depot {depot_id} has manifest {manifest}")
                 manifest = sub_manifest if sub_manifest else manifest
@@ -110,6 +115,18 @@ class ManifestDownloader:
                 + Style.RESET_ALL
             )
 
+            possible_saved_manifest = (
+                Path.cwd() / f"manifests/{depot_id}_{manifest_id}.manifest"
+            )
+            final_manifest_loc = (
+                self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
+            )
+
+            if possible_saved_manifest.exists():
+                print("One of the endpoints had a manifest. Skipping download...")
+                if not final_manifest_loc.exists():
+                    possible_saved_manifest.rename(final_manifest_loc)
+                continue
             while True:
                 req_code = asyncio.run(get_gmrc(manifest_id))
                 print(f"Request code is: {req_code}")
@@ -131,7 +148,4 @@ class ManifestDownloader:
             manifest = get_request_raw(manifest_url)
 
             if manifest:
-                output_file = (
-                    self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
-                )
-                decrypt_manifest(manifest, output_file, dec_key)
+                decrypt_manifest(manifest, final_manifest_loc, dec_key)

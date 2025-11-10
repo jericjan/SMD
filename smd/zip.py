@@ -31,9 +31,15 @@ def read_lua_from_zip(path: Union[Path, BytesIO], decode: bool = True):
             for file in f.filelist:
                 if file.filename.endswith(".lua"):
                     print(f".lua found in ZIP: {file.filename}")
-                    lua_contents = f.read(file)
-                    break  # lua found in ZIP, stop searching
-            else:
+                    if lua_contents is None:
+                        lua_contents = f.read(file)
+                elif file.filename.endswith(".manifest"):
+                    print(f"Manifest found in ZIP: {file.filename}")
+                    manifests_dir = Path.cwd() / "manifests"
+                    manifests_dir.mkdir(exist_ok=True)
+                    with (manifests_dir / file.filename).open("wb") as mf:
+                        mf.write(f.read(file))
+            if lua_contents is None:
                 print(Fore.RED + "Could not find the lua in the ZIP" + Style.RESET_ALL)
     except zipfile.BadZipFile:
         return

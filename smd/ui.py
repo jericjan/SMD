@@ -80,6 +80,7 @@ class UI:
             self.midi_player.stop()
             del self.midi_player
             self.midi_player = None  # prolly does nothing but whatever
+
     @music_toggle_decorator
     def edit_settings_menu(self) -> MainReturnCode:
         while True:

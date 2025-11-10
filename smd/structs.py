@@ -16,6 +16,7 @@ class LuaChoice(Enum):
 
 class MainMenu(Enum):
     MANAGE_LUA = "Manage .lua files"
+    DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
     DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
@@ -30,12 +31,14 @@ GameSpecificChoices = Literal[
     MainMenu.CRACK_GAME,
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
+    MainMenu.DLC_CHECK
 ]
 
 GAME_SPECIFIC_CHOICES = (
     MainMenu.CRACK_GAME,
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
+    MainMenu.DLC_CHECK
 )
 
 
