@@ -79,8 +79,12 @@ jaraco-functools==4.3.0
     # via keyring
 keyring==25.6.0
     # via steam-manifest-decrypt (pyproject.toml)
+markdown-it-py==3.0.0
+    # via rich
 mccabe==0.7.0
     # via flake8
+mdurl==0.1.2
+    # via markdown-it-py
 more-itertools==10.8.0
     # via
     #   jaraco-classes
@@ -121,6 +125,8 @@ pycryptodomex==3.23.0
     # via steam
 pyflakes==3.4.0
     # via flake8
+pygments==2.19.2
+    # via rich
 pyinstaller==6.16.0
     # via steam-manifest-decrypt (pyproject.toml)
 pyinstaller-hooks-contrib==2025.9
@@ -137,6 +143,8 @@ pywin32-ctypes==0.2.3
     #   pyinstaller
 requests==2.32.5
     # via steam
+rich==14.2.0
+    # via steam-manifest-decrypt (pyproject.toml)
 setuptools==80.9.0
     # via
     #   grpcio-tools
