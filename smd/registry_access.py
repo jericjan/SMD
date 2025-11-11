@@ -3,7 +3,7 @@ from pathlib import Path
 
 from colorama import Fore, Style
 
-from smd.prompts import prompt_dir
+from smd.prompts import prompt_dir, prompt_select
 
 
 def find_steam_path_from_registry():
@@ -35,3 +35,55 @@ def get_steam_path():
         colorized = Fore.YELLOW + str(steam_path.resolve()) + Style.RESET_ALL
         print(f"Your Steam path is {colorized}")
     return steam_path
+
+
+def key_exists(hive: int, key_path: str):
+    try:
+        key = winreg.OpenKey(hive, key_path, 0, winreg.KEY_READ)
+        winreg.CloseKey(key)
+        return True
+    except FileNotFoundError:
+        return False
+    except OSError as e:
+        print(f"An OS error occurred: {e}")
+        return False
+
+
+def set_stats_and_achievements(app_id: int, enabled: bool):
+    """Sets the SkipStatsAndAchievements key for a game."""
+    greenluma_keynames = ["GLR", "GL2020", "GL2024", "GL2025"]
+    exist_map = {
+        x: key_exists(winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{x}")
+        for x in greenluma_keynames
+    }
+    existing_keys = [x for x, y in exist_map.items() if y]
+    if len(existing_keys) == 0:
+        selected_version = prompt_select(
+            "Which GreenLuma version do you have:", list(exist_map.keys())
+        )
+    elif len(existing_keys) == 1:
+        selected_version = existing_keys[0]
+    else:  # More than 1
+        print("More than one Greenluma key found.")
+        selected_version = prompt_select(
+            "Which version are you using rn?", existing_keys
+        )
+    try:
+        with winreg.CreateKey(
+            winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{selected_version}\AppID\{app_id}"
+        ) as key:
+            winreg.SetValueEx(
+                key,
+                "SkipStatsAndAchievements",
+                0,
+                winreg.REG_DWORD,
+                0 if enabled else 1,
+            )
+        return True
+    except OSError as e:
+        print(f"Error setting registry key: {e}")
+        return False
+
+
+if __name__ == "__main__":
+    set_stats_and_achievements(123, True)

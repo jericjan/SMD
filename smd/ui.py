@@ -18,6 +18,7 @@ from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.midi import MidiPlayer
 from smd.prompts import prompt_confirm, prompt_secret, prompt_select, prompt_text
+from smd.registry_access import set_stats_and_achievements
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import VERSION
@@ -230,6 +231,12 @@ class UI:
         acf = ACFWriter(lib_path)
 
         parsed_lua = lua_manager.fetch_lua(lua_choice)
+        if prompt_confirm(
+            "Would you like Greenluma (normal mode) to track achievements?"
+        ):
+            set_stats_and_achievements(int(parsed_lua.app_id), True)
+        else:
+            set_stats_and_achievements(int(parsed_lua.app_id), False)
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
         self.app_list_man.get_non_depot_dlcs(self.steam_client, int(parsed_lua.app_id))
@@ -289,11 +296,11 @@ class UI:
         )
         zip_name = Path(download_url).name
         print(
-            Fore.GREEN +
-            "\n\nThe cursed update is about to begin. Prepare yourself."
+            Fore.GREEN
+            + "\n\nThe cursed update is about to begin. Prepare yourself."
             + Style.RESET_ALL
         )
-        tmp_dir = Path.cwd() / 'tmp'
+        tmp_dir = Path.cwd() / "tmp"
         zip_path = Path.cwd() / zip_name
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(tmp_dir)

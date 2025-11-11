@@ -88,10 +88,13 @@ if __name__ == "__main__":
 
     ui = UI(client, steam_path)
 
+    return_code = None
     while True:
-        # Re-initialize AppListManager in case setting is changed
         try:
             return_code = main(ui)
+        except KeyboardInterrupt:
+            print(Fore.RED + "\nWait, don't go—\n" + Style.RESET_ALL)
+            break
         except Exception:
             print(
                 "There was an error. You can also find this in crash.log:\n" + Fore.RED
@@ -111,4 +114,5 @@ if __name__ == "__main__":
         elif return_code == MainReturnCode.LOOP:
             if not prompt_confirm("Go back to the Main Menu?", false_msg="No (Exit)"):
                 break
-    print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)
+    if return_code is not None:
+        print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)
