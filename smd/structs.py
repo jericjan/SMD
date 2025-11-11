@@ -187,6 +187,6 @@ class ManifestGetModes(Enum):
 
 
 class DLCTypes(Enum):
-    DEPOT = "DEPOT"
-    NOT_DEPOT = "NOT A DEPOT"
+    DEPOT = "DOWNLOAD REQUIRED"
+    NOT_DEPOT = "PRE-INSTALLED"
     UNRELEASED = "UNRELEASED"
