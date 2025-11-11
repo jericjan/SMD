@@ -27,6 +27,38 @@ class ManifestDownloader:
         self.client = client
         self.steam_path = steam_path
 
+    def get_dlc_manifest_status(
+        self, depot_ids: list[int]
+    ):
+        # A dict of Depot IDs mapped to Manifest IDs
+        manifest_ids: dict[int, bool] = {}
+
+        while True:
+            app_info = (
+                get_product_info(self.client, depot_ids)  # type: ignore
+            )
+            if app_info is None:
+                continue
+            for depot_id in depot_ids:
+                depots_dict: dict[str, Any] = (
+                    app_info.get("apps", {}).get(depot_id, {}).get("depots", {})
+                )
+
+                manifest = (
+                    depots_dict.get(str(depot_id), {})
+                    .get("manifests", {})
+                    .get("public", {})
+                    .get("gid")
+                )
+                if manifest is not None:
+                    print(f"Depot {depot_id} has manifest {manifest}")
+                manifest_file = (
+                    self.steam_path / f"depotcache/{depot_id}_{manifest}.manifest"
+                )
+                manifest_ids[depot_id] = manifest_file.exists()
+            break
+        return manifest_ids
+
     def get_manifest_ids(
         self, lua: LuaParsedInfo, depth: int = 0, auto: bool = False
     ) -> DepotManifestMap:

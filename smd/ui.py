@@ -1,11 +1,11 @@
 import asyncio
 import functools
-from collections import OrderedDict
 import os
-from pathlib import Path
 import subprocess
-from typing import Callable, Optional
 import zipfile
+from collections import OrderedDict
+from pathlib import Path
+from typing import Callable, Optional
 
 from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
@@ -60,7 +60,7 @@ class UI:
     ):
         self.steam_client = client
         self.steam_path = steam_path
-        self.app_list_man = AppListManager(steam_path)
+        self.app_list_man = AppListManager(steam_path, self.steam_client)
 
         self.init_midi_player()
 
@@ -125,7 +125,7 @@ class UI:
                     self.init_midi_player()
 
             if selected_key == Settings.APPLIST_FOLDER:
-                self.app_list_man = AppListManager(self.steam_path)
+                self.app_list_man = AppListManager(self.steam_path, self.steam_client)
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator
@@ -207,7 +207,9 @@ class UI:
     def handle_game_specific(self, choice: GameSpecificChoices) -> MainReturnCode:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
-        handler = GameHandler(self.steam_path, lib_path, self.steam_client)
+        handler = GameHandler(
+            self.steam_path, lib_path, self.steam_client, self.app_list_man
+        )
         return handler.execute_choice(choice)
 
     @music_toggle_decorator

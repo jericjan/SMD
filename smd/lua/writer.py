@@ -6,7 +6,7 @@ from pathvalidate import sanitize_filename
 
 from smd.http_utils import get_game_name
 from smd.prompts import prompt_confirm
-from smd.storage.vdf import VDFLoadAndDumper, vdf_dump
+from smd.storage.vdf import VDFLoadAndDumper, vdf_dump, vdf_load
 from smd.structs import LuaParsedInfo
 from smd.utils import enter_path
 
@@ -21,7 +21,7 @@ class ACFWriter:
         if acf_file.exists():
             do_write_acf = not prompt_confirm(
                 ".acf file found. Is this an update?",
-                false_msg="No (Overwrites the .acf file)"
+                false_msg="No (Overwrites the .acf file)",
             )
 
         if do_write_acf:
@@ -62,10 +62,27 @@ class ConfigVDFWriter:
                     "Steam",
                     "depots",
                     mutate=True,
-                    ignore_case=True
+                    ignore_case=True,
                 )
                 if depot_id not in depots:
                     depots[depot_id] = {"DecryptionKey": dec_key}
                     print("Added to config.vdf succesfully.")
                 else:
                     print("Already in config.vdf.")
+
+    def ids_in_config(self, ids: list[int]):
+        """Checks if IDs are in config.vdf and returns a
+        dict mapping IDs to their existence"""
+        vdf_file = self.steam_path / "config/config.vdf"
+        data = vdf_load(vdf_file)
+        depots = enter_path(
+            data,
+            "InstallConfigStore",
+            "Software",
+            "Valve",
+            "Steam",
+            "depots",
+            mutate=True,
+            ignore_case=True,
+        )
+        return {x: (str(x) in depots) for x in ids}

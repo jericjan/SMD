@@ -11,6 +11,7 @@ from typing import Literal, NamedTuple, Optional, overload
 
 from steam.client import SteamClient  # type: ignore
 
+from smd.applist import AppListManager
 from smd.http_utils import get_product_info
 from smd.prompts import (
     prompt_confirm,
@@ -43,10 +44,18 @@ AppName = str
 
 
 class GameHandler:
-    def __init__(self, steam_root: Path, library_path: Path, client: SteamClient):
+
+    def __init__(
+        self,
+        steam_root: Path,
+        library_path: Path,
+        client: SteamClient,
+        app_list_man: AppListManager,
+    ):
         self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps"
         self.client = client
+        self.app_list_man = app_list_man
 
     def get_game(self) -> Optional[ACFInfo]:
         games: list[tuple[AppName, ACFInfo]] = []
@@ -304,5 +313,5 @@ class GameHandler:
         elif choice == MainMenu.DL_USER_GAME_STATS:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         elif choice == MainMenu.DLC_CHECK:
-            pass
+            self.app_list_man.get_non_depot_dlcs(self.client, int(app_info.app_id))
         return MainReturnCode.LOOP

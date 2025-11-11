@@ -2,20 +2,24 @@
 
 import logging
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from colorama import Fore, Style
+from rich.console import Console
+from rich.table import Table, Column
 from steam.client import SteamClient  # type: ignore
 
 from smd.http_utils import get_product_info
+from smd.lua.writer import ConfigVDFWriter
+from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
     AppIDInfo,
     AppListChoice,
     AppListFile,
-    DLCTypes,
     DepotOrAppID,
+    DLCTypes,
     LuaParsedInfo,
     MainReturnCode,
     OrganizedAppIDs,
@@ -27,10 +31,25 @@ from smd.utils import enter_path
 logger = logging.getLogger(__name__)
 
 
+class ParsedDLC:
+    def __init__(self, depot_id: int, data: dict[str, Any], local_ids: list[int]):
+        self.id = depot_id
+        self.name: str = enter_path(data, "common", "name")
+        depots = enter_path(data, "depots")
+        self.release_state = enter_path(data, "common", "releasestate")
+        self.type = (
+            (DLCTypes.DEPOT if depots else DLCTypes.NOT_DEPOT)
+            if self.release_state == "released"
+            else DLCTypes.UNRELEASED
+        )
+        self.in_applist = True if depot_id in local_ids else False
+
+
 class AppListManager:
-    def __init__(self, steam_path: Path):
+    def __init__(self, steam_path: Path, client: SteamClient):
         self.max_id_limit = 168
         self.steam_path = steam_path
+        self.client = client
 
         # App ID / Depot IDs mapped to their name and type
         self.id_map: dict[int, DepotOrAppID] = {}
@@ -99,8 +118,7 @@ class AppListManager:
             self.last_idx = new_idx
             id_count = new_idx + 1
             print(
-                f"{app_id} added to AppList. "
-                f"There are now {id_count} IDs stored."
+                f"{app_id} added to AppList. " f"There are now {id_count} IDs stored."
             )
             if id_count > self.max_id_limit:
                 print(
@@ -256,37 +274,71 @@ class AppListManager:
         dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
         logger.debug(f"listofdlc: {dlcs}")
         if not dlcs:
-            print("No DLC found.")
+            print("This game has no DLC.")
         else:
             assert isinstance(dlcs, str)
             dlcs = [int(x) for x in dlcs.split(",")]
             dlc_info = self.get_product_info_with_retry(client, dlcs)
+            config = ConfigVDFWriter(self.steam_path)
+            manifest = ManifestDownloader(self.client, self.steam_path)
             if dlc_info:
                 if apps := dlc_info.get("apps"):
-                    non_depot_dlcs: list[int] = []
-                    for depot_id, data in apps.items():
-                        name = enter_path(data, "common", "name")
-                        depots = enter_path(data, "depots")
-                        release_state = enter_path(data, "common", "releasestate")
-                        dlc_type = (
-                            (DLCTypes.DEPOT if depots else DLCTypes.NOT_DEPOT)
-                            if release_state == "released"
-                            else DLCTypes.UNRELEASED
+                    unowned_non_depot_dlcs: list[int] = []
+                    local_ids = [x.app_id for x in self.get_local_ids()]
+                    parsed_dlcs: list[ParsedDLC] = [
+                        ParsedDLC(int(depot_id), data, local_ids)
+                        for depot_id, data in apps.items()
+                    ]
+                    depot_dlcs = [x.id for x in parsed_dlcs if x.type == DLCTypes.DEPOT]
+                    key_map = config.ids_in_config(depot_dlcs)
+                    manifest_map = manifest.get_dlc_manifest_status(depot_dlcs)
+                    non_depot_dlc_count = 0
+                    console = Console()
+                    table = Table(
+                        "ID",
+                        "Name",
+                        "Type",
+                        Column(header="In AppList?", justify="center"),
+                        Column(header="Has Key?", justify="center"),
+                        Column(header="Has Manifest?", justify="center"),
+                    )
+                    bool_map: dict[Optional[bool], str] = {
+                        True: "[green]O[/green]",
+                        False: "[red]X[/red]",
+                        None: "N/A",
+                    }
+                    for dlc in parsed_dlcs:
+                        if dlc.type == DLCTypes.NOT_DEPOT:
+                            non_depot_dlc_count += 1
+                            if not dlc.in_applist:
+                                unowned_non_depot_dlcs.append(dlc.id)
+                        table.add_row(
+                            str(dlc.id),
+                            dlc.name,
+                            dlc.type.value,
+                            bool_map[dlc.in_applist],
+                            bool_map[key_map.get(dlc.id)],
+                            bool_map[manifest_map.get(dlc.id)],
                         )
-                        if dlc_type == DLCTypes.NOT_DEPOT:
-                            non_depot_dlcs.append(int(depot_id))
+                    console.print(table)
+                    print(
+                        Fore.YELLOW + "NOTE: Pre-installed DLCs don't need "
+                        "decryption key & manifest\n"
+                        "Keys and manifests are only required "
+                        "when you don't have the DLC downlaoded yet." + Style.RESET_ALL
+                    )
+                    if len(unowned_non_depot_dlcs) > 0:
                         print(
-                            (Fore.GREEN if dlc_type == DLCTypes.NOT_DEPOT else Fore.RED)
-                            + f"{depot_id} -> {name} ({dlc_type.value})"
-                            + Style.RESET_ALL
+                            "This game has pre-installed DLCs that aren't "
+                            "in the AppList."
                         )
-                    if len(non_depot_dlcs) > 0:
-                        print("This game has DLCs that aren't depots!")
                         if prompt_confirm("Do you want to add these to the AppList?"):
-                            self.add_ids(non_depot_dlcs)
-                    else:
+                            self.add_ids(unowned_non_depot_dlcs, skip_check=False)
+                    elif len(unowned_non_depot_dlcs) == 0 and non_depot_dlc_count > 0:
+                        print("All pre-installed DLCs are already enabled.")
+                    elif non_depot_dlc_count == 0:
                         print(
-                            "This game has no DLCs that aren't depots. :(\n"
+                            "This game has no pre-installed DLCs :(\n"
                             "You'll have to find a lua that has "
                             "decryption keys for them."
                         )
