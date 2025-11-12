@@ -116,6 +116,9 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
     metadata.filenames_encrypted = False  # Mark the filenames as decrypted
     fixed_metadata_bytes = metadata.SerializeToString()
 
+    # Some users don't have a depotcache folder (e.g. new installation)
+    output_filepath.parent.mkdir(parents=True, exist_ok=True)
+
     # Write the new manifest file
     with open(output_filepath, "wb") as f:
         f.write(struct.pack("<II", PROTOBUF_PAYLOAD_MAGIC, len(fixed_payload_bytes)))
