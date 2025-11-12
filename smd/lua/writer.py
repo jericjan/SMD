@@ -20,8 +20,10 @@ class ACFWriter:
         do_write_acf = True
         if acf_file.exists():
             do_write_acf = not prompt_confirm(
-                ".acf file found. Is this an update?",
-                false_msg="No (Overwrites the .acf file, i.e., "
+                ".acf file found. Are you updating a game you already have installed"
+                " or is this a new installation?",
+                true_msg="I'm updating a game",
+                false_msg="This is a new installation (Overwrites the .acf file, i.e., "
                 "resets the status of the game)",
             )
 
