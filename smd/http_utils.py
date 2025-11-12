@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import msvcrt
+import time
 from contextlib import contextmanager
 from tempfile import TemporaryFile
 from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
@@ -150,9 +151,11 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
         client.anonymous_login()
     while True:
         try:
+            start = time.time()
             info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
-                app_ids
+                app_ids, timeout=5
             )
+            logger.debug(f"Product info request took: {time.time() - start}s")
         except gevent.Timeout:
             print("Request timed out. Trying again")
             client.anonymous_login()  # might fix the endless timeout loop
