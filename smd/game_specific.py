@@ -68,7 +68,13 @@ class GameHandler:
             games.append(
                 (name, ACFInfo(app_id, self.steamapps_path / "common" / installdir))
             )
-        return prompt_select("Select a game", games, fuzzy=True, cancellable=True)
+        return prompt_select(
+            "Select a game (You can type btw)",
+            games,
+            fuzzy=True,
+            max_height=10,
+            cancellable=True,
+        )
 
     def find_steam_dll(self, game_path: Path) -> Optional[Path]:
         files = list(game_path.rglob("steam_api*.dll"))

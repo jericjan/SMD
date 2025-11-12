@@ -33,6 +33,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
         [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()]
         + [("(Add a lua file instead)", None)],
         fuzzy=True,
+        max_height=10
     )
     if lua_path is None or not lua_path.exists():
         return LuaResult(None, None, LuaChoice.ADD_LUA)

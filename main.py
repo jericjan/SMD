@@ -94,6 +94,7 @@ if __name__ == "__main__":
             return_code = main(ui)
         except KeyboardInterrupt:
             print(Fore.RED + "\nWait, don't go—\n" + Style.RESET_ALL)
+            return_code = None
             break
         except Exception:
             print(
