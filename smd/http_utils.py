@@ -153,12 +153,15 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
         try:
             start = time.time()
             info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
-                app_ids, timeout=5
+                app_ids
             )
             logger.debug(f"Product info request took: {time.time() - start}s")
         except gevent.Timeout:
             print("Request timed out. Trying again")
-            client.anonymous_login()  # might fix the endless timeout loop
+            try:
+                client.anonymous_login()  # might fix the endless timeout loop
+            except RuntimeError:  # Alr logged in error
+                pass
             continue
         break
     if info:
