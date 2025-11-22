@@ -147,10 +147,13 @@ def get_game_name(app_id: str):
 
 def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
     if not client.logged_on:
-        print("Logging in anonymously...")
+        print("Logging in anonymously...", end="", flush=True)
         client.anonymous_login()
+        print(" Done!")
     while True:
         try:
+            print("Getting app info...")
+            logger.debug(f"Getting info for {', '.join([str(x) for x in app_ids])}")
             start = time.time()
             info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
                 app_ids

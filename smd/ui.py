@@ -256,7 +256,7 @@ class UI:
         return MainReturnCode.LOOP
 
     def check_updates(self, test: bool = False) -> MainReturnCode:
-        print("Making request to github...", end="")
+        print("Making request to github...", end="", flush=True)
         resp = None
         while resp is None:
             resp = asyncio.run(
