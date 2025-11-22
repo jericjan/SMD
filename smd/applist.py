@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional, Union
 
 from colorama import Fore, Style
 from rich.console import Console
-from rich.table import Table, Column
+from rich.table import Column, Table
 from steam.client import SteamClient  # type: ignore
 
 from smd.http_utils import get_product_info
@@ -269,7 +269,7 @@ class AppListManager:
                             unique_ids.add(x)
         self.remove_ids(list(unique_ids))
 
-    def get_non_depot_dlcs(self, client: SteamClient, base_id: int):
+    def dlc_check(self, client: SteamClient, base_id: int):
         print("Checking for DLC...")
         info = self.get_product_info_with_retry(client, [base_id])
         dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")

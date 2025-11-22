@@ -239,7 +239,7 @@ class UI:
             set_stats_and_achievements(int(parsed_lua.app_id), False)
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
-        self.app_list_man.get_non_depot_dlcs(self.steam_client, int(parsed_lua.app_id))
+        self.app_list_man.dlc_check(self.steam_client, int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
         config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)

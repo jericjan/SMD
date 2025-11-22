@@ -319,5 +319,5 @@ class GameHandler:
         elif choice == MainMenu.DL_USER_GAME_STATS:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         elif choice == MainMenu.DLC_CHECK:
-            self.app_list_man.get_non_depot_dlcs(self.client, int(app_info.app_id))
+            self.app_list_man.dlc_check(self.client, int(app_info.app_id))
         return MainReturnCode.LOOP
