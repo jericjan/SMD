@@ -31,7 +31,7 @@ def enter_path(
             try:
                 current = current[key]  # pyright: ignore[reportUnknownVariableType]
             except IndexError:
-                return
+                return type(current)()
             continue
         # try normal case, then lower if ignore_case is True
         original_key = key

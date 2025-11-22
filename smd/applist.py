@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Column, Table
 from steam.client import SteamClient  # type: ignore
 
-from smd.http_utils import get_product_info
+from smd.steam_client import get_product_info
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text

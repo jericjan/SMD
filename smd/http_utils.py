@@ -1,19 +1,14 @@
 import asyncio
-import json
 import logging
 import msvcrt
-import time
 from contextlib import contextmanager
 from tempfile import TemporaryFile
 from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
 
-import gevent
 import httpx
-from steam.client import SteamClient  # type: ignore
 from tqdm import tqdm  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_text
-from smd.structs import ProductInfo  # type: ignore
 
 if TYPE_CHECKING:
     from tempfile import _TemporaryFileWrapper  # pyright: ignore[reportPrivateUsage]
@@ -145,34 +140,6 @@ def get_game_name(app_id: str):
     return app_name
 
 
-def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
-    if not client.logged_on:
-        print("Logging in anonymously...", end="", flush=True)
-        client.anonymous_login()
-        print(" Done!")
-    while True:
-        try:
-            print("Getting app info...")
-            logger.debug(f"Getting info for {', '.join([str(x) for x in app_ids])}")
-            start = time.time()
-            info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
-                app_ids
-            )
-            logger.debug(f"Product info request took: {time.time() - start}s")
-        except gevent.Timeout:
-            print("Request timed out. Trying again")
-            try:
-                client.anonymous_login()  # might fix the endless timeout loop
-            except RuntimeError:  # Alr logged in error
-                pass
-            continue
-        break
-    if info:
-        logger.debug(f"get_product_info retured: {json.dumps(info)}")
-        return ProductInfo(info)
-    return None
-
-
 @contextmanager
 def download_to_tempfile(
     url: str, headers: Optional[dict[str, str]] = None, chunk_size: int = (1024**2) // 2
@@ -196,7 +163,7 @@ def download_to_tempfile(
                 unit="B",
                 unit_scale=True,
                 unit_divisor=1024,
-                miniters=1
+                miniters=1,
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=chunk_size):
                     temp_f.write(chunk)

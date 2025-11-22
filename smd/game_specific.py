@@ -12,7 +12,7 @@ from typing import Literal, NamedTuple, Optional, overload
 from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
-from smd.http_utils import get_product_info
+from smd.steam_client import get_product_info
 from smd.prompts import (
     prompt_confirm,
     prompt_file,

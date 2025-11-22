@@ -2,24 +2,32 @@ import asyncio
 import logging
 import time
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 from urllib.parse import urljoin
 
-from colorama import Fore, Style
 import gevent
+from colorama import Fore, Style
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.http_utils import get_gmrc, get_product_info, get_request_raw
+from smd.http_utils import get_gmrc, get_request_raw
 from smd.manifest.crypto import decrypt_manifest
-from smd.prompts import prompt_select, prompt_text
+from smd.manifest.strategies import (
+    DirectManifestStrategy,
+    IManifestStrategy,
+    InnerDepotManifestStrategy,
+    ManifestContext,
+    ManifestResolver,
+    ManualManifestStrategy,
+    SharedDepotManifestStrategy,
+)
+from smd.prompts import prompt_select
+from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.structs import (  # type: ignore
-    DepotKeyPair,
     DepotManifestMap,
     LuaParsedInfo,
     ManifestGetModes,
 )
-from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)
 
@@ -28,17 +36,14 @@ class ManifestDownloader:
     def __init__(self, client: SteamClient, steam_path: Path):
         self.client = client
         self.steam_path = steam_path
+        self.provider = SteamInfoProvider(client)
 
-    def get_dlc_manifest_status(
-        self, depot_ids: list[int]
-    ):
+    def get_dlc_manifest_status(self, depot_ids: list[int]):
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[int, bool] = {}
 
         while True:
-            app_info = (
-                get_product_info(self.client, depot_ids)  # type: ignore
-            )
+            app_info = get_product_info(self.client, depot_ids)  # type: ignore
             if app_info is None:
                 continue
             for depot_id in depot_ids:
@@ -62,118 +67,50 @@ class ManifestDownloader:
         return manifest_ids
 
     def get_manifest_ids(
-        self, lua: LuaParsedInfo, depth: int = 0, auto: bool = False
+        self, lua: LuaParsedInfo, auto: bool = False
     ) -> DepotManifestMap:
         """Returns a dict of depot IDs mapped to manifest IDs"""
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[str, str] = {}
-
-        # Get manifest IDs. The official API doesn't return these,
-        # so using steam module instead
-        while True:
-            manifest_mode: ManifestGetModes = (
-                prompt_select(
-                    "How would you like to obtain the manifest ID?",
-                    list(ManifestGetModes),
-                )
-                if not auto
-                else ManifestGetModes.AUTO
+        app_id = int(lua.app_id)
+        if not auto:
+            mode = prompt_select(
+                "How would you like to obtain the manifest ID?",
+                list(ManifestGetModes),
             )
-            app_info = (
-                get_product_info(self.client, [int(lua.app_id)])  # type: ignore
-                if manifest_mode == ManifestGetModes.AUTO
-                else None
-            )
-            depots_dict: dict[str, Any] = (
-                app_info.get("apps", {}).get(int(lua.app_id), {}).get("depots", {})
-                if app_info
-                else {}
-            )
+            auto_fetch = mode == ManifestGetModes.AUTO
+        else:
+            auto_fetch = True
 
-            dlc_info = None
-            for pair in lua.depots:
-                depot_id = pair.depot_id
-                if pair.decryption_key == "":
-                    logger.debug(
-                        f"Skipping {depot_id} because it has no decryption key"
-                    )
-                    continue
-                manifest = (
-                    depots_dict.get(str(depot_id), {})
-                    .get("manifests", {})
-                    .get("public", {})
-                    .get("gid")
-                )
-                sub_manifest = None
-                if manifest is None:
-                    if manifest_mode == ManifestGetModes.AUTO:
-                        if depth < 1:
-                            # usually vcredist stuff (sharedinstall)
-                            depot_from_app: Optional[str] = depots_dict.get(
-                                str(depot_id), {}
-                            ).get("depotfromapp")
+        main_app_data = {}
+        if auto_fetch:
+            main_app_data = self.provider.get_single_app_info(app_id)
 
-                            if app_info and not depot_from_app:
-                                dlcs_str = enter_path(
-                                    app_info,
-                                    "apps",
-                                    int(lua.app_id),
-                                    "extended",
-                                    "listofdlc",
-                                )
-                                if dlcs_str:
-                                    dlcs = [int(x) for x in dlcs_str.split(",")]
-                                    if dlc_info is None:
-                                        dlc_info = get_product_info(self.client, dlcs)
-                                    if dlc_info:
-                                        if apps := dlc_info.get("apps"):
-                                            for data in apps.values():
-                                                depots = data.get("depots", [])
-                                                if depot_id in depots:
-                                                    sub_manifest = enter_path(
-                                                        depots[depot_id],
-                                                        'manifests',
-                                                        'public',
-                                                        'gid'
-                                                        )
-                                                    print(
-                                                        f"Inner Depot {depot_id} has "
-                                                        f"manifest {sub_manifest}"
-                                                    )
-                                                    break
-                            elif depot_from_app:
-                                sub = LuaParsedInfo(
-                                    lua.path,
-                                    lua.contents,
-                                    depot_from_app,
-                                    [
-                                        DepotKeyPair(depot_id, "foo")
-                                    ],  # decryption key not needed,
-                                    # also can't make it blank cuz it will be skipped
-                                )
-                                sub_manifest = self.get_manifest_ids(
-                                    sub, depth + 1, True
-                                ).get(depot_id)
-                        if sub_manifest is None:
-                            print(
-                                "API failed. "
-                                "I need the latest manifest ID for this depot. "
-                                "Blank if you want to try the request again."
-                            )
-                    if sub_manifest is None and not (
-                        manifest := prompt_text(f"Depot {depot_id}: ")
-                    ):
-                        print("Blank entered. Let's try this again.")
-                        break
-                if manifest is not None:
-                    print(
-                        f"Depot {depot_id} has manifest {manifest}"
-                        + (" (Shared Install)" if depth > 0 else "")
-                    )
-                manifest = sub_manifest if sub_manifest else manifest
-                manifest_ids[depot_id] = manifest
-            else:
-                break  # User did not give a blank, end the loop
+        context = ManifestContext(
+            app_id=app_id, app_data=main_app_data, provider=self.provider
+        )
+
+        strats: list[IManifestStrategy] = []
+
+        if auto_fetch:
+            strats.append(DirectManifestStrategy())
+            strats.append(SharedDepotManifestStrategy())
+            strats.append(InnerDepotManifestStrategy())
+        strats.append(ManualManifestStrategy())
+
+        resolver = ManifestResolver(strats)
+
+        for pair in lua.depots:
+            depot_id = str(pair.depot_id)
+
+            if not pair.decryption_key:
+                logger.debug(f"Skipping {depot_id} because it has no decryption key")
+                continue
+
+            manifest, strat = resolver.resolve(context, depot_id)
+            print(f"Depot {depot_id} has manifest {manifest} ({strat})")
+            manifest_ids[depot_id] = manifest
+
         return DepotManifestMap(manifest_ids)
 
     def download_manifests(
