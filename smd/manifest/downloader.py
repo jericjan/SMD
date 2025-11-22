@@ -64,6 +64,7 @@ class ManifestDownloader:
     def get_manifest_ids(
         self, lua: LuaParsedInfo, depth: int = 0, auto: bool = False
     ) -> DepotManifestMap:
+        """Returns a dict of depot IDs mapped to manifest IDs"""
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[str, str] = {}
 
@@ -89,6 +90,7 @@ class ManifestDownloader:
                 else {}
             )
 
+            dlc_info = None
             for pair in lua.depots:
                 depot_id = pair.depot_id
                 if pair.decryption_key == "":
@@ -106,14 +108,11 @@ class ManifestDownloader:
                 if manifest is None:
                     if manifest_mode == ManifestGetModes.AUTO:
                         if depth < 1:
+                            # usually vcredist stuff (sharedinstall)
                             depot_from_app: Optional[str] = depots_dict.get(
                                 str(depot_id), {}
                             ).get("depotfromapp")
 
-                            print(
-                                "This might be an inner depot "
-                                f"from a DLC... ({depot_id})"
-                            )
                             if app_info and not depot_from_app:
                                 dlcs_str = enter_path(
                                     app_info,
@@ -124,8 +123,8 @@ class ManifestDownloader:
                                 )
                                 if dlcs_str:
                                     dlcs = [int(x) for x in dlcs_str.split(",")]
-                                    # TODO: reuse instead of querying again and again
-                                    dlc_info = get_product_info(self.client, dlcs)
+                                    if dlc_info is None:
+                                        dlc_info = get_product_info(self.client, dlcs)
                                     if dlc_info:
                                         if apps := dlc_info.get("apps"):
                                             for data in apps.values():
@@ -137,6 +136,10 @@ class ManifestDownloader:
                                                         'public',
                                                         'gid'
                                                         )
+                                                    print(
+                                                        f"Inner Depot {depot_id} has "
+                                                        f"manifest {sub_manifest}"
+                                                    )
                                                     break
                             elif depot_from_app:
                                 sub = LuaParsedInfo(
@@ -163,7 +166,10 @@ class ManifestDownloader:
                         print("Blank entered. Let's try this again.")
                         break
                 if manifest is not None:
-                    print(f"Depot {depot_id} has manifest {manifest}")
+                    print(
+                        f"Depot {depot_id} has manifest {manifest}"
+                        + (" (Shared Install)" if depth > 0 else "")
+                    )
                 manifest = sub_manifest if sub_manifest else manifest
                 manifest_ids[depot_id] = manifest
             else:
