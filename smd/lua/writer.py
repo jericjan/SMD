@@ -9,6 +9,9 @@ from smd.prompts import prompt_confirm
 from smd.storage.vdf import VDFLoadAndDumper, vdf_dump, vdf_load
 from smd.structs import LuaParsedInfo
 from smd.utils import enter_path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -56,6 +59,9 @@ class ConfigVDFWriter:
             for pair in lua.depots:
                 depot_id = pair.depot_id
                 dec_key = pair.decryption_key
+                if dec_key == "":
+                    logger.debug(f"Skipping {depot_id} because it's not a depot")
+                    continue
                 print(
                     f"Depot {depot_id} has decryption key {dec_key}... ",
                     end="",

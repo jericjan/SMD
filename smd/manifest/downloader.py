@@ -90,6 +90,11 @@ class ManifestDownloader:
 
             for pair in lua.depots:
                 depot_id = pair.depot_id
+                if pair.decryption_key == "":
+                    logger.debug(
+                        f"Skipping {depot_id} because it has no decryption key"
+                    )
+                    continue
                 manifest = (
                     depots_dict.get(str(depot_id), {})
                     .get("manifests", {})
@@ -146,6 +151,9 @@ class ManifestDownloader:
         for pair in lua.depots:
             depot_id = pair.depot_id
             dec_key = pair.decryption_key
+            if dec_key == "":
+                logger.debug(f"Skipping {depot_id} because it's not a depot")
+                continue
             manifest_id = manifest_ids[depot_id]
             print(
                 Fore.CYAN

@@ -42,20 +42,25 @@ class LuaManager:
         depot_dec_key_regex = re.compile(
             r"addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
         )
+        extra_no_key_ids: list[str] = []
         while True:
             lua = self.get_raw_lua(choice)
-            if not (app_id_match := app_id_regex.search(lua.contents)):
+            if not (app_id_match := app_id_regex.findall(lua.contents)):
                 print("App ID not found. Try again.")
                 continue
 
-            app_id = app_id_match.group(1)
+            app_id = app_id_match[0]
             print(f"App ID is {app_id}")
+
+            if len(app_id_match) > 1:
+                extra_no_key_ids = app_id_match[1:]
 
             if not (depot_dec_key := depot_dec_key_regex.findall(lua.contents)):
                 print("Decryption keys not found. Try again.")
                 continue
             break
         depot_dec_key = [DepotKeyPair(*x) for x in depot_dec_key]
+        depot_dec_key.extend([DepotKeyPair(x, "") for x in extra_no_key_ids])
         return LuaParsedInfo(lua.path, lua.contents, app_id, depot_dec_key)
 
     def backup_lua(self, lua: LuaParsedInfo):
