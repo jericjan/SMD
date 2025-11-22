@@ -60,10 +60,11 @@ class LuaManager:
 
     def backup_lua(self, lua: LuaParsedInfo):
         """Saves the lua file for later use"""
+        target = self.saved_lua / f"{lua.app_id}.lua"
         if lua.path.suffix == ".zip":
-            with (self.saved_lua / f"{lua.app_id}.lua").open(
+            with target.open(
                 "w", encoding="utf-8"
             ) as f:
                 f.write(lua.contents)
-        elif not (self.saved_lua / lua.path.name).exists():
-            shutil.copyfile(lua.path, self.saved_lua / lua.path.name)
+        elif not target.exists():
+            shutil.copyfile(lua.path, target)
