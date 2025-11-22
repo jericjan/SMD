@@ -6,6 +6,7 @@ from typing import Any, cast
 from urllib.parse import urljoin
 
 from colorama import Fore, Style
+import gevent
 from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
@@ -133,7 +134,12 @@ class ManifestDownloader:
         lua: LuaParsedInfo,
     ):
         """Gets latest manifest IDs and downloads respective manifests"""
-        cdn = CDNClient(self.client)
+        while True:
+            try:
+                cdn = CDNClient(self.client)
+                break
+            except gevent.Timeout:
+                print("CDN Client timed out. Trying again.")
         manifest_ids = self.get_manifest_ids(lua)
 
         # Download and decrypt manifests
