@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Optional, cast
 from urllib.parse import urljoin
 
 from colorama import Fore, Style
@@ -19,6 +19,7 @@ from smd.structs import (  # type: ignore
     LuaParsedInfo,
     ManifestGetModes,
 )
+from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)
 
@@ -105,16 +106,51 @@ class ManifestDownloader:
                 if manifest is None:
                     if manifest_mode == ManifestGetModes.AUTO:
                         if depth < 1:
-                            sub = LuaParsedInfo(
-                                lua.path, lua.contents, lua.app_id, lua.depots
+                            depot_from_app: Optional[str] = depots_dict.get(
+                                str(depot_id), {}
+                            ).get("depotfromapp")
+
+                            print(
+                                "This might be an inner depot "
+                                f"from a DLC... ({depot_id})"
                             )
-                            sub.app_id = depot_id
-                            # decryption key not needed
-                            sub.depots = [DepotKeyPair(depot_id, "")]
-                            print("This might be an inner depot...")
-                            sub_manifest = self.get_manifest_ids(
-                                sub, depth + 1, True
-                            ).get(depot_id)
+                            if app_info and not depot_from_app:
+                                dlcs_str = enter_path(
+                                    app_info,
+                                    "apps",
+                                    int(lua.app_id),
+                                    "extended",
+                                    "listofdlc",
+                                )
+                                if dlcs_str:
+                                    dlcs = [int(x) for x in dlcs_str.split(",")]
+                                    # TODO: reuse instead of querying again and again
+                                    dlc_info = get_product_info(self.client, dlcs)
+                                    if dlc_info:
+                                        if apps := dlc_info.get("apps"):
+                                            for data in apps.values():
+                                                depots = data.get("depots", [])
+                                                if depot_id in depots:
+                                                    sub_manifest = enter_path(
+                                                        depots[depot_id],
+                                                        'manifests',
+                                                        'public',
+                                                        'gid'
+                                                        )
+                                                    break
+                            elif depot_from_app:
+                                sub = LuaParsedInfo(
+                                    lua.path,
+                                    lua.contents,
+                                    depot_from_app,
+                                    [
+                                        DepotKeyPair(depot_id, "foo")
+                                    ],  # decryption key not needed,
+                                    # also can't make it blank cuz it will be skipped
+                                )
+                                sub_manifest = self.get_manifest_ids(
+                                    sub, depth + 1, True
+                                ).get(depot_id)
                         if sub_manifest is None:
                             print(
                                 "API failed. "
