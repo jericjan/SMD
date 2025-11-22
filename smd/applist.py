@@ -270,6 +270,7 @@ class AppListManager:
         self.remove_ids(list(unique_ids))
 
     def get_non_depot_dlcs(self, client: SteamClient, base_id: int):
+        print("Checking for DLC...")
         info = self.get_product_info_with_retry(client, [base_id])
         dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
         logger.debug(f"listofdlc: {dlcs}")
@@ -291,7 +292,11 @@ class AppListManager:
                     ]
                     depot_dlcs = [x.id for x in parsed_dlcs if x.type == DLCTypes.DEPOT]
                     key_map = config.ids_in_config(depot_dlcs)
-                    manifest_map = manifest.get_dlc_manifest_status(depot_dlcs)
+                    manifest_map = (
+                        manifest.get_dlc_manifest_status(depot_dlcs)
+                        if depot_dlcs
+                        else {}
+                    )
                     non_depot_dlc_count = 0
                     console = Console()
                     table = Table(

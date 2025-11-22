@@ -56,7 +56,11 @@ class ConfigVDFWriter:
             for pair in lua.depots:
                 depot_id = pair.depot_id
                 dec_key = pair.decryption_key
-                print(f"Depot {depot_id} has decryption key {dec_key}... ", end="", flush=True)
+                print(
+                    f"Depot {depot_id} has decryption key {dec_key}... ",
+                    end="",
+                    flush=True,
+                )
                 depots = enter_path(
                     vdf_data,
                     "InstallConfigStore",

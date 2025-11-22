@@ -81,7 +81,11 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
     original_payload = ContentManifestPayload()
     original_payload.ParseFromString(payload_bytes)
 
-    print(f"Decrypting {len(original_payload.mappings)} file mappings... ", end="", flush=True)
+    print(
+        f"Decrypting {len(original_payload.mappings)} file mappings... ",
+        end="",
+        flush=True,
+    )
 
     # Decrypt filenames
     key_bytes = bytes.fromhex(dec_key)
