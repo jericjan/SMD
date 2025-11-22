@@ -43,7 +43,7 @@ class IManifestStrategy(ABC):
         pass
 
 
-class DirectManifestStrategy(IManifestStrategy):
+class StandardManifestStrategy(IManifestStrategy):
     """Just get the manifest directly from initial request"""
     @property
     def name(self):
@@ -110,7 +110,7 @@ class ManualManifestStrategy(IManifestStrategy):
         return prompt_text(f"Depot {depot_id}: ")
 
 
-class ManifestResolver:
+class ManifestIDResolver:
     def __init__(self, strategies: List[IManifestStrategy]):
         self.strategies = strategies
 

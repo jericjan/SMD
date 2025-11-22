@@ -12,14 +12,14 @@ from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from smd.http_utils import get_gmrc, get_request_raw
 from smd.manifest.crypto import decrypt_manifest
-from smd.manifest.strategies import (
-    DirectManifestStrategy,
+from smd.manifest.id_resolver import (
     IManifestStrategy,
     InnerDepotManifestStrategy,
     ManifestContext,
-    ManifestResolver,
+    ManifestIDResolver,
     ManualManifestStrategy,
     SharedDepotManifestStrategy,
+    StandardManifestStrategy,
 )
 from smd.prompts import prompt_select
 from smd.steam_client import SteamInfoProvider, get_product_info
@@ -93,12 +93,12 @@ class ManifestDownloader:
         strats: list[IManifestStrategy] = []
 
         if auto_fetch:
-            strats.append(DirectManifestStrategy())
+            strats.append(StandardManifestStrategy())
             strats.append(SharedDepotManifestStrategy())
             strats.append(InnerDepotManifestStrategy())
         strats.append(ManualManifestStrategy())
 
-        resolver = ManifestResolver(strats)
+        resolver = ManifestIDResolver(strats)
 
         for pair in lua.depots:
             depot_id = str(pair.depot_id)
