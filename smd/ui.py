@@ -236,12 +236,7 @@ class UI:
         acf = ACFWriter(lib_path)
 
         parsed_lua = lua_manager.fetch_lua(lua_choice)
-        if prompt_confirm(
-            "Would you like Greenluma (normal mode) to track achievements?"
-        ):
-            set_stats_and_achievements(int(parsed_lua.app_id), True)
-        else:
-            set_stats_and_achievements(int(parsed_lua.app_id), False)
+        set_stats_and_achievements(int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
         self.app_list_man.dlc_check(self.provider, int(parsed_lua.app_id))

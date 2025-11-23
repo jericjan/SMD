@@ -1,9 +1,10 @@
+from typing import Optional
 import winreg
 from pathlib import Path
 
 from colorama import Fore, Style
 
-from smd.prompts import prompt_dir, prompt_select
+from smd.prompts import prompt_confirm, prompt_dir, prompt_select
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import GreenLumaVersions, Settings
 
@@ -72,11 +73,33 @@ def get_greenluma_key():
     return selected_version
 
 
-def set_stats_and_achievements(app_id: int, enabled: bool):
-    """Sets the SkipStatsAndAchievements key for a game."""
+def read_subkey(hive: int, key_path: str, sub_key_name: str):
+    try:
+        with winreg.OpenKey(hive, key_path) as key:
+            return winreg.QueryValueEx(key, sub_key_name)[0]
+    except FileNotFoundError:
+        return
+
+
+def set_stats_and_achievements(app_id: int):
+    """Sets the SkipStatsAndAchievements key (GreenLuma) for a game."""
     if (selected_version := get_setting(Settings.GL_VERSION)) is None:
         selected_version = get_greenluma_key()
         set_setting(Settings.GL_VERSION, selected_version)
+
+    curr: Optional[int] = read_subkey(
+        winreg.HKEY_CURRENT_USER,
+        rf"SOFTWARE\{selected_version}\AppID\{app_id}",
+        "SkipStatsAndAchievements",
+    )
+    enabled = prompt_confirm(
+        "Would you like Greenluma (normal mode) to track achievements?"
+        + (
+            (" (Currently Disabled)" if curr else " (Currently Enabled)")
+            if curr is not None
+            else ""
+        )
+    )
     try:
         with winreg.CreateKey(
             winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{selected_version}\AppID\{app_id}"
@@ -95,4 +118,4 @@ def set_stats_and_achievements(app_id: int, enabled: bool):
 
 
 if __name__ == "__main__":
-    set_stats_and_achievements(123, True)
+    set_stats_and_achievements(123)
