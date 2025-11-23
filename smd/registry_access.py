@@ -4,6 +4,7 @@ from pathlib import Path
 from colorama import Fore, Style
 
 from smd.prompts import prompt_dir, prompt_select
+from smd.structs import GreenLumaVersions
 
 
 def find_steam_path_from_registry():
@@ -51,15 +52,15 @@ def key_exists(hive: int, key_path: str):
 
 def set_stats_and_achievements(app_id: int, enabled: bool):
     """Sets the SkipStatsAndAchievements key for a game."""
-    greenluma_keynames = ["GLR", "GL2020", "GL2024", "GL2025"]
-    exist_map = {
-        x: key_exists(winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{x}")
+    greenluma_keynames = [x.value for x in GreenLumaVersions]
+    existing_keys = [
+        x
         for x in greenluma_keynames
-    }
-    existing_keys = [x for x, y in exist_map.items() if y]
+        if key_exists(winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{x}")
+    ]
     if len(existing_keys) == 0:
         selected_version = prompt_select(
-            "Which GreenLuma version do you have:", list(exist_map.keys())
+            "Which GreenLuma version do you have:", greenluma_keynames
         )
     elif len(existing_keys) == 1:
         selected_version = existing_keys[0]

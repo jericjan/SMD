@@ -190,3 +190,14 @@ class DLCTypes(Enum):
     DEPOT = "DOWNLOAD REQUIRED"
     NOT_DEPOT = "PRE-INSTALLED"
     UNRELEASED = "UNRELEASED"
+
+
+class GreenLumaVersions(Enum):
+    """These are the keynames in HKCU\\SOFTWARE\\"""
+    GLR = "GLR"
+    GL2020 = "GL2020"
+    GL2024 = "GL2024"
+    GL2025 = "GL2025"
+
+    def __str__(self):
+        return self.value
