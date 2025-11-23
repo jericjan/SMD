@@ -24,6 +24,7 @@ from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import VERSION
 from smd.structs import (
     GameSpecificChoices,
+    GreenLumaVersions,
     LoggedInUser,
     LuaChoice,
     MainReturnCode,
@@ -113,6 +114,10 @@ class UI:
             if isinstance(value, bool):
                 new_value = prompt_select(
                     "Select the new value:", [("Enabled", True), ("Disabled", False)]
+                )
+            elif selected_key == Settings.GL_VERSION:
+                new_value = prompt_select(
+                    "Select the new value:", [x.value for x in GreenLumaVersions]
                 )
             else:
                 func = prompt_secret if selected_key.hidden else prompt_text

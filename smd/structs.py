@@ -73,6 +73,7 @@ class Settings(Enum):
     STEAM_USER = SettingItem("steam_user", "Steam Username", False)
     STEAM_PASS = SettingItem("steam_pass", "Steam Password", True)
     STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)
+    GL_VERSION = SettingItem("greenluma_version", "GreenLuma Version", False)
     APPLIST_FOLDER = SettingItem("applist_folder", "GreenLuma AppList Folder", False)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False)
 

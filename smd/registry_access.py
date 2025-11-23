@@ -4,7 +4,8 @@ from pathlib import Path
 from colorama import Fore, Style
 
 from smd.prompts import prompt_dir, prompt_select
-from smd.structs import GreenLumaVersions
+from smd.storage.settings import get_setting, set_setting
+from smd.structs import GreenLumaVersions, Settings
 
 
 def find_steam_path_from_registry():
@@ -50,8 +51,7 @@ def key_exists(hive: int, key_path: str):
         return False
 
 
-def set_stats_and_achievements(app_id: int, enabled: bool):
-    """Sets the SkipStatsAndAchievements key for a game."""
+def get_greenluma_key():
     greenluma_keynames = [x.value for x in GreenLumaVersions]
     existing_keys = [
         x
@@ -69,6 +69,14 @@ def set_stats_and_achievements(app_id: int, enabled: bool):
         selected_version = prompt_select(
             "Which version are you using rn?", existing_keys
         )
+    return selected_version
+
+
+def set_stats_and_achievements(app_id: int, enabled: bool):
+    """Sets the SkipStatsAndAchievements key for a game."""
+    if (selected_version := get_setting(Settings.GL_VERSION)) is None:
+        selected_version = get_greenluma_key()
+        set_setting(Settings.GL_VERSION, selected_version)
     try:
         with winreg.CreateKey(
             winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{selected_version}\AppID\{app_id}"
