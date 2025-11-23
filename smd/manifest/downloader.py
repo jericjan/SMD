@@ -83,7 +83,8 @@ class ManifestDownloader:
             main_app_data = self.provider.get_single_app_info(app_id)
 
         context = ManifestContext(
-            app_id=app_id, app_data=main_app_data, provider=self.provider
+            app_id=app_id, app_data=main_app_data, provider=self.provider,
+            auto=auto_fetch
         )
 
         strats: list[IManifestStrategy] = []
@@ -104,6 +105,10 @@ class ManifestDownloader:
                 continue
 
             manifest, strat = resolver.resolve(context, depot_id)
+            if manifest == "":
+                # Skip, probably because lua file had a base app ID
+                # that also had a decryption key
+                continue
             print(f"Depot {depot_id} has manifest {manifest} ({strat})")
             manifest_ids[depot_id] = manifest
 
@@ -129,7 +134,9 @@ class ManifestDownloader:
             if dec_key == "":
                 logger.debug(f"Skipping {depot_id} because it's not a depot")
                 continue
-            manifest_id = manifest_ids[depot_id]
+            manifest_id = manifest_ids.get(depot_id)
+            if manifest_id is None:
+                continue
             print(
                 Fore.CYAN
                 + f"\nDepot {depot_id} - Manifest {manifest_id}"

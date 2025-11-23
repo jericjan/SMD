@@ -102,7 +102,7 @@ class AppListManager:
         if isinstance(data, int):
             app_ids = [data]
         elif isinstance(data, LuaParsedInfo):
-            app_ids = [int(data.app_id), *[int(x.depot_id) for x in data.depots]]
+            app_ids = [int(x.depot_id) for x in data.depots]
         else:
             app_ids = data
 

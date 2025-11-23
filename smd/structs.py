@@ -148,10 +148,11 @@ class AppListFile(NamedTuple):
 
 @dataclass
 class DepotKeyPair():
+    """A depot and its decryption key"""
     depot_id: str
     "Depot ID"
     decryption_key: str
-    "Decryption Key of the Depot"
+    "Decryption Key of the Depot. Can be blank if it's not a depot"
 
 
 @dataclass

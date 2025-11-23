@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, List, Optional, Union
 
+from colorama import Fore, Style
+
 from smd.prompts import prompt_text
 from smd.steam_client import SteamInfoProvider
 from smd.utils import enter_path
@@ -14,6 +16,8 @@ class ManifestContext:
     app_data: dict[str, Any]
     "get_product_info data for app id"
     provider: SteamInfoProvider
+    auto: bool = True
+    "whether the user chose to automatically get IDs or not"
     _dlc_data: Optional[dict[int, Any]] = None
     "Lazy-loaded DLC data"
 
@@ -45,6 +49,7 @@ class IManifestStrategy(ABC):
 
 class StandardManifestStrategy(IManifestStrategy):
     """Just get the manifest directly from initial request"""
+
     @property
     def name(self):
         return "Direct"
@@ -52,16 +57,14 @@ class StandardManifestStrategy(IManifestStrategy):
     def get_manifest_id(
         self, ctx: ManifestContext, depot_id: Union[str, int]
     ) -> Optional[str]:
-        return (
-            enter_path(
-                ctx.app_data,
-                "depots", str(depot_id), "manifests", "public"
-            ).get("gid")
-        )
+        return enter_path(
+            ctx.app_data, "depots", str(depot_id), "manifests", "public"
+        ).get("gid")
 
 
 class SharedDepotManifestStrategy(IManifestStrategy):
     """Usually stuff like vcredist"""
+
     @property
     def name(self):
         return "Shared Install"
@@ -69,10 +72,9 @@ class SharedDepotManifestStrategy(IManifestStrategy):
     def get_manifest_id(
         self, ctx: ManifestContext, depot_id: Union[str, int]
     ) -> Optional[str]:
-        target_app_id = enter_path(
-            ctx.app_data,
-            "depots", str(depot_id)
-        ).get("depotfromapp")
+        target_app_id = enter_path(ctx.app_data, "depots", str(depot_id)).get(
+            "depotfromapp"
+        )
 
         if not target_app_id:
             return None
@@ -80,13 +82,13 @@ class SharedDepotManifestStrategy(IManifestStrategy):
         target_data = ctx.provider.get_single_app_info(int(target_app_id))
 
         return enter_path(
-            target_data,
-            "depots", str(depot_id), "manifests", "public"
+            target_data, "depots", str(depot_id), "manifests", "public"
         ).get("gid")
 
 
 class InnerDepotManifestStrategy(IManifestStrategy):
     """Inner depot DLC"""
+
     @property
     def name(self):
         return "Inner Depot From DLC"
@@ -95,9 +97,7 @@ class InnerDepotManifestStrategy(IManifestStrategy):
         for dlc_data in ctx.dlc_data.values():
             depots = dlc_data.get("depots", {})
             if depot_id in depots:
-                return enter_path(
-                    depots[depot_id], "manifests", "public"
-                ).get("gid")
+                return enter_path(depots[depot_id], "manifests", "public").get("gid")
         return None
 
 
@@ -107,6 +107,19 @@ class ManualManifestStrategy(IManifestStrategy):
         return "Manual"
 
     def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> Optional[str]:
+        if ctx.app_id == int(depot_id):
+            print(
+                Fore.YELLOW
+                + "The base app ID had a decryption key, and manifest ID could not be"
+                " found. Skipping..."
+                + Style.RESET_ALL
+            )
+            return ""
+        if ctx.auto:
+            print(
+                "All auto methods failed. Type the manifest ID manually here, "
+                "enter a blank to skip downloading it."
+            )
         return prompt_text(f"Depot {depot_id}: ")
 
 
@@ -119,7 +132,7 @@ class ManifestIDResolver:
         Returns manifest and strategy name"""
         for strategy in self.strategies:
             manifest = strategy.get_manifest_id(ctx, depot_id)
-            if manifest:
+            if manifest is not None:
                 return manifest, strategy.name
 
         raise Exception(f"Unable to resolve manifest for depot {depot_id}")

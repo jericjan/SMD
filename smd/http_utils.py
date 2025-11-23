@@ -9,6 +9,7 @@ import httpx
 from tqdm import tqdm  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_text
+from smd.secret_store import b64_decrypt
 
 if TYPE_CHECKING:
     from tempfile import _TemporaryFileWrapper  # pyright: ignore[reportPrivateUsage]
@@ -88,8 +89,14 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     Returns:
         str: The request code
     """
-    url = f"http://gmrc.openst.top/manifest/{manifest_id}"
-    print(f"Getting request code from: {url}")
+    # Yes, I'm aware it's not actually "encrypted" since I included the password
+    # Shut up.
+    template_url = b64_decrypt(
+        b"+GM38vRJxeVFvupQLdBtFXmkXf9wNVIewrUgeepdZ/k=",
+        b"0qbgZnBuui43SVL4LnCAk9hC5aQC7C+ycMuPMsHUDPUcqWJ6JJ2CJOzbNWI2xjqp1IRZCAE5yKQseS3+CiZ88QorosG1KfLQw2Vj0q5pVfVFrO37lA==",
+    )
+    url = template_url.format(manifest_id=manifest_id)
+    print("Getting request code...")
 
     request_task = asyncio.create_task(get_request(url))
     cancel_task = asyncio.create_task(_wait_for_enter())

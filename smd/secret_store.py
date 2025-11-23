@@ -37,3 +37,15 @@ def keyring_decrypt(data: bytes):
         return box.decrypt(data).decode()
     except CryptoError:
         pass
+
+
+def b64_decrypt(key: bytes, ciphertext: bytes):
+    box = SecretBox(base64.b64decode(key))
+    plaintext = box.decrypt(base64.b64decode(ciphertext))
+    return plaintext.decode()
+
+
+def b64_encrypt(key: bytes, plaintext: str):
+    box = SecretBox(base64.b64decode(key))
+    ciphertext = box.encrypt(plaintext.encode())
+    return base64.b64encode(ciphertext)

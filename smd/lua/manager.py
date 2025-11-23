@@ -1,3 +1,4 @@
+import logging
 import re
 import shutil
 from pathlib import Path
@@ -5,6 +6,8 @@ from pathlib import Path
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
 from smd.storage.named_ids import get_named_ids
 from smd.structs import DepotKeyPair, LuaChoice, LuaParsedInfo, RawLua  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class LuaManager:
@@ -38,29 +41,36 @@ class LuaManager:
 
     def fetch_lua(self, choice: LuaChoice) -> LuaParsedInfo:
         """Depending on the choice, fetch a lua file then parse the contents"""
-        app_id_regex = re.compile(r"^\s*addappid\s*\(\s*(\d+)\s*\)")
-        depot_dec_key_regex = re.compile(
-            r"^\s*addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
+        depot_no_key_regex = re.compile(
+            r"^\s*addappid\s*\(\s*(\d+)\s*\)", flags=re.MULTILINE
         )
-        extra_no_key_ids: list[str] = []
+        # addappid with just 1 arg
+        depot_dec_key_regex = re.compile(
+            r"^\s*addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)",
+            flags=re.MULTILINE,
+        )
+        # addappid with decryption key
+        general_regex = re.compile(r"^\s*addappid\s*\(\s*(\d+)", flags=re.MULTILINE)
+        # any addappid command
+
         while True:
+            ids_with_no_key: list[str] = []
             lua = self.get_raw_lua(choice)
-            if not (app_id_match := app_id_regex.findall(lua.contents)):
+            if not (any_addappid := general_regex.search(lua.contents)):
                 print("App ID not found. Try again.")
                 continue
 
-            app_id = app_id_match[0]
+            app_id = any_addappid.group(1)
             print(f"App ID is {app_id}")
 
-            if len(app_id_match) > 1:
-                extra_no_key_ids = app_id_match[1:]
+            ids_with_no_key = depot_no_key_regex.findall(lua.contents)
 
             if not (depot_dec_key := depot_dec_key_regex.findall(lua.contents)):
                 print("Decryption keys not found. Try again.")
                 continue
             break
         depot_dec_key = [DepotKeyPair(*x) for x in depot_dec_key]
-        depot_dec_key.extend([DepotKeyPair(x, "") for x in extra_no_key_ids])
+        depot_dec_key.extend([DepotKeyPair(x, "") for x in ids_with_no_key])
         return LuaParsedInfo(lua.path, lua.contents, app_id, depot_dec_key)
 
     def backup_lua(self, lua: LuaParsedInfo):
