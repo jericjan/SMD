@@ -59,7 +59,11 @@ class SteamInfoProvider:
             info = _get_product_info(self.client, missing)
             self._cache.update(info.get("apps", {}))
 
-        return {app_id: self._cache.get(app_id, {}) for app_id in app_ids}
+        return {
+            app_id: self._cache.get(app_id, {})
+            for app_id in app_ids
+            if app_id in self._cache
+        }
 
     def get_single_app_info(self, app_id: int) -> dict[str, Any]:
         result = self.get_app_info([app_id])
