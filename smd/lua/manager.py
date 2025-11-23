@@ -38,9 +38,9 @@ class LuaManager:
 
     def fetch_lua(self, choice: LuaChoice) -> LuaParsedInfo:
         """Depending on the choice, fetch a lua file then parse the contents"""
-        app_id_regex = re.compile(r"addappid\s*\(\s*(\d+)\s*\)")
+        app_id_regex = re.compile(r"^\s*addappid\s*\(\s*(\d+)\s*\)")
         depot_dec_key_regex = re.compile(
-            r"addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
+            r"^\s*addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|\')(\S+)(?:\"|\')\s*\)"
         )
         extra_no_key_ids: list[str] = []
         while True:
