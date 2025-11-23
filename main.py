@@ -9,6 +9,7 @@ from steam.client import SteamClient  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_select
 from smd.registry_access import get_steam_path
+from smd.steam_client import SteamInfoProvider
 from smd.strings import VERSION
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
@@ -84,9 +85,10 @@ if __name__ == "__main__":
         + Style.RESET_ALL
     )
     client = SteamClient()
+    provider = SteamInfoProvider(client)
     steam_path = get_steam_path()
 
-    ui = UI(client, steam_path)
+    ui = UI(provider, steam_path)
 
     return_code = None
     while True:

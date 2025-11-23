@@ -7,9 +7,8 @@ from typing import Any, Callable, Optional, Union
 from colorama import Fore, Style
 from rich.console import Console
 from rich.table import Column, Table
-from steam.client import SteamClient  # type: ignore
 
-from smd.steam_client import get_product_info
+from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
@@ -46,10 +45,10 @@ class ParsedDLC:
 
 
 class AppListManager:
-    def __init__(self, steam_path: Path, client: SteamClient):
+    def __init__(self, steam_path: Path, provider: SteamInfoProvider):
         self.max_id_limit = 168
         self.steam_path = steam_path
-        self.client = client
+        self.provider = provider
 
         # App ID / Depot IDs mapped to their name and type
         self.id_map: dict[int, DepotOrAppID] = {}
@@ -173,7 +172,7 @@ class AppListManager:
                         app_name, int(depot_id), parent_id
                     )
 
-    def prompt_id_deletion(self, client: SteamClient):
+    def prompt_id_deletion(self, provider: SteamInfoProvider):
         # i'm not using set() cuz that doesn't preserve insertion order lmao
         ids = list(
             dict.fromkeys([int(x.app_id) for x in self.get_local_ids(sort=True)])
@@ -185,7 +184,7 @@ class AppListManager:
                 "add a game with the tool."
             )
             return
-        info = get_product_info(client, list(ids))
+        info = get_product_info(provider, list(ids))
         self.update_depot_info(info)
 
         still_missing: list[int] = []
@@ -196,7 +195,7 @@ class AppListManager:
                 still_missing.append(self.tweak_last_digit(app_id))
 
         if still_missing:
-            info = get_product_info(client, still_missing)
+            info = get_product_info(provider, still_missing)
             self.update_depot_info(info)
 
         organized: OrganizedAppIDs = {}
@@ -260,9 +259,9 @@ class AppListManager:
                             unique_ids.add(x)
         self.remove_ids(list(unique_ids))
 
-    def dlc_check(self, client: SteamClient, base_id: int):
+    def dlc_check(self, provider: SteamInfoProvider, base_id: int):
         print("Checking for DLC...")
-        info = get_product_info(client, [base_id])
+        info = get_product_info(provider, [base_id])
         dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
         logger.debug(f"listofdlc: {dlcs}")
         if not dlcs:
@@ -270,9 +269,9 @@ class AppListManager:
         else:
             assert isinstance(dlcs, str)
             dlcs = [int(x) for x in dlcs.split(",")]
-            dlc_info = get_product_info(client, dlcs)
+            dlc_info = get_product_info(provider, dlcs)
             config = ConfigVDFWriter(self.steam_path)
-            manifest = ManifestDownloader(self.client, self.steam_path)
+            manifest = ManifestDownloader(self.provider, self.steam_path)
             if dlc_info:
                 if apps := dlc_info.get("apps"):
                     unowned_non_depot_dlcs: list[int] = []
@@ -339,14 +338,14 @@ class AppListManager:
                             "decryption keys for them."
                         )
 
-    def display_menu(self, client: SteamClient) -> MainReturnCode:
+    def display_menu(self, provider: SteamInfoProvider) -> MainReturnCode:
         applist_choice: Optional[AppListChoice] = prompt_select(
             "Choose:", list(AppListChoice), cancellable=True
         )
         if applist_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
         if applist_choice == AppListChoice.DELETE:
-            self.prompt_id_deletion(client)
+            self.prompt_id_deletion(provider)
         elif applist_choice == AppListChoice.ADD:
             validator: Callable[[str], bool] = lambda x: all(
                 [y.isdigit() for y in x.split()]

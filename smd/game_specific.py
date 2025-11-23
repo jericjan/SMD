@@ -9,10 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Literal, NamedTuple, Optional, overload
 
-from steam.client import SteamClient  # type: ignore
-
 from smd.applist import AppListManager
-from smd.steam_client import get_product_info
 from smd.prompts import (
     prompt_confirm,
     prompt_file,
@@ -20,6 +17,7 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
+from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
@@ -49,12 +47,12 @@ class GameHandler:
         self,
         steam_root: Path,
         library_path: Path,
-        client: SteamClient,
+        provider: SteamInfoProvider,
         app_list_man: AppListManager,
     ):
         self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps"
-        self.client = client
+        self.provider = provider
         self.app_list_man = app_list_man
 
     def get_game(self) -> Optional[ACFInfo]:
@@ -286,7 +284,7 @@ class GameHandler:
 
     def select_executable(self, app_info: ACFInfo) -> Path:
         """Selects EXE to get used for Steamless"""
-        info = get_product_info(self.client, [int(app_info.app_id)])
+        info = get_product_info(self.provider, [int(app_info.app_id)])
 
         windows_exes = self._get_windows_execs(info, int(app_info.app_id))
         if not windows_exes:
@@ -316,5 +314,5 @@ class GameHandler:
         elif choice == MainMenu.DL_USER_GAME_STATS:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         elif choice == MainMenu.DLC_CHECK:
-            self.app_list_man.dlc_check(self.client, int(app_info.app_id))
+            self.app_list_man.dlc_check(self.provider, int(app_info.app_id))
         return MainReturnCode.LOOP

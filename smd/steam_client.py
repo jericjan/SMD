@@ -11,8 +11,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# TODO: remove all uses outside of SteamInfoProvider
-def get_product_info(client: SteamClient, app_ids: list[int]) -> ProductInfo:
+def get_product_info(provider: "SteamInfoProvider", app_ids: list[int]) -> ProductInfo:
+    """Here for backwards compatibility"""
+    return ProductInfo({"apps": provider.get_app_info(app_ids), "packages": {}})
+
+
+def _get_product_info(client: SteamClient, app_ids: list[int]) -> ProductInfo:
     if len(app_ids) == 0:
         raise ValueError("app_ids cannot be empty.")
     if not client.logged_on:
@@ -52,7 +56,7 @@ class SteamInfoProvider:
     def get_app_info(self, app_ids: list[int]) -> dict[int, Any]:
         missing = [app_id for app_id in app_ids if app_id not in self._cache]
         if missing:
-            info = get_product_info(self.client, missing)
+            info = _get_product_info(self.client, missing)
             self._cache.update(info.get("apps", {}))
 
         return {app_id: self._cache.get(app_id, {}) for app_id in app_ids}

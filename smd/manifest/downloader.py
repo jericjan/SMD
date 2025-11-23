@@ -7,7 +7,6 @@ from urllib.parse import urljoin
 
 import gevent
 from colorama import Fore, Style
-from steam.client import SteamClient  # type: ignore
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from smd.http_utils import get_gmrc, get_request_raw
@@ -33,17 +32,16 @@ logger = logging.getLogger(__name__)
 
 
 class ManifestDownloader:
-    def __init__(self, client: SteamClient, steam_path: Path):
-        self.client = client
+    def __init__(self, provider: SteamInfoProvider, steam_path: Path):
         self.steam_path = steam_path
-        self.provider = SteamInfoProvider(client)
+        self.provider = provider
 
     def get_dlc_manifest_status(self, depot_ids: list[int]):
         # A dict of Depot IDs mapped to Manifest IDs
         manifest_ids: dict[int, bool] = {}
 
         while True:
-            app_info = get_product_info(self.client, depot_ids)  # type: ignore
+            app_info = get_product_info(self.provider, depot_ids)  # type: ignore
             for depot_id in depot_ids:
                 depots_dict: dict[str, Any] = (
                     app_info.get("apps", {}).get(depot_id, {}).get("depots", {})
@@ -118,7 +116,7 @@ class ManifestDownloader:
         """Gets latest manifest IDs and downloads respective manifests"""
         while True:
             try:
-                cdn = CDNClient(self.client)
+                cdn = CDNClient(self.provider.client)
                 break
             except gevent.Timeout:
                 print("CDN Client timed out. Trying again.")

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from colorama import Fore, Style
-from steam.client import SteamClient  # type: ignore
 
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
@@ -19,6 +18,7 @@ from smd.manifest.downloader import ManifestDownloader
 from smd.midi import MidiPlayer
 from smd.prompts import prompt_confirm, prompt_secret, prompt_select, prompt_text
 from smd.registry_access import set_stats_and_achievements
+from smd.steam_client import SteamInfoProvider
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import VERSION
@@ -56,12 +56,12 @@ def music_toggle_decorator(func):  # type: ignore
 class UI:
     def __init__(
         self,
-        client: SteamClient,
+        provider: SteamInfoProvider,
         steam_path: Path,
     ):
-        self.steam_client = client
+        self.provider = provider
         self.steam_path = steam_path
-        self.app_list_man = AppListManager(steam_path, self.steam_client)
+        self.app_list_man = AppListManager(steam_path, self.provider)
 
         self.init_midi_player()
 
@@ -126,7 +126,7 @@ class UI:
                     self.init_midi_player()
 
             if selected_key == Settings.APPLIST_FOLDER:
-                self.app_list_man = AppListManager(self.steam_path, self.steam_client)
+                self.app_list_man = AppListManager(self.steam_path, self.provider)
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator
@@ -189,7 +189,7 @@ class UI:
 
     @music_toggle_decorator
     def applist_menu(self) -> MainReturnCode:
-        return self.app_list_man.display_menu(self.steam_client)
+        return self.app_list_man.display_menu(self.provider)
 
     def select_steam_library(self):
         """Returns success status"""
@@ -209,7 +209,7 @@ class UI:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
         handler = GameHandler(
-            self.steam_path, lib_path, self.steam_client, self.app_list_man
+            self.steam_path, lib_path, self.provider, self.app_list_man
         )
         return handler.execute_choice(choice)
 
@@ -226,7 +226,7 @@ class UI:
             return MainReturnCode.LOOP_NO_PROMPT
 
         lua_manager = LuaManager()
-        downloader = ManifestDownloader(self.steam_client, self.steam_path)
+        downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
 
@@ -239,7 +239,7 @@ class UI:
             set_stats_and_achievements(int(parsed_lua.app_id), False)
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
-        self.app_list_man.dlc_check(self.steam_client, int(parsed_lua.app_id))
+        self.app_list_man.dlc_check(self.provider, int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
         config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)
