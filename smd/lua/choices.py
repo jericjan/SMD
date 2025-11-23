@@ -2,16 +2,22 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from colorama import Fore, Style
 
-from smd.utils import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
-from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
-from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs
-from smd.utils import enter_path, root_folder
+from smd.prompts import (
+    prompt_confirm,
+    prompt_file,
+    prompt_secret,
+    prompt_select,
+    prompt_text,
+)
+from smd.storage.settings import get_setting, set_setting
+from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs, Settings
+from smd.utils import enter_path, root_folder, run_fzf
 from smd.zip import read_lua_from_zip
 
 
@@ -80,21 +86,37 @@ def search_game() -> Optional[str]:
     else:
         download = True
     if download:
+        if (api_key := get_setting(Settings.STEAM_WEB_API_KEY)) is None:
+            print("You don't have a Steam Web API Key yet. "
+                  "Steam needs this in order to browse through all the games.\n\n"
+                  "Head over to https://steamcommunity.com/dev/apikey to get one.")
+            api_key = prompt_secret("Enter your Steam Web API Key:")
+            set_setting(Settings.STEAM_WEB_API_KEY, api_key)
+        params: dict[str, str] = {"key": api_key, "max_results": "50000"}
+        games: list[dict[str, Any]] = []
+        print("Steam has limited this endpoint to 50k IDs per requests, so "
+              "it'll be downloading a couple times. Don't be alarmed.")
         while True:
             with download_to_tempfile(
-                "https://api.steampowered.com/ISteamApps/GetAppList/v1/"
+                "https://api.steampowered.com/IStoreService/GetAppList/v1/",
+                params=params
             ) as tf:
                 if tf is None:
                     continue
                 resp = json.load(tf)
-            break
-        games = enter_path(resp, "applist", "apps", "app")
-        games = [x.get("name") + f" [ID={x.get('appid')}]" for x in games]
+            games.extend(enter_path(resp, "response", "apps"))
+            more = enter_path(resp, "response", "have_more_results")
+            if not more:
+                break
+            params['last_appid'] = enter_path(resp, "response", "last_appid")
+        games_str = [
+            x.get("name", "UNKNOWN GAME") + f" [ID={x.get('appid')}]" for x in games
+        ]
         with all_games_file.open("w", encoding="utf=-8") as f:
-            f.write('\n'.join(games))
+            f.write('\n'.join(games_str))
     else:
-        games = all_games_file
-    selection = run_fzf(games)
+        games_str = all_games_file
+    selection = run_fzf(games_str)
     if selection:
         match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection)
         assert match is not None

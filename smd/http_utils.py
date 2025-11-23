@@ -142,13 +142,21 @@ def get_game_name(app_id: str):
 
 @contextmanager
 def download_to_tempfile(
-    url: str, headers: Optional[dict[str, str]] = None, chunk_size: int = (1024**2) // 2
+    url: str,
+    headers: Optional[dict[str, str]] = None,
+    params: Optional[dict[str, str]] = None,
+    chunk_size: int = (1024**2) // 2,
 ) -> Generator[Union["_TemporaryFileWrapper[bytes]", None], None, None]:
     """Downloads and yields a tempfile, Defaults to 0.5MiB for chunk size"""
     temp_f = TemporaryFile()
     try:
         with httpx.stream(
-            "GET", url, headers=headers, follow_redirects=True, timeout=None
+            "GET",
+            url,
+            headers=headers,
+            params=params,
+            follow_redirects=True,
+            timeout=None,
         ) as response:
 
             try:

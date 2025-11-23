@@ -75,6 +75,7 @@ class Settings(Enum):
     STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)
     GL_VERSION = SettingItem("greenluma_version", "GreenLuma Version", False)
     APPLIST_FOLDER = SettingItem("applist_folder", "GreenLuma AppList Folder", False)
+    STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False)
 
     @property
