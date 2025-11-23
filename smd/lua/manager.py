@@ -67,9 +67,10 @@ class LuaManager:
         """Saves the lua file for later use"""
         target = self.saved_lua / f"{lua.app_id}.lua"
         if lua.path.suffix == ".zip":
-            with target.open(
-                "w", encoding="utf-8"
-            ) as f:
+            with target.open("w", encoding="utf-8") as f:
                 f.write(lua.contents)
-        elif not target.exists():
+        try:
             shutil.copyfile(lua.path, target)
+        except shutil.SameFileError:
+            logger.debug("Skipped backup because it's the same file")
+            pass
