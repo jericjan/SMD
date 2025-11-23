@@ -52,17 +52,25 @@ class SteamInfoProvider:
     def __init__(self, client: SteamClient):
         self.client = client
         self._cache: dict[int, Any] = {}
+        """A cache of app IDs and their data taken
+        from the `apps` key of `get_product_info`.
+        Values are False if it's not a base app ID"""
 
     def get_app_info(self, app_ids: list[int]) -> dict[int, Any]:
         missing = [app_id for app_id in app_ids if app_id not in self._cache]
         if missing:
             info = _get_product_info(self.client, missing)
-            self._cache.update(info.get("apps", {}))
+            apps: dict[int, Any] = info.get("apps", {})
+            valid_ids = set(apps.keys())
+            invalid_ids = set(missing) - valid_ids
+            self._cache.update({**apps, **{x: False for x in invalid_ids}})
+        else:
+            print("Reading app info from cache...")
 
         return {
             app_id: self._cache.get(app_id, {})
             for app_id in app_ids
-            if app_id in self._cache
+            if self._cache.get(app_id, {})
         }
 
     def get_single_app_info(self, app_id: int) -> dict[str, Any]:
