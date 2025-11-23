@@ -287,9 +287,6 @@ class GameHandler:
     def select_executable(self, app_info: ACFInfo) -> Path:
         """Selects EXE to get used for Steamless"""
         info = get_product_info(self.client, [int(app_info.app_id)])
-        if not info:
-            print("Failed to get app info...")
-            return self._prompt_manual_exe(app_info)
 
         windows_exes = self._get_windows_execs(info, int(app_info.app_id))
         if not windows_exes:

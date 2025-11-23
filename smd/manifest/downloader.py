@@ -44,8 +44,6 @@ class ManifestDownloader:
 
         while True:
             app_info = get_product_info(self.client, depot_ids)  # type: ignore
-            if app_info is None:
-                continue
             for depot_id in depot_ids:
                 depots_dict: dict[str, Any] = (
                     app_info.get("apps", {}).get(depot_id, {}).get("depots", {})

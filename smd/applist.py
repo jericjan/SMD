@@ -154,15 +154,6 @@ class AppListManager:
         chars[-1] = "0"
         return int("".join(chars))
 
-    # TODO: move this to http_utils.py?
-    def get_product_info_with_retry(self, client: SteamClient, ids: list[int]):
-        if not ids:
-            raise ValueError("`ids` should not be empty")
-        while True:
-            info = get_product_info(client, ids)  # type: ignore
-            if info is not None:
-                return info
-
     def update_depot_info(self, product_info: ProductInfo):
         """Updates `self.id_map` with data from `product_info`"""
         apps_data = enter_path(product_info, "apps")
@@ -194,7 +185,7 @@ class AppListManager:
                 "add a game with the tool."
             )
             return
-        info = self.get_product_info_with_retry(client, list(ids))
+        info = get_product_info(client, list(ids))
         self.update_depot_info(info)
 
         still_missing: list[int] = []
@@ -205,7 +196,7 @@ class AppListManager:
                 still_missing.append(self.tweak_last_digit(app_id))
 
         if still_missing:
-            info = self.get_product_info_with_retry(client, still_missing)
+            info = get_product_info(client, still_missing)
             self.update_depot_info(info)
 
         organized: OrganizedAppIDs = {}
@@ -271,7 +262,7 @@ class AppListManager:
 
     def dlc_check(self, client: SteamClient, base_id: int):
         print("Checking for DLC...")
-        info = self.get_product_info_with_retry(client, [base_id])
+        info = get_product_info(client, [base_id])
         dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
         logger.debug(f"listofdlc: {dlcs}")
         if not dlcs:
@@ -279,7 +270,7 @@ class AppListManager:
         else:
             assert isinstance(dlcs, str)
             dlcs = [int(x) for x in dlcs.split(",")]
-            dlc_info = self.get_product_info_with_retry(client, dlcs)
+            dlc_info = get_product_info(client, dlcs)
             config = ConfigVDFWriter(self.steam_path)
             manifest = ManifestDownloader(self.client, self.steam_path)
             if dlc_info:

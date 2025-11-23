@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any, Optional
+from typing import Any
 
 import gevent
 from steam.client import SteamClient  # type: ignore
@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: remove all uses outside of SteamInfoProvider
-def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[ProductInfo]:
+def get_product_info(client: SteamClient, app_ids: list[int]) -> ProductInfo:
+    if len(app_ids) == 0:
+        raise ValueError("app_ids cannot be empty.")
     if not client.logged_on:
         print("Logging in anonymously...", end="", flush=True)
         client.anonymous_login()
@@ -25,6 +27,8 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
             info = client.get_product_info(  # pyright: ignore[reportUnknownMemberType]
                 app_ids
             )
+            # only none when app_ids is empty, which never happens
+            assert info is not None
             logger.debug(f"Product info request took: {time.time() - start}s")
         except gevent.Timeout:
             print("Request timed out. Trying again")
@@ -34,10 +38,8 @@ def get_product_info(client: SteamClient, app_ids: list[int]) -> Optional[Produc
                 pass
             continue
         break
-    if info:
-        logger.debug(f"get_product_info retured: {json.dumps(info)}")
-        return ProductInfo(info)
-    return None
+    logger.debug(f"get_product_info retured: {json.dumps(info)}")
+    return ProductInfo(info)
 
 
 class SteamInfoProvider:
@@ -51,8 +53,7 @@ class SteamInfoProvider:
         missing = [app_id for app_id in app_ids if app_id not in self._cache]
         if missing:
             info = get_product_info(self.client, missing)
-            if info:
-                self._cache.update(info.get("apps", {}))
+            self._cache.update(info.get("apps", {}))
 
         return {app_id: self._cache.get(app_id, {}) for app_id in app_ids}
 
