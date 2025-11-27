@@ -86,13 +86,26 @@ class AppListManager:
         self.last_idx = -1
         ids: list[AppListFile] = []
         for file in self.applist_folder.glob("*.txt"):
-            if file.stem.isdigit():
-                file_idx = int(file.stem) if file.stem.isnumeric() else -1
-                if file_idx > self.last_idx:
-                    self.last_idx = file_idx
-            ids.append(AppListFile(file, int(file.read_text(encoding="utf-8").strip())))
+            if not file.stem.isdigit():
+                logger.debug(f"[get_local_ids] Ignored {file.name}")
+                continue
+            file_idx = int(file.stem)
+            if file_idx > self.last_idx:
+                self.last_idx = file_idx
+
+            contents = file.read_text(encoding="utf-8").strip()
+
+            if contents.isnumeric():
+                appid = int(contents)
+            else:
+                raise Exception(
+                    f"{file.name} does not contain a "
+                    "number. Text files in AppList should only contain the number "
+                    "of their App ID. Please fix this and launch SMD again."
+                )
+            ids.append(AppListFile(file, appid))
         if sort:
-            ids.sort(key=lambda x: int(x.path.stem))
+            ids.sort(key=lambda x: int(x.path.stem) if x.path.stem.isnumeric() else -1)
         return ids
 
     def add_ids(
@@ -191,7 +204,7 @@ class AppListManager:
 
         for app_id in ids:
             if app_id not in self.id_map:
-                # There is a Depot ID in AppList without a corresponding App ID
+                # There is a Depot ID in AppList without a corresponding base App ID
                 still_missing.append(self.tweak_last_digit(app_id))
 
         if still_missing:
