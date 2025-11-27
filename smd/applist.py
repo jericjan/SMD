@@ -46,7 +46,7 @@ class ParsedDLC:
 
 class AppListManager:
     def __init__(self, steam_path: Path, provider: SteamInfoProvider):
-        self.max_id_limit = 168
+        self.max_id_limit = 134
         self.steam_path = steam_path
         self.provider = provider
 
