@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shutil
 import time
 from pathlib import Path
 from typing import Any, cast
@@ -153,7 +154,7 @@ class ManifestDownloader:
             if possible_saved_manifest.exists():
                 print("One of the endpoints had a manifest. Skipping download...")
                 if not final_manifest_loc.exists():
-                    possible_saved_manifest.rename(final_manifest_loc)
+                    shutil.move(possible_saved_manifest, final_manifest_loc)
                 continue
             while True:
                 req_code = asyncio.run(get_gmrc(manifest_id))
