@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -26,6 +27,17 @@ fh.setFormatter(
     )
 )
 logger.addHandler(fh)
+
+
+def dump_crash():
+    print(
+        "There was an error. You can also find this in crash.log:\n" + Fore.RED
+    )
+    with Path("crash.log").open("w+", encoding="utf-8") as f:
+        traceback.print_exc(file=f)
+        f.seek(0)
+        print(f.read())
+    print(Style.RESET_ALL, end="")
 
 
 def main(ui: UI) -> MainReturnCode:
@@ -84,11 +96,15 @@ if __name__ == "__main__":
 └────────────────────────────────────────┘ """
         + Style.RESET_ALL
     )
-    client = SteamClient()
-    provider = SteamInfoProvider(client)
-    steam_path = get_steam_path()
-
-    ui = UI(provider, steam_path)
+    try:
+        client = SteamClient()
+        provider = SteamInfoProvider(client)
+        steam_path = get_steam_path()
+        ui = UI(provider, steam_path)
+    except Exception:
+        dump_crash()
+        input("Press Enter to exit the program...")
+        sys.exit()
 
     return_code = None
     while True:
@@ -99,14 +115,7 @@ if __name__ == "__main__":
             return_code = None
             break
         except Exception:
-            print(
-                "There was an error. You can also find this in crash.log:\n" + Fore.RED
-            )
-            with Path("crash.log").open("w+", encoding="utf-8") as f:
-                traceback.print_exc(file=f)
-                f.seek(0)
-                print(f.read())
-            print(Style.RESET_ALL, end="")
+            dump_crash()
             input("Press Enter to restart the program...")
             continue
 
