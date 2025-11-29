@@ -69,10 +69,13 @@ def main(ui: UI) -> MainReturnCode:
     if menu_choice == MainMenu.CHECK_UPDATES:
         return ui.check_updates()
 
+    if menu_choice == MainMenu.DL_MANIFEST_ONLY:
+        return ui.process_lua_minimal()
+
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
-    return ui.process_lua_choice()
+    return ui.process_lua_full()
 
 
 if __name__ == "__main__":

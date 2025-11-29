@@ -128,6 +128,7 @@ class ManifestDownloader:
                 print("CDN Client timed out. Trying again.")
         manifest_ids = self.get_manifest_ids(lua)
 
+        manifest_paths: list[Path] = []
         # Download and decrypt manifests
         for pair in lua.depots:
             depot_id = pair.depot_id
@@ -178,3 +179,5 @@ class ManifestDownloader:
 
             if manifest:
                 decrypt_manifest(manifest, final_manifest_loc, dec_key)
+                manifest_paths.append(final_manifest_loc)
+        return manifest_paths

@@ -16,6 +16,7 @@ class LuaChoice(Enum):
 
 class MainMenu(Enum):
     MANAGE_LUA = "Manage .lua files"
+    DL_MANIFEST_ONLY = "Download manifests only"
     DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"

@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import os
+import shutil
 import subprocess
 import zipfile
 from collections import OrderedDict
@@ -16,7 +17,13 @@ from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.midi import MidiPlayer
-from smd.prompts import prompt_confirm, prompt_secret, prompt_select, prompt_text
+from smd.prompts import (
+    prompt_confirm,
+    prompt_dir,
+    prompt_secret,
+    prompt_select,
+    prompt_text,
+)
 from smd.registry_access import set_stats_and_achievements
 from smd.steam_client import SteamInfoProvider
 from smd.storage.settings import get_setting, load_all_settings, set_setting
@@ -219,7 +226,50 @@ class UI:
         return handler.execute_choice(choice)
 
     @music_toggle_decorator
-    def process_lua_choice(self) -> MainReturnCode:
+    def process_lua_minimal(self) -> MainReturnCode:
+        """Processes a .lua file but only does the lua input, lua backup, and manifest
+        download steps"""
+
+        lua_choice: Optional[LuaChoice] = prompt_select(
+            "Choose:", list(LuaChoice), cancellable=True
+        )
+
+        if lua_choice is None:
+            return MainReturnCode.LOOP_NO_PROMPT
+
+        lua_manager = LuaManager()
+        downloader = ManifestDownloader(self.provider, self.steam_path)
+
+        parsed_lua = lua_manager.fetch_lua(lua_choice)
+        lua_manager.backup_lua(parsed_lua)
+        print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
+        manifests = downloader.download_manifests(parsed_lua)
+        move_files = prompt_confirm(
+            "Manifests are now in the depotcache folder. "
+            "Would you like to transfer these files to another folder?",
+            default=False
+        )
+        if move_files:
+            dst = prompt_dir("Paste in here the folder you'd like to move them to:")
+            for file in manifests:
+                shutil.move(file, dst / file.name)
+                print(f"{file.name} moved")
+        print(
+            Fore.GREEN + "\nSuccess! ", end=""
+        )
+        if not move_files:
+            print(
+                "Close Steam and run DLLInjector again "
+                "(or not depending on how you installed Greenluma). "
+                'Your game should show up in the library ready to "update"'
+                , end=""
+            )
+        print(Style.RESET_ALL)
+        return MainReturnCode.LOOP
+
+    @music_toggle_decorator
+    def process_lua_full(self) -> MainReturnCode:
+        """Processes a .lua file and goes through all the usual steps"""
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
