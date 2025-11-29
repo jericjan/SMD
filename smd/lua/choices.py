@@ -11,11 +11,11 @@ from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import (
     prompt_confirm,
     prompt_file,
-    prompt_secret,
     prompt_select,
     prompt_text,
 )
 from smd.storage.settings import get_setting, set_setting
+from smd.strings import STEAM_WEB_API_KEY
 from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs, Settings
 from smd.utils import enter_path, root_folder, run_fzf
 from smd.zip import read_lua_from_zip
@@ -89,8 +89,9 @@ def search_game() -> Optional[str]:
         if (api_key := get_setting(Settings.STEAM_WEB_API_KEY)) is None:
             print("You don't have a Steam Web API Key yet. "
                   "Steam needs this in order to browse through all the games.\n\n"
-                  "Head over to https://steamcommunity.com/dev/apikey to get one.")
-            api_key = prompt_secret("Enter your Steam Web API Key:")
+                  "No worries though. I'll just give you one (It's not mine) "
+                  "You can change this later with your own in settings if you'd like.")
+            api_key = STEAM_WEB_API_KEY
             set_setting(Settings.STEAM_WEB_API_KEY, api_key)
         params: dict[str, str] = {"key": api_key, "max_results": "50000"}
         games: list[dict[str, Any]] = []
