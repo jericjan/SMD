@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -52,6 +53,8 @@ def main(ui: UI) -> MainReturnCode:
     print("\n==========================================\n")
     advanced_mode = resolve_advanced_mode()
     exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
+    if first_launch:
+        logger.debug(f"Took {time.time() - start_time}s to start")
     menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu), exclude=exclude)
 
     if menu_choice == MainMenu.EXIT:
@@ -82,6 +85,7 @@ def main(ui: UI) -> MainReturnCode:
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     color_init()
     version_txt = f"Version: {VERSION}"
     print(
@@ -104,18 +108,22 @@ if __name__ == "__main__":
     )
     try:
         client = SteamClient()
+        logger.debug(f"Steam client init in {time.time() - start_time}s")
         provider = SteamInfoProvider(client)
         steam_path = init_steam_path()
+        logger.debug(f"Steam path init in {time.time() - start_time}s")
         ui = UI(provider, steam_path)
     except Exception:
         dump_crash()
         input("Press Enter to exit the program...")
         sys.exit()
-
+    logger.debug(f"Init finished in {time.time() - start_time}s")
     return_code = None
+    first_launch = True
     while True:
         try:
             return_code = main(ui)
+            first_launch = False
         except KeyboardInterrupt:
             print(Fore.RED + "\nWait, don't go—\n" + Style.RESET_ALL)
             return_code = None

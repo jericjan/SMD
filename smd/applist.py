@@ -80,6 +80,18 @@ class AppListManager:
             print(f"Your AppList folder is {colorized}")
         self.fix_names()
 
+    def get_local_filenames(self, sort: bool = False) -> list[Path]:
+        """get_local_ids but just filenames and no last_idx editing"""
+        files: list[Path] = []
+        for file in self.applist_folder.glob("*.txt"):
+            if not file.stem.isdigit():
+                logger.debug(f"[get_local_filenames] Ignored {file.name}")
+                continue
+            files.append(file)
+        if sort:
+            files.sort(key=lambda x: int(x.stem) if x.stem.isnumeric() else -1)
+        return files
+
     def get_local_ids(self, sort: bool = False) -> list[AppListFile]:
         """Returns a list of tuple(path, app_id) and
         updates self.last_idx to the filename with the largest number"""
@@ -155,7 +167,7 @@ class AppListManager:
 
     def fix_names(self):
         """Fixes filenames if they're wrong (e.g. 0.txt is missing, gap in numbering)"""
-        ids = [x.path for x in self.get_local_ids(sort=True)]
+        ids = self.get_local_filenames(sort=True)
         for new_idx, old_path in enumerate(ids):
             new_name = old_path.parent / f"{new_idx}.txt"
             if new_name.name != old_path.name:

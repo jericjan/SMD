@@ -5,6 +5,9 @@ import msgpack  # type: ignore
 
 from smd.secret_store import keyring_decrypt, keyring_encrypt
 from smd.structs import Settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 SETTINGS_FILE = Path.cwd() / "settings.bin"
 
@@ -21,11 +24,14 @@ def load_all_settings() -> dict[Any, Any]:
 
 
 def get_setting(key: Settings):
+    # TODO: don't trigger I/O when last used command was also get_setting
+    logger.debug(f"get_setting: {key.clean_name}")
     value = load_all_settings().get(key.key_name)
     return keyring_decrypt(value) if (value and key.hidden) else value
 
 
 def set_setting(key: Settings, value: Union[str, bool]):
+    logger.debug(f"set_setting: {key.clean_name} -> {str(value)}")
     settings = load_all_settings()
     settings[key.key_name] = (
         keyring_encrypt(value) if key.hidden and isinstance(value, str) else value
