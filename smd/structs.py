@@ -15,8 +15,8 @@ class LuaChoice(Enum):
 
 
 class MainMenu(Enum):
-    MANAGE_LUA = "Manage .lua files"
-    DL_MANIFEST_ONLY = "Download manifests only"
+    MANAGE_LUA = "Process a .lua file"
+    DL_MANIFEST_ONLY = "Process a .lua file (Manifest downloads only)"
     DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
@@ -70,6 +70,7 @@ class SettingItem(NamedTuple):
 
 # Note: values are only obtained through get_setting() in utils.py
 class Settings(Enum):
+    ADVANCED_MODE = SettingItem("advanced_mode", "Advanced Mode", False)
     MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True)
     STEAM_PATH = SettingItem("steam_path", "Steam Installation Path", False)
     STEAM_USER = SettingItem("steam_user", "Steam Username", False)

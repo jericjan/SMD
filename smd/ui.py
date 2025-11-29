@@ -118,6 +118,8 @@ class UI:
             )
             if not prompt_confirm("Do you want to edit this setting?"):
                 continue
+
+            # TODO: move this functionality somewhere else / automate it
             if isinstance(value, bool):
                 new_value = prompt_select(
                     "Select the new value:", [("Enabled", True), ("Disabled", False)]
@@ -229,6 +231,14 @@ class UI:
     def process_lua_minimal(self) -> MainReturnCode:
         """Processes a .lua file but only does the lua input, lua backup, and manifest
         download steps"""
+
+        print(
+            Fore.YELLOW + "This is the minimal version of the lua processing logic. "
+            "Only use this when updating a game or if you want to export manifest "
+            "files to a different folder." + Style.RESET_ALL
+        )
+        if not prompt_confirm("Continue?"):
+            return MainReturnCode.LOOP_NO_PROMPT
 
         lua_choice: Optional[LuaChoice] = prompt_select(
             "Choose:", list(LuaChoice), cancellable=True

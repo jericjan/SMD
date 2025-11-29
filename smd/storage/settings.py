@@ -32,3 +32,11 @@ def set_setting(key: Settings, value: Union[str, bool]):
     )
     with SETTINGS_FILE.open("wb") as f:
         f.write(msgpack.packb(settings))  # type: ignore
+
+
+def resolve_advanced_mode() -> bool:
+    adv_mode = get_setting(Settings.ADVANCED_MODE)
+    if adv_mode is None or isinstance(adv_mode, str):
+        adv_mode = False
+        set_setting(Settings.ADVANCED_MODE, adv_mode)
+    return adv_mode

@@ -11,6 +11,7 @@ from steam.client import SteamClient  # type: ignore
 from smd.prompts import prompt_confirm, prompt_select
 from smd.steam_client import SteamInfoProvider
 from smd.steam_path import init_steam_path
+from smd.storage.settings import resolve_advanced_mode
 from smd.strings import VERSION
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
 from smd.ui import UI
@@ -49,7 +50,9 @@ def main(ui: UI) -> MainReturnCode:
     logger.debug(f"AppList path is {ui.app_list_man.applist_folder.resolve()}")
 
     print("\n==========================================\n")
-    menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu))
+    advanced_mode = resolve_advanced_mode()
+    exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
+    menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu), exclude=exclude)
 
     if menu_choice == MainMenu.EXIT:
         return MainReturnCode.EXIT

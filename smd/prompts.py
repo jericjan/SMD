@@ -32,11 +32,15 @@ def prompt_select(
     default: Optional[Any] = None,
     fuzzy: bool = False,
     cancellable: bool = False,
+    exclude: Optional[list[Any]] = None,
     **kwargs: Any,
 ):
     new_choices: list[Choice] = []
     for c in choices:
         if isinstance(c, Enum):
+            if exclude and c in exclude:
+                # Skip excluded choice
+                continue
             new_choices.append(Choice(value=c, name=c.value))
         elif isinstance(c, Choice):
             new_choices.append(c)
