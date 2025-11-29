@@ -70,6 +70,7 @@ class SettingItem(NamedTuple):
 # Note: values are only obtained through get_setting() in utils.py
 class Settings(Enum):
     MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True)
+    STEAM_PATH = SettingItem("steam_path", "Steam Installation Path", False)
     STEAM_USER = SettingItem("steam_user", "Steam Username", False)
     STEAM_PASS = SettingItem("steam_pass", "Steam Password", True)
     STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)

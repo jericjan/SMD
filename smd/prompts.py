@@ -54,14 +54,25 @@ def prompt_select(
     return result
 
 
-def prompt_dir(msg: str) -> Path:
-    is_dir: Callable[[str], bool] = (
-        lambda x: convert_to_path(x).exists() and convert_to_path(x).is_dir()
-    )
+def prompt_dir(
+    msg: str,
+    custom_check: Optional[Callable[[Path], bool]] = None,
+    custom_msg: Optional[str] = None,
+) -> Path:
+    def validator(raw_input: str) -> bool:
+        path = convert_to_path(raw_input)
+
+        if not (path.exists() and path.is_dir()):
+            return False
+
+        if custom_check and not custom_check(path):
+            return False
+
+        return True
     return prompt_text(
         msg,
-        validator=is_dir,
-        invalid_msg="Doesn't exist or not a folder.",
+        validator=validator,
+        invalid_msg=custom_msg if custom_msg else "Doesn't exist or not a folder.",
         filter=convert_to_path,
     )
 
