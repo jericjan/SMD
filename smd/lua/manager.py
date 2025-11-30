@@ -4,6 +4,8 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
+from colorama import Fore, Style
+
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
 from smd.storage.named_ids import get_named_ids
 from smd.structs import DepotKeyPair, LuaChoice, LuaParsedInfo, RawLua  # type: ignore
@@ -33,7 +35,14 @@ class LuaManager:
                 if result.contents is not None:  # Usually a zip
                     lua_contents = result.contents
                 else:
-                    lua_contents = result.path.read_text(encoding="utf-8")
+                    try:
+                        lua_contents = result.path.read_text(encoding="utf-8")
+                    except UnicodeDecodeError:
+                        print(
+                            Fore.RED + "This file is not a text file!" + Style.RESET_ALL
+                        )
+                        override = None
+                        continue
                 break
 
             if result.switch_choice is not None:
