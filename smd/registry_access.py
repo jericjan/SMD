@@ -1,7 +1,9 @@
-from typing import Optional
+import sys
 import winreg
 from pathlib import Path
+from typing import Optional
 
+from colorama import Fore, Style
 
 from smd.prompts import prompt_confirm, prompt_select
 from smd.storage.settings import get_setting, set_setting
@@ -103,5 +105,57 @@ def set_stats_and_achievements(app_id: int):
         return False
 
 
-if __name__ == "__main__":
-    set_stats_and_achievements(123)
+def install_context_menu():
+    exe_path = sys.executable
+
+    if not getattr(sys, "frozen", False):
+        root_dir = Path(__file__).parent.parent
+        script_path = root_dir / "main.py"
+        command_val = f'"{exe_path}" "{script_path}" -f "%V"'
+        mode = "Venv"
+        icon = str((root_dir / "icon.ico").resolve())
+    else:
+        command_val = f'"{exe_path}" -f "%V"'
+        mode = "Executable"
+        icon = exe_path
+
+    smd_path = r"SOFTWARE\Classes\*\shell\SMD"
+    command_path = r"SOFTWARE\Classes\*\shell\SMD\command"
+
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, smd_path) as key:
+            winreg.SetValueEx(key, "", 0, winreg.REG_SZ, "Add to SMD")
+            winreg.SetValueEx(key, "Icon", 0, winreg.REG_SZ, icon)
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, command_path) as key:
+            winreg.SetValueEx(key, "", 0, winreg.REG_SZ, command_val)
+
+        print(
+            Fore.GREEN + f"Success! Context menu added via {mode}.\n"
+            'You can now right click .lua/.zip files and click "Add to SMD"'
+            + Style.RESET_ALL
+        )
+
+    except Exception as e:
+        print(f"Failed to update registry: {e}")
+
+
+def uninstall_context_menu():
+    keys_to_delete = [
+        r"SOFTWARE\Classes\*\shell\SMD\command",
+        r"SOFTWARE\Classes\*\shell\SMD"
+    ]
+
+    try:
+        for subkey in keys_to_delete:
+            try:
+                winreg.DeleteKey(winreg.HKEY_CURRENT_USER, subkey)
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                print(Fore.RED + f"Error deleting {subkey}: {e}" + Style.RESET_ALL)
+                return
+
+        print(Fore.GREEN + "Success! Context menu removed." + Style.RESET_ALL)
+
+    except Exception as e:
+        print(f"Error during uninstall: {e}")

@@ -24,12 +24,17 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
-from smd.registry_access import set_stats_and_achievements
+from smd.registry_access import (
+    install_context_menu,
+    set_stats_and_achievements,
+    uninstall_context_menu,
+)
 from smd.steam_client import SteamInfoProvider
 from smd.storage.settings import get_setting, load_all_settings, set_setting
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import VERSION
 from smd.structs import (
+    ContextMenuOptions,
     GameSpecificChoices,
     GreenLumaVersions,
     LoggedInUser,
@@ -317,6 +322,16 @@ class UI:
             + Style.RESET_ALL
         )
         return MainReturnCode.LOOP
+
+    def manage_context_menu(self) -> MainReturnCode:
+        choice = prompt_select(
+            "Select an operation for the context menu:", list(ContextMenuOptions)
+        )
+        if choice == ContextMenuOptions.INSTALL:
+            install_context_menu()
+        elif choice == ContextMenuOptions.UNINSTALL:
+            uninstall_context_menu()
+        return MainReturnCode.LOOP_NO_PROMPT
 
     def check_updates(self, test: bool = False) -> MainReturnCode:
         print("Making request to github...", end="", flush=True)

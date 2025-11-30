@@ -84,11 +84,18 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
     if menu_choice == MainMenu.DL_MANIFEST_ONLY:
         return ui.process_lua_minimal()
 
+    if menu_choice == MainMenu.INSTALL_MENU:
+        return ui.manage_context_menu()
+
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
     if args.file:
-        return ui.process_lua_full(Path(args.file))
+        path = Path(args.file)
+        print(
+            f"You have provided: {Fore.YELLOW + str(path.resolve()) + Style.RESET_ALL}"
+        )
+        return ui.process_lua_full(path)
     return ui.process_lua_full()
 
 

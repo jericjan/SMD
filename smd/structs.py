@@ -24,6 +24,7 @@ class MainMenu(Enum):
     OFFLINE_FIX = "Offline Mode Fix"
     MANAGE_APPLIST = "Manage AppList IDs"
     CHECK_UPDATES = "Check for updates"
+    INSTALL_MENU = "Install/Uninstall Context Menu"
     SETTINGS = "Settings"
     EXIT = "Exit"
 
@@ -207,3 +208,8 @@ class GreenLumaVersions(Enum):
 
     def __str__(self):
         return self.value
+
+
+class ContextMenuOptions(Enum):
+    INSTALL = "Install"
+    UNINSTALL = "Uninstall"
