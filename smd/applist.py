@@ -1,5 +1,6 @@
 """For managing Greenluma's AppList folder"""
 
+from collections import defaultdict
 import logging
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -165,6 +166,19 @@ class AppListManager:
             if remaining_id.path.name != new_name.name:
                 remaining_id.path.rename(new_name)
 
+    def delete_paths(self, paths_to_delete: list[Path], all_paths: list[Path]):
+        """Deletes all paths_to_delete and renames remaining files.
+        Assumes all_paths is already sorted in ascending order"""
+        remaining_paths = [*all_paths]
+        for path in paths_to_delete:
+            path.unlink(missing_ok=True)
+            remaining_paths.remove(path)
+            print(f"{path.name} deleted")
+        for new_idx, path in enumerate(remaining_paths):
+            new_name = path.parent / f"{new_idx}.txt"
+            if path.name != new_name.name:
+                path.rename(new_name)
+
     def fix_names(self):
         """Fixes filenames if they're wrong (e.g. 0.txt is missing, gap in numbering)"""
         ids = self.get_local_filenames(sort=True)
@@ -198,10 +212,19 @@ class AppListManager:
                     )
 
     def prompt_id_deletion(self, provider: SteamInfoProvider):
+        """Show all AppList IDs and let the user delete them"""
+        file_map: defaultdict[int, list[Path]] = defaultdict(list)
+        # app id mapped to files that have that ID
+
+        path_and_ids = self.get_local_ids(sort=True)
         # i'm not using set() cuz that doesn't preserve insertion order lmao
         ids = list(
-            dict.fromkeys([int(x.app_id) for x in self.get_local_ids(sort=True)])
+            dict.fromkeys([int(x.app_id) for x in path_and_ids])
         )
+        all_paths = [x.path for x in path_and_ids]
+        for x in path_and_ids:
+            file_map[x.app_id].append(x.path)
+
         if not ids:
             print(
                 "There's nothing inside the AppList folder. "
@@ -246,6 +269,7 @@ class AppListManager:
             else:
                 organized[app_id] = AppIDInfo(True, "UNKNOWN GAME")
 
+        # list of tuple(app name, app id)
         menu_items: list[tuple[str, int]] = []
 
         for app_id, info in organized.items():
@@ -282,7 +306,11 @@ class AppListManager:
                     ):
                         for x in depots:
                             unique_ids.add(x)
-        self.remove_ids(list(unique_ids))
+        paths_to_delete: list[Path] = []
+        for app_id in unique_ids:
+            for path in file_map[app_id]:
+                paths_to_delete.append(path)
+        self.delete_paths(paths_to_delete, all_paths)
 
     def dlc_check(self, provider: SteamInfoProvider, base_id: int):
         print("Checking for DLC...")
