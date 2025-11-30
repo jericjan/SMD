@@ -401,7 +401,6 @@ class UI:
                     "echo Old files deleted. Moving in new files...\n",
                     convert(["robocopy", "/E", "/MOVE", tmp_dir, str(Path.cwd()), *nul])
                     + "\n",
-                    convert(["rmdir", "/s", "/q", tmp_dir, *nul]) + "\n",
                     "echo UPDATE COMPLETE!!!! You can close this now\n",
                     '(goto) 2>nul & del "%~f0"',
                 ]
