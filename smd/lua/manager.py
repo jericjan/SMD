@@ -91,8 +91,9 @@ class LuaManager:
         if lua.path.suffix == ".zip":
             with target.open("w", encoding="utf-8") as f:
                 f.write(lua.contents)
-        try:
-            shutil.copyfile(lua.path, target)
-        except shutil.SameFileError:
-            logger.debug("Skipped backup because it's the same file")
-            pass
+        else:
+            try:
+                shutil.copyfile(lua.path, target)
+            except shutil.SameFileError:
+                logger.debug("Skipped backup because it's the same file")
+                pass
