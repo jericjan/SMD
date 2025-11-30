@@ -1,3 +1,4 @@
+import argparse
 import logging
 import sys
 import time
@@ -42,7 +43,7 @@ def dump_crash():
     print(Style.RESET_ALL, end="")
 
 
-def main(ui: UI) -> MainReturnCode:
+def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
     logger.debug(f"Root folder is {root_folder()}")
 
@@ -55,7 +56,12 @@ def main(ui: UI) -> MainReturnCode:
     exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
     if first_launch:
         logger.debug(f"Took {time.time() - start_time}s to start")
-    menu_choice: MainMenu = prompt_select("Choose:", list(MainMenu), exclude=exclude)
+    if args.file and first_launch:
+        menu_choice = MainMenu.MANAGE_LUA
+    else:
+        menu_choice: MainMenu = prompt_select(
+            "Choose:", list(MainMenu), exclude=exclude
+        )
 
     if menu_choice == MainMenu.EXIT:
         return MainReturnCode.EXIT
@@ -81,11 +87,22 @@ def main(ui: UI) -> MainReturnCode:
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
+    if args.file:
+        return ui.process_lua_full(Path(args.file))
     return ui.process_lua_full()
 
 
 if __name__ == "__main__":
     start_time = time.time()
+    parser = argparse.ArgumentParser(
+                        prog='SMD',
+                        description='Steam Manifest Decryptor',
+                        epilog='bottom text')
+    parser.add_argument(
+        "-f", "--file", help="A .lua file or ZIP file you want to process"
+    )
+    args = parser.parse_args()
+    logger.debug(f"Received args: {args}")
     color_init()
     version_txt = f"Version: {VERSION}"
     print(
@@ -122,7 +139,7 @@ if __name__ == "__main__":
     first_launch = True
     while True:
         try:
-            return_code = main(ui)
+            return_code = main(ui, args)
             first_launch = False
         except KeyboardInterrupt:
             print(Fore.RED + "\nWait, don't go—\n" + Style.RESET_ALL)

@@ -278,14 +278,17 @@ class UI:
         return MainReturnCode.LOOP
 
     @music_toggle_decorator
-    def process_lua_full(self) -> MainReturnCode:
+    def process_lua_full(self, file: Optional[Path] = None) -> MainReturnCode:
         """Processes a .lua file and goes through all the usual steps"""
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_choice: Optional[LuaChoice] = prompt_select(
-            "Choose:", list(LuaChoice), cancellable=True
-        )
+        if file:
+            lua_choice = LuaChoice.ADD_LUA
+        else:
+            lua_choice: Optional[LuaChoice] = prompt_select(
+                "Choose:", list(LuaChoice), cancellable=True
+            )
 
         if lua_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
@@ -295,7 +298,7 @@ class UI:
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
 
-        parsed_lua = lua_manager.fetch_lua(lua_choice)
+        parsed_lua = lua_manager.fetch_lua(lua_choice, file)
         set_stats_and_achievements(int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)

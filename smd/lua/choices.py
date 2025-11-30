@@ -46,13 +46,13 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
     return LuaResult(lua_path, None, None)
 
 
-def add_new_lua() -> LuaResult:
+def add_new_lua(file: Optional[Path] = None) -> LuaResult:
     """Prompts user to add a new .lua or ZIP file
 
     Returns:
         LuaResult:
     """
-    lua_path = prompt_file(
+    lua_path = file if file else prompt_file(
         "Drag a .lua file (or .zip w/ .lua inside) into here "
         "then press Enter.\n"
         "Leave it blank to switch to selecting a saved .lua:",

@@ -2,6 +2,7 @@ import logging
 import re
 import shutil
 from pathlib import Path
+from typing import Optional
 
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
 from smd.storage.named_ids import get_named_ids
@@ -17,13 +18,13 @@ class LuaManager:
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
 
-    def get_raw_lua(self, choice: LuaChoice) -> RawLua:
+    def get_raw_lua(self, choice: LuaChoice, override: Optional[Path] = None) -> RawLua:
         """Return the lua path and contents"""
         while True:
             if choice == LuaChoice.SELECT_SAVED_LUA:
                 result = select_from_saved_luas(self.saved_lua, self.named_ids)
             elif choice == LuaChoice.ADD_LUA:
-                result = add_new_lua()
+                result = add_new_lua(override)
             elif choice == LuaChoice.AUTO_DOWNLOAD:
                 result = download_lua(self.saved_lua)
 
@@ -39,7 +40,9 @@ class LuaManager:
                 choice = result.switch_choice
         return RawLua(lua_path, lua_contents)
 
-    def fetch_lua(self, choice: LuaChoice) -> LuaParsedInfo:
+    def fetch_lua(
+        self, choice: LuaChoice, override: Optional[Path] = None
+    ) -> LuaParsedInfo:
         """Depending on the choice, fetch a lua file then parse the contents"""
         depot_no_key_regex = re.compile(
             r"^\s*addappid\s*\(\s*(\d+)\s*\)", flags=re.MULTILINE
@@ -55,7 +58,7 @@ class LuaManager:
 
         while True:
             ids_with_no_key: list[str] = []
-            lua = self.get_raw_lua(choice)
+            lua = self.get_raw_lua(choice, override)
             if not (any_addappid := general_regex.search(lua.contents)):
                 print("App ID not found. Try again.")
                 continue
