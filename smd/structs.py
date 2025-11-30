@@ -144,7 +144,7 @@ OrganizedAppIDs = dict[int, AppIDInfo]
 "A dict of IDs where Depot IDs are organized inside their parent App IDs"
 
 
-class AppListFile(NamedTuple):
+class AppListPathAndID(NamedTuple):
     path: Path
     app_id: int
 

@@ -1,7 +1,7 @@
 """For managing Greenluma's AppList folder"""
 
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
@@ -9,15 +9,15 @@ from colorama import Fore, Style
 from rich.console import Console
 from rich.table import Column, Table
 
-from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
+from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
     AppIDInfo,
     AppListChoice,
-    AppListFile,
+    AppListPathAndID,
     DepotOrAppID,
     DLCTypes,
     LuaParsedInfo,
@@ -93,11 +93,11 @@ class AppListManager:
             files.sort(key=lambda x: int(x.stem) if x.stem.isnumeric() else -1)
         return files
 
-    def get_local_ids(self, sort: bool = False) -> list[AppListFile]:
+    def get_local_ids(self, sort: bool = False) -> list[AppListPathAndID]:
         """Returns a list of tuple(path, app_id) and
         updates self.last_idx to the filename with the largest number"""
         self.last_idx = -1
-        ids: list[AppListFile] = []
+        ids: list[AppListPathAndID] = []
         for file in self.applist_folder.glob("*.txt"):
             if not file.stem.isdigit():
                 logger.debug(f"[get_local_ids] Ignored {file.name}")
@@ -116,7 +116,7 @@ class AppListManager:
                     "number. Text files in AppList should only contain the number "
                     "of their App ID. Please fix this and launch SMD again."
                 )
-            ids.append(AppListFile(file, appid))
+            ids.append(AppListPathAndID(file, appid))
         if sort:
             ids.sort(key=lambda x: int(x.path.stem) if x.path.stem.isnumeric() else -1)
         return ids
@@ -154,6 +154,7 @@ class AppListManager:
                 )
 
     def remove_ids(self, ids_to_delete: list[int]):
+        """became unused and replaced with delete_paths"""
         local_ids = self.get_local_ids(sort=True)
         remaining_ids = [*local_ids]
         for local_id in local_ids:
@@ -192,7 +193,7 @@ class AppListManager:
         chars[-1] = "0"
         return int("".join(chars))
 
-    def update_depot_info(self, product_info: ProductInfo):
+    def _update_depot_info(self, product_info: ProductInfo):
         """Updates `self.id_map` with data from `product_info`"""
         apps_data = enter_path(product_info, "apps")
 
@@ -211,41 +212,25 @@ class AppListManager:
                         app_name, int(depot_id), parent_id
                     )
 
-    def prompt_id_deletion(self, provider: SteamInfoProvider):
-        """Show all AppList IDs and let the user delete them"""
-        file_map: defaultdict[int, list[Path]] = defaultdict(list)
-        # app id mapped to files that have that ID
-
-        path_and_ids = self.get_local_ids(sort=True)
-        # i'm not using set() cuz that doesn't preserve insertion order lmao
-        ids = list(
-            dict.fromkeys([int(x.app_id) for x in path_and_ids])
-        )
-        all_paths = [x.path for x in path_and_ids]
-        for x in path_and_ids:
-            file_map[x.app_id].append(x.path)
-
-        if not ids:
-            print(
-                "There's nothing inside the AppList folder. "
-                "Try adding one manually or automatically when you "
-                "add a game with the tool."
-            )
-            return
-        info = get_product_info(provider, list(ids))
-        self.update_depot_info(info)
+    def _populate_id_map(self, app_ids: list[int]):
+        """populates `self.id_map` but with an extra layer of recursion in case an ID
+        has been added that does not come with the parent ID"""
+        info = get_product_info(self.provider, list(app_ids))
+        self._update_depot_info(info)
 
         still_missing: list[int] = []
 
-        for app_id in ids:
+        for app_id in app_ids:
             if app_id not in self.id_map:
                 # There is a Depot ID in AppList without a corresponding base App ID
                 still_missing.append(self.tweak_last_digit(app_id))
 
         if still_missing:
-            info = get_product_info(provider, still_missing)
-            self.update_depot_info(info)
+            info = get_product_info(self.provider, still_missing)
+            self._update_depot_info(info)
 
+    def _organize_ids(self, ids: list[int]):
+        """Organize Depot IDs inside parent App IDs"""
         organized: OrganizedAppIDs = {}
 
         for app_id in ids:
@@ -268,8 +253,10 @@ class AppListManager:
                         organized[app_id] = AppIDInfo(True, item.name)
             else:
                 organized[app_id] = AppIDInfo(True, "UNKNOWN GAME")
+        return organized
 
-        # list of tuple(app name, app id)
+    def _menu_items_from_organized(self, organized: OrganizedAppIDs):
+        """Convert organized IDs into menu items for prompt_select"""
         menu_items: list[tuple[str, int]] = []
 
         for app_id, info in organized.items():
@@ -279,11 +266,64 @@ class AppListManager:
             depots = info.depots
             for depot in depots:
                 menu_items.append((f"└──>{depot}", depot))
+        return menu_items
 
-        if len(menu_items) < len(ids):
+    def _prompt_include_depots(
+        self, selected_ids: set[int], organized: OrganizedAppIDs
+    ):
+        """Prompts to select depots related to selected parent IDs.
+        Modified selected_ids in-place."""
+        selected_base_ids = [
+            x for x in selected_ids if x in organized and organized[x].depots
+        ]
+        if len(selected_base_ids) > 0:
+            for app_id in selected_base_ids:
+                name = organized[app_id].name
+                depots = organized[app_id].depots
+                if prompt_confirm(
+                    f"Would you to select all Depot IDs related to {name}?",
+                ):
+                    selected_ids.update(depots)
+
+    def _get_paths_from_ids(
+        self, app_ids: set[int], path_and_ids: list[AppListPathAndID]
+    ):
+        """Converts IDs to Paths"""
+        file_map: defaultdict[int, list[Path]] = defaultdict(list)
+        # app id mapped to files that have that ID
+        for x in path_and_ids:
+            file_map[x.app_id].append(x.path)
+        paths_to_delete: list[Path] = []
+        for app_id in app_ids:
+            for path in file_map[app_id]:
+                paths_to_delete.append(path)
+        return paths_to_delete
+
+    def prompt_id_deletion(self):
+        """Show all AppList IDs and let the user delete them"""
+
+        path_and_ids = self.get_local_ids(sort=True)
+        if not path_and_ids:
+            print(
+                "There's nothing inside the AppList folder. "
+                "Try adding one manually or automatically when you "
+                "add a game with the tool."
+            )
+            return
+
+        # i'm not using set() cuz that doesn't preserve insertion order lmao
+        local_ids = list(dict.fromkeys([int(x.app_id) for x in path_and_ids]))
+
+        self._populate_id_map(local_ids)
+
+        organized = self._organize_ids(local_ids)
+
+        # list of tuple(app name, app id)
+        menu_items = self._menu_items_from_organized(organized)
+        if len(menu_items) < len(local_ids):
             logger.warning("There are less menu items than actual IDs inside AppList.")
 
-        ids_to_delete: Optional[list[int]] = prompt_select(
+        ids_to_delete_list: Optional[list[int]] = prompt_select(
             "Select IDs to delete from AppList:",
             menu_items,
             multiselect=True,
@@ -291,25 +331,14 @@ class AppListManager:
             "and Enter to confirm selections. Ctrl+Z to cancel.",
             mandatory=False,
         )
-        if ids_to_delete is None:
+        if ids_to_delete_list is None:
             print("No IDs selected. Doing nothing")
             return
-        unique_ids = set(ids_to_delete)
-        selected_base_ids = [x for x in unique_ids if x in organized]
-        if len(selected_base_ids) > 0:
-            for app_id in selected_base_ids:
-                name = organized[app_id].name
-                depots = organized[app_id].depots
-                if len(depots) > 0:
-                    if prompt_confirm(
-                        f"Would you to select all Depot IDs related to {name}?",
-                    ):
-                        for x in depots:
-                            unique_ids.add(x)
-        paths_to_delete: list[Path] = []
-        for app_id in unique_ids:
-            for path in file_map[app_id]:
-                paths_to_delete.append(path)
+        ids_to_delete = set(ids_to_delete_list)
+        self._prompt_include_depots(ids_to_delete, organized)
+
+        paths_to_delete = self._get_paths_from_ids(ids_to_delete, path_and_ids)
+        all_paths = [x.path for x in path_and_ids]
         self.delete_paths(paths_to_delete, all_paths)
 
     def dlc_check(self, provider: SteamInfoProvider, base_id: int):
@@ -398,7 +427,7 @@ class AppListManager:
         if applist_choice is None:
             return MainReturnCode.LOOP_NO_PROMPT
         if applist_choice == AppListChoice.DELETE:
-            self.prompt_id_deletion(provider)
+            self.prompt_id_deletion()
         elif applist_choice == AppListChoice.ADD:
             validator: Callable[[str], bool] = lambda x: all(
                 [y.isdigit() for y in x.split()]
