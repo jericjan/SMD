@@ -3,6 +3,7 @@
 import logging
 import subprocess
 from pathlib import Path
+import sys
 from typing import Any, Union
 
 import vdf  # type: ignore
@@ -10,10 +11,14 @@ import vdf  # type: ignore
 logger = logging.getLogger(__name__)
 
 
-def root_folder():
+def root_folder(outside_internal: bool = False):
     """Returns the executable's root folder"""
     # Go up one more level cuz we in `smd` subfolder
-    return Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parent.parent
+    is_frozen = getattr(sys, "frozen", False)
+    if outside_internal and is_frozen:
+        return root.parent
+    return root
 
 
 def enter_path(

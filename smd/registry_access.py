@@ -8,6 +8,7 @@ from colorama import Fore, Style
 from smd.prompts import prompt_confirm, prompt_select
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import GreenLumaVersions, Settings
+from smd.utils import root_folder
 
 
 def find_steam_path_from_registry():
@@ -109,7 +110,7 @@ def install_context_menu():
     exe_path = sys.executable
 
     if not getattr(sys, "frozen", False):
-        root_dir = Path(__file__).parent.parent
+        root_dir = root_folder()
         script_path = root_dir / "main.py"
         command_val = f'"{exe_path}" "{script_path}" -f "%V"'
         mode = "Venv"

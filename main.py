@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 import time
 import traceback
@@ -100,6 +101,9 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
 
 if __name__ == "__main__":
+    os.chdir(root_folder(outside_internal=True))
+    logger.debug(f"CWD is {str(Path.cwd().resolve())}")
+    logger.debug(f"exe is {sys.executable}")
     start_time = time.time()
     parser = argparse.ArgumentParser(
                         prog='SMD',
