@@ -1,4 +1,5 @@
 import asyncio
+from enum import Enum
 import functools
 import os
 import shutil
@@ -6,7 +7,7 @@ import subprocess
 import zipfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 
@@ -36,7 +37,6 @@ from smd.strings import VERSION
 from smd.structs import (
     ContextMenuOptions,
     GameSpecificChoices,
-    GreenLumaVersions,
     LoggedInUser,
     LuaChoice,
     MainReturnCode,
@@ -132,24 +132,27 @@ class UI:
             if not prompt_confirm("Do you want to edit this setting?"):
                 continue
 
-            # TODO: move this functionality somewhere else / automate it
-            if isinstance(value, bool):
-                new_value = prompt_select(
-                    "Select the new value:", [("Enabled", True), ("Disabled", False)]
+            new_settings_value: Union[str, bool]
+            if selected_key.type == bool:
+                new_settings_value = prompt_confirm(
+                    "Select the new value:", "Enable", "Disable"
                 )
-            elif selected_key == Settings.GL_VERSION:
-                new_value = prompt_select(
-                    "Select the new value:", [x.value for x in GreenLumaVersions]
+            elif isinstance(selected_key.type, list):
+                enum_val: Enum = prompt_select(
+                    "Select the new value:", selected_key.type
                 )
-            else:
+                new_settings_value = enum_val.value
+            elif selected_key.type == str:
                 func = prompt_secret if selected_key.hidden else prompt_text
-                new_value = func("Enter the new value:")
-            set_setting(selected_key, new_value)
+                new_settings_value = func("Enter the new value:")
+            else:
+                raise Exception("Unhandled setting type. Shouldn't happen.")
+            set_setting(selected_key, new_settings_value)
 
             if selected_key == Settings.PLAY_MUSIC:
-                if value is True and new_value is False:
+                if value is True and new_settings_value is False:
                     self.kill_midi_player()
-                elif value is False and new_value is True:
+                elif value is False and new_settings_value is True:
                     self.init_midi_player()
 
             if selected_key == Settings.APPLIST_FOLDER:

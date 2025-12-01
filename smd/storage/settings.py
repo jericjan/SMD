@@ -31,6 +31,11 @@ def get_setting(key: Settings):
 
 
 def set_setting(key: Settings, value: Union[str, bool]):
+    if not isinstance(value, str) and not isinstance(
+        value, bool
+    ):  # pyright: ignore[reportUnnecessaryIsInstance]
+        raise ValueError("Invalid type used for set_setting")
+
     logger.debug(f"set_setting: {key.clean_name} -> {str(value)}")
     settings = load_all_settings()
     settings[key.key_name] = (

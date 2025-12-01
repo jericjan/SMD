@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, NewType, Optional
+from typing import Any, Literal, NamedTuple, NewType, Optional, Union
 
 from smd.utils import root_folder
 
@@ -33,14 +33,14 @@ GameSpecificChoices = Literal[
     MainMenu.CRACK_GAME,
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
-    MainMenu.DLC_CHECK
+    MainMenu.DLC_CHECK,
 ]
 
 GAME_SPECIFIC_CHOICES = (
     MainMenu.CRACK_GAME,
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
-    MainMenu.DLC_CHECK
+    MainMenu.DLC_CHECK,
 )
 
 
@@ -60,6 +60,18 @@ class MainReturnCode(Enum):
     EXIT = auto()
 
 
+class GreenLumaVersions(Enum):
+    """These are the keynames in HKCU\\SOFTWARE\\"""
+
+    GLR = "GLR"
+    GL2020 = "GL2020"
+    GL2024 = "GL2024"
+    GL2025 = "GL2025"
+
+    def __str__(self):
+        return self.value
+
+
 class SettingItem(NamedTuple):
     key_name: str
     "The key name of the setting (used in the savefile)"
@@ -67,20 +79,26 @@ class SettingItem(NamedTuple):
     "The name of the setting as displayed in the Settings menu"
     hidden: bool
     "Whether the item is hidden (e.g. sensitive info)"
+    type: Union[type, list[Enum]]
+    "Type of the setting"
 
 
 # Note: values are only obtained through get_setting() in utils.py
 class Settings(Enum):
-    ADVANCED_MODE = SettingItem("advanced_mode", "Advanced Mode", False)
-    MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True)
-    STEAM_PATH = SettingItem("steam_path", "Steam Installation Path", False)
-    STEAM_USER = SettingItem("steam_user", "Steam Username", False)
-    STEAM_PASS = SettingItem("steam_pass", "Steam Password", True)
-    STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False)
-    GL_VERSION = SettingItem("greenluma_version", "GreenLuma Version", False)
-    APPLIST_FOLDER = SettingItem("applist_folder", "GreenLuma AppList Folder", False)
-    STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True)
-    PLAY_MUSIC = SettingItem("play_music", "Play Music", False)
+    ADVANCED_MODE = SettingItem("advanced_mode", "Advanced Mode", False, bool)
+    MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True, str)
+    STEAM_PATH = SettingItem("steam_path", "Steam Installation Path", False, str)
+    STEAM_USER = SettingItem("steam_user", "Steam Username", False, str)
+    STEAM_PASS = SettingItem("steam_pass", "Steam Password", True, str)
+    STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False, str)
+    GL_VERSION = SettingItem(
+        "greenluma_version", "GreenLuma Version", False, list(GreenLumaVersions)
+    )
+    APPLIST_FOLDER = SettingItem(
+        "applist_folder", "GreenLuma AppList Folder", False, str
+    )
+    STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True, str)
+    PLAY_MUSIC = SettingItem("play_music", "Play Music", False, bool)
 
     @property
     def key_name(self) -> str:
@@ -97,9 +115,14 @@ class Settings(Enum):
         "Whether the item is hidden (e.g. sensitive info)"
         return self.value.hidden
 
+    @property
+    def type(self) -> Union[type, list[Enum]]:
+        return self.value.type
+
 
 class LoggedInUser(NamedTuple):
     """A user in loginusers.vdf"""
+
     steam64_id: str
     persona_name: str
     wants_offline_mode: str
@@ -131,7 +154,7 @@ class DepotOrAppID(NamedTuple):
 
 
 @dataclass
-class AppIDInfo():
+class AppIDInfo:
     exists: bool
     """Whether this App ID exists in AppList
     (Sometimes a Depot ID is inside the folder but without an App ID)"""
@@ -151,8 +174,9 @@ class AppListPathAndID(NamedTuple):
 
 
 @dataclass
-class DepotKeyPair():
+class DepotKeyPair:
     """A depot and its decryption key"""
+
     depot_id: str
     "Depot ID"
     decryption_key: str
@@ -178,7 +202,7 @@ NamedIDs = NewType("NamedIDs", dict[str, str])
 ProductInfo = NewType("ProductInfo", dict[str, dict[Any, Any]])
 "The dict returned by get_product_info"
 
-DepotManifestMap = NewType("DepotManifestMap",  dict[str, str])
+DepotManifestMap = NewType("DepotManifestMap", dict[str, str])
 "Depot IDs mapped to Manifest IDs"
 
 
@@ -197,17 +221,6 @@ class DLCTypes(Enum):
     DEPOT = "DOWNLOAD REQUIRED"
     NOT_DEPOT = "PRE-INSTALLED"
     UNRELEASED = "UNRELEASED"
-
-
-class GreenLumaVersions(Enum):
-    """These are the keynames in HKCU\\SOFTWARE\\"""
-    GLR = "GLR"
-    GL2020 = "GL2020"
-    GL2024 = "GL2024"
-    GL2025 = "GL2025"
-
-    def __str__(self):
-        return self.value
 
 
 class ContextMenuOptions(Enum):
