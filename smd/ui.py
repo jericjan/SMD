@@ -104,7 +104,15 @@ class UI:
                 [
                     (
                         x.clean_name
-                        + (" (unset)" if x.key_name not in saved_settings else ""),
+                        + (
+                            " (unset)"
+                            if x.key_name not in saved_settings
+                            else (
+                                f": {saved_settings.get(x.key_name)}"
+                                if not x.hidden
+                                else ": [ENCRYPTED]"
+                            )
+                        ),
                         x,
                     )
                     for x in Settings
@@ -113,7 +121,7 @@ class UI:
             )
             if not selected_key:
                 break
-            value = get_setting(selected_key)
+            value = saved_settings.get(selected_key.key_name)
             value = value if value is not None else "(unset)"
             print(
                 f"{selected_key.clean_name} is set to "
