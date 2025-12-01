@@ -10,6 +10,7 @@ from Crypto.Util.Padding import unpad
 from steam.protobufs.content_manifest_pb2 import (
     ContentManifestMetadata,
     ContentManifestPayload,
+    ContentManifestSignature,
 )
 
 from smd.zip import read_nth_file_from_zip_bytes
@@ -52,6 +53,74 @@ def decrypt_filename(b64_encrypted_name: str, key_bytes: bytes) -> str:
     except Exception:
         # If decryption fails for any reason, return the original string
         return b64_encrypted_name
+
+
+def view_manifest(manifest_file: bytes):
+    """Decrypts a manifest file, given a decryption key
+
+    Args:
+        encrypted_file (io.BytesIO): The encrypted manifest file
+        output_filepath (Path): Where you want the decrypted file to go
+        dec_key (str): The decryption key as a hex string
+    """
+
+    stream = io.BytesIO(manifest_file)
+
+    magic, payload_length = struct.unpack("<II", stream.read(8))
+    if magic != PROTOBUF_PAYLOAD_MAGIC:
+        raise ValueError("Bad payload magic")
+    payload_bytes = stream.read(payload_length)
+
+    magic, metadata_length = struct.unpack("<II", stream.read(8))
+    if magic != PROTOBUF_METADATA_MAGIC:
+        raise ValueError("Bad metadata magic")
+    metadata_bytes = stream.read(metadata_length)
+
+    magic, metadata_length = struct.unpack("<II", stream.read(8))
+    if magic != PROTOBUF_SIGNATURE_MAGIC:
+        raise ValueError("Bad signature magic")
+    signature_bytes = stream.read(metadata_length)
+
+    original_payload = ContentManifestPayload()
+    original_payload.ParseFromString(payload_bytes)
+
+    print(f"{len(original_payload.mappings)} file mappings found.")
+
+    print("PAYLOAD")
+    for mapping in original_payload.mappings:
+        print(f"\n---\nName: {mapping.filename}\n"
+              f"Size: {mapping.size}\n"
+              f"Flags: {mapping.flags}\n"
+              f"SHA filename: {mapping.sha_filename.hex()}\n"
+              f"SHA content: {mapping.sha_content.hex()}\n"
+              f"Chunk count: {len(mapping.chunks)}\n"
+              "---\n")
+        for nth, chunk in enumerate(mapping.chunks):
+            print(f"Chunk #{nth+1}")
+            print(f"SHA: {chunk.sha.hex()}\n"
+                  f"CRC: {hex(chunk.crc)[2:]}\n"
+                  f"Offset: {chunk.offset}\n"
+                  f"CB Original: {chunk.cb_original}\n"
+                  f"CB Compressed: {chunk.cb_compressed}")
+    # Update and re-serialize the metadata
+    metadata = ContentManifestMetadata()
+    metadata.ParseFromString(metadata_bytes)
+    print("METADATA")
+    print(f"\n---\nDepot ID: {metadata.depot_id}\n"
+          f"Manifest ID: {metadata.gid_manifest}\n"
+          f"Creation Time: {metadata.creation_time}\n"
+          f"Encrypted: {metadata.filenames_encrypted}\n"
+          f"CB Disk Original: {metadata.cb_disk_original}\n"
+          f"CB Disk Compressed: {metadata.cb_disk_compressed}\n"
+          f"Unique Chunks: {metadata.unique_chunks}\n"
+          f"CRC (Encrypted): {hex(metadata.crc_encrypted)[2:]}\n"
+          f"CRC (Clear): {hex(metadata.crc_clear)[2:]}\n"
+          "---\n")
+    signature = ContentManifestSignature()
+    signature.ParseFromString(signature_bytes)
+    print(
+        f"Signature: {signature.signature.hex() if signature.signature else 'Missing'}"
+    )
 
 
 def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str):
@@ -138,3 +207,10 @@ def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str)
         + f"Manifest created at: {output_filepath.resolve()}"
         + Style.RESET_ALL
     )
+
+
+if __name__ == "__main__":
+    file_a = Path(r"C:\GAMES\Steam\depotcache\1392821_4740032384826825263.manifest")
+    with file_a.open("rb") as f:
+        print(f"Reading {file_a.name}")
+        view_manifest(f.read())
