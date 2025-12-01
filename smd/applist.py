@@ -91,6 +91,11 @@ class AppListManager:
                 Fore.YELLOW + str(self.applist_folder.resolve()) + Style.RESET_ALL
             )
             print(f"Your AppList folder is {colorized}")
+            print(
+                Fore.LIGHTBLACK_EX
+                + "If you are using Stealth Mode (Any folder), make sure"
+                " this points to the folder you put GreenLuma in" + Style.RESET_ALL
+            )
         self.fix_names()
 
     def get_local_filenames(self, sort: bool = False) -> list[Path]:
