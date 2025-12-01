@@ -32,13 +32,25 @@ logger = logging.getLogger(__name__)
 
 
 class ParsedDLC:
-    def __init__(self, depot_id: int, data: dict[str, Any], local_ids: list[int]):
+
+    def __init__(
+        self,
+        depot_id: int,
+        dlc_data: dict[str, Any],
+        parent_data: dict[str, Any],
+        local_ids: list[int],
+    ):
         self.id = depot_id
-        self.name: str = enter_path(data, "common", "name")
-        depots = enter_path(data, "depots")
-        self.release_state = enter_path(data, "common", "releasestate")
+        self.name: str = enter_path(dlc_data, "common", "name")
+        depots = enter_path(dlc_data, "depots")
+        parent_depots = enter_path(parent_data, "depots")
+        self.release_state = enter_path(dlc_data, "common", "releasestate")
         self.type = (
-            (DLCTypes.DEPOT if depots else DLCTypes.NOT_DEPOT)
+            (
+                DLCTypes.DEPOT
+                if depots or str(depot_id) in parent_depots
+                else DLCTypes.NOT_DEPOT
+            )
             if self.release_state == "released"
             else DLCTypes.UNRELEASED
         )
@@ -343,8 +355,9 @@ class AppListManager:
 
     def dlc_check(self, provider: SteamInfoProvider, base_id: int):
         print("Checking for DLC...")
-        info = get_product_info(provider, [base_id])
-        dlcs = enter_path(info, "apps", base_id, "extended", "listofdlc")
+        base_info = get_product_info(provider, [base_id])
+        base_info_trimmed = enter_path(base_info, "apps", base_id)
+        dlcs = enter_path(base_info_trimmed, "extended", "listofdlc")
         logger.debug(f"listofdlc: {dlcs}")
         if not dlcs:
             print("This game has no DLC.")
@@ -359,7 +372,7 @@ class AppListManager:
                     unowned_non_depot_dlcs: list[int] = []
                     local_ids = [x.app_id for x in self.get_local_ids()]
                     parsed_dlcs: list[ParsedDLC] = [
-                        ParsedDLC(int(depot_id), data, local_ids)
+                        ParsedDLC(int(depot_id), data, base_info_trimmed, local_ids)
                         for depot_id, data in apps.items()
                     ]
                     depot_dlcs = [x.id for x in parsed_dlcs if x.type == DLCTypes.DEPOT]
