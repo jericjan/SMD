@@ -1,7 +1,9 @@
-# Steam Manifest Decryptor (SMD)
+# Steam Manifest Downloader (SMD)
 <img alt="" src="https://img.shields.io/github/repo-size/jericjan/SMD" />
 
-Download and decrypt Steam manifest files. Basically imitates what steamtools does and greenluma couldn't.
+Download ~~and decrypt~~** Steam manifest files. Basically imitates what steamtools does and greenluma couldn't.
+
+##### [**] Apparently you don't need to decrypt them for it to work lmao
 
 ## **Educational use only.** This project is provided for educational purposes only. Use at your own risk.
 
@@ -77,6 +79,7 @@ Full license texts are available in the `third_party_licenses` directory or as c
 # Credit
 Credit to RedPaper for the Broken Moon MIDI cover, originally arranged by U2 Akiyama and used in Touhou 7.5: Immaterial and Missing Power.
 Touhou 7.5 and its related assets are owned by Team Shanghai Alice and Twilight Frontier. SMD is not affiliated with, endorsed by, or sponsored by either party. All trademarks belong to their respective owners.
+
 
 
 
