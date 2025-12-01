@@ -258,7 +258,12 @@ class UI:
         parsed_lua = lua_manager.fetch_lua(lua_choice)
         lua_manager.backup_lua(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
-        manifests = downloader.download_manifests(parsed_lua)
+        decrypt = prompt_confirm(
+            "Would you like to also decrypt the manifest files?"
+            " (Usually not needed)",
+            default=False,
+        )
+        manifests = downloader.download_manifests(parsed_lua, decrypt=decrypt)
         move_files = prompt_confirm(
             "Manifests are now in the depotcache folder. "
             "Would you like to transfer these files to another folder?",

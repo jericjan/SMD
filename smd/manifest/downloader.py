@@ -28,6 +28,7 @@ from smd.structs import (  # type: ignore
     LuaParsedInfo,
     ManifestGetModes,
 )
+from smd.zip import read_nth_file_from_zip_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ class ManifestDownloader:
 
     def download_manifests(
         self,
-        lua: LuaParsedInfo,
+        lua: LuaParsedInfo, decrypt: bool = False
     ):
         """Gets latest manifest IDs and downloads respective manifests"""
         while True:
@@ -178,6 +179,14 @@ class ManifestDownloader:
             manifest = get_request_raw(manifest_url)
 
             if manifest:
-                decrypt_manifest(manifest, final_manifest_loc, dec_key)
+                if decrypt:
+                    decrypt_manifest(manifest, final_manifest_loc, dec_key)
+                else:
+                    extracted = read_nth_file_from_zip_bytes(0, manifest)
+                    if not extracted:
+                        raise Exception("File isn't a ZIP. This shouldn't happen.")
+                    with final_manifest_loc.open('wb') as f:
+                        f.write(extracted.read())
+
                 manifest_paths.append(final_manifest_loc)
         return manifest_paths
