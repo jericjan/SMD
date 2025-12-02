@@ -43,6 +43,9 @@ update_changelog_on_bump = true
 changelog_incremental = true
 gpg_sign = true
 changelog_start_rev = "4.2.0"
+version_files = [
+    "smd/strings.py:VERSION"
+]
 
 [dependency-groups]
 dev = [
