@@ -1,4 +1,3 @@
-import asyncio
 from enum import Enum
 import functools
 import os
@@ -15,7 +14,6 @@ from colorama import Fore, Style
 from smd.storage.acf import ACFParser
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
-from smd.http_utils import get_request
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
@@ -43,8 +41,10 @@ from smd.structs import (
     LuaChoice,
     MainReturnCode,
     MidiFiles,
+    ReleaseType,
     Settings,
 )
+from smd.updater import Updater
 from smd.utils import enter_path, root_folder
 
 
@@ -353,18 +353,21 @@ class UI:
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
 
+        release_type: ReleaseType = prompt_select(
+            "Which type of release would you like to update to?", list(ReleaseType)
+        )
         print("Making request to github...", end="", flush=True)
-        resp = None
-        while resp is None:
-            resp = asyncio.run(
-                get_request(
-                    "https://api.github.com/repos/jericjan/smd/releases/latest", "json"
-                )
-            )
+        if release_type == ReleaseType.STABLE:
+            resp = Updater.get_latest_stable()
+        elif release_type == ReleaseType.PRERELEASE:
+            resp = Updater.get_latest_prerelease()
         print("Done!")
+        if resp is None:
+            print("Could not find a release that matched your request :(")
+            return MainReturnCode.LOOP_NO_PROMPT
         remote_version = resp.get("tag_name")
-        print(f"Local Version: {VERSION}")
-        print(f"Remote Version: {remote_version}")
+        print(f"Your Version: {VERSION}")
+        print(f"Latest Version: {remote_version}")
         if VERSION == remote_version and test is False:
             print(Fore.GREEN + "You're up to date!" + Style.RESET_ALL)
             return MainReturnCode.LOOP_NO_PROMPT

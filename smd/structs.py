@@ -227,3 +227,8 @@ class DLCTypes(Enum):
 class ContextMenuOptions(Enum):
     INSTALL = "Install"
     UNINSTALL = "Uninstall"
+
+
+class ReleaseType(Enum):
+    PRERELEASE = "Pre-release (Buggy)"
+    STABLE = "Stable"
