@@ -17,6 +17,7 @@ class LuaManager:
     def __init__(
         self,
     ):
+        """Might need refactor. Does I/O on init"""
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
 

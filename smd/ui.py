@@ -11,6 +11,7 @@ from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 
+from smd.storage.acf import ACFParser
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
 from smd.http_utils import get_request
@@ -222,7 +223,6 @@ class UI:
         return self.app_list_man.display_menu(self.provider)
 
     def select_steam_library(self):
-        """Returns success status"""
         steam_libs = get_steam_libs(self.steam_path)
         if len(steam_libs) == 1:
             return steam_libs[0]
@@ -278,22 +278,20 @@ class UI:
         move_files = prompt_confirm(
             "Manifests are now in the depotcache folder. "
             "Would you like to transfer these files to another folder?",
-            default=False
+            default=False,
         )
         if move_files:
             dst = prompt_dir("Paste in here the folder you'd like to move them to:")
             for file in manifests:
                 shutil.move(file, dst / file.name)
                 print(f"{file.name} moved")
-        print(
-            Fore.GREEN + "\nSuccess! ", end=""
-        )
+        print(Fore.GREEN + "\nSuccess! ", end="")
         if not move_files:
             print(
                 "Close Steam and run DLLInjector again "
                 "(or not depending on how you installed Greenluma). "
-                'Your game should show up in the library ready to "update"'
-                , end=""
+                'Your game should show up in the library ready to "update"',
+                end="",
             )
         print(Style.RESET_ALL)
         return MainReturnCode.LOOP
@@ -424,3 +422,45 @@ class UI:
         command = convert(["cmd", "/k", str(updater.resolve())])
         subprocess.Popen(command, creationflags=subprocess.DETACHED_PROCESS, shell=True)
         return MainReturnCode.LOOP_NO_PROMPT
+
+    def update_all_manifests(self) -> MainReturnCode:
+        steam_libs = get_steam_libs(self.steam_path)
+        applist_ids = [x.app_id for x in self.app_list_man.get_local_ids()]
+        lua_manager = LuaManager()
+        downloader = ManifestDownloader(self.provider, self.steam_path)
+        explored_ids: list[int] = []
+        for lib in steam_libs:
+            steamapps = lib / "steamapps"
+            acf_files = steamapps.glob("*.acf")
+            for acf_file in acf_files:
+                acf = ACFParser(acf_file)
+                if not acf.needs_update():
+                    continue
+                if acf.id not in applist_ids:
+                    continue
+                if acf.id in explored_ids:
+                    continue
+                print(
+                    Fore.YELLOW + f"\n{acf.name} needs an update!\n" + Style.RESET_ALL
+                )
+                explored_ids.append(acf.id)
+                in_backup = str(acf.id) in lua_manager.named_ids
+                # TODO: DRY this
+                parsed_lua = lua_manager.fetch_lua(
+                    LuaChoice.ADD_LUA,
+                    lua_manager.saved_lua / f"{acf.id}.lua" if in_backup else None,
+                )
+                if not in_backup:
+                    lua_manager.backup_lua(parsed_lua)
+                print(
+                    Fore.YELLOW
+                    + "\nDownloading Manifests:"
+                    + Style.RESET_ALL
+                )
+                downloader.download_manifests(parsed_lua, auto_manifest=True)
+        print(
+            Fore.GREEN + "\nSuccess! All game manifests have been updated!\n"
+            "Try updating them via Steam."
+            + Style.RESET_ALL
+        )
+        return MainReturnCode.LOOP

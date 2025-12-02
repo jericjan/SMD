@@ -4,7 +4,7 @@ import logging
 import subprocess
 from pathlib import Path
 import sys
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import vdf  # type: ignore
 
@@ -26,9 +26,12 @@ def enter_path(
     *paths: Union[int, str],
     mutate: bool = False,
     ignore_case: bool = False,
+    default: Optional[Any] = None
 ) -> Any:
     """
-    Walks or creates nested dicts in a VDFDict/dict
+    Walks or creates nested dicts in a VDFDict/dict.
+    Returns an empty dict-like if not found.
+    `default` key only works when `mutate` is False.
     """
     current = obj
     for key in paths:
@@ -57,7 +60,7 @@ def enter_path(
         else:
             # key not found
             if not mutate:
-                return type(current)()
+                return default if default else type(current)()
             # create a new key that's the same type as current
             new_node = type(current)()
             current[original_key] = new_node

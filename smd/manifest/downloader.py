@@ -118,7 +118,7 @@ class ManifestDownloader:
 
     def download_manifests(
         self,
-        lua: LuaParsedInfo, decrypt: bool = False
+        lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
     ):
         """Gets latest manifest IDs and downloads respective manifests"""
         while True:
@@ -127,7 +127,7 @@ class ManifestDownloader:
                 break
             except gevent.Timeout:
                 print("CDN Client timed out. Trying again.")
-        manifest_ids = self.get_manifest_ids(lua)
+        manifest_ids = self.get_manifest_ids(lua, auto_manifest)
 
         manifest_paths: list[Path] = []
         # Download and decrypt manifests

@@ -88,6 +88,9 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
     if menu_choice == MainMenu.INSTALL_MENU:
         return ui.manage_context_menu()
 
+    if menu_choice == MainMenu.UPDATE_ALL_MANIFESTS:
+        return ui.update_all_manifests()
+
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
         _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
 
