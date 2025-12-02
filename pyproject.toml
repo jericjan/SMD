@@ -32,3 +32,20 @@ profile = "black"
 
 [tool.uv.sources]
 inquirerpy = { git = "https://github.com/kazhala/InquirerPy" }
+
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "semver2"
+version_provider = "uv"
+update_changelog_on_bump = true
+changelog_incremental = true
+gpg_sign = true
+changelog_start_rev = "4.2.0"
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.10.0",
+    "pre-commit>=4.3.0",
+]
