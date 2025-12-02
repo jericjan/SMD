@@ -4,6 +4,7 @@ import functools
 import os
 import shutil
 import subprocess
+import sys
 import zipfile
 from collections import OrderedDict
 from pathlib import Path
@@ -348,6 +349,10 @@ class UI:
         return MainReturnCode.LOOP_NO_PROMPT
 
     def check_updates(self, test: bool = False) -> MainReturnCode:
+        if not getattr(sys, "frozen", False):
+            print("Program isn't frozen. You can't update.")
+            return MainReturnCode.LOOP_NO_PROMPT
+
         print("Making request to github...", end="", flush=True)
         resp = None
         while resp is None:
