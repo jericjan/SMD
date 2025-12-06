@@ -43,12 +43,19 @@ class ParsedDLC:
         self.id = depot_id
         self.name: str = enter_path(dlc_data, "common", "name")
         depots = enter_path(dlc_data, "depots")
-        parent_depots = enter_path(parent_data, "depots")
+        parent_depots: dict[str, Union[dict[str, Any], str]] = enter_path(
+            parent_data, "depots"
+        )
+
+        parent_depots_resolved = [
+            (x.get("dlcappid") if isinstance(x, dict) else None)
+            for x in parent_depots.values()
+        ]
         self.release_state = enter_path(dlc_data, "common", "releasestate")
         self.type = (
             (
                 DLCTypes.DEPOT
-                if depots or str(depot_id) in parent_depots
+                if depots or str(depot_id) in parent_depots_resolved
                 else DLCTypes.NOT_DEPOT
             )
             if self.release_state == "released"
