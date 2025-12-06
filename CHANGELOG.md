@@ -1,3 +1,9 @@
+## 4.3.0-beta.1 (2025-12-06)
+
+### Fix
+
+- handle dlc misclassification
+
 ## 4.3.0-beta.0 (2025-12-03)
 
 ### Feat
