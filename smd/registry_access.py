@@ -81,14 +81,21 @@ def set_stats_and_achievements(app_id: int):
         rf"SOFTWARE\{selected_version}\AppID\{app_id}",
         "SkipStatsAndAchievements",
     )
-    enabled = prompt_confirm(
-        "Would you like Greenluma (normal mode) to track achievements?"
-        + (
-            (" (Currently Disabled)" if curr else " (Currently Enabled)")
-            if curr is not None
-            else ""
+    if (enabled := get_setting(Settings.TRACK_GREENLUMA_ACH)) is None:
+        enabled = prompt_confirm(
+            "Would you like Greenluma (normal mode) to track achievements?"
+            + (
+                (" (Currently Disabled)" if curr else " (Currently Enabled)")
+                if curr is not None
+                else ""
+            )
         )
-    )
+        if prompt_confirm(
+            "Would you like SMD to remember this setting? "
+            "(You can change this in Settings)",
+            default=False,
+        ):
+            set_setting(Settings.TRACK_GREENLUMA_ACH, enabled)
     try:
         with winreg.CreateKey(
             winreg.HKEY_CURRENT_USER, rf"SOFTWARE\{selected_version}\AppID\{app_id}"

@@ -98,6 +98,9 @@ class Settings(Enum):
     APPLIST_FOLDER = SettingItem(
         "applist_folder", "GreenLuma AppList Folder", False, str
     )
+    TRACK_GREENLUMA_ACH = SettingItem(
+        "gl_track_ach", "Track Achievements via Greenluma", False, bool
+    )
     STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True, str)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False, bool)
 
