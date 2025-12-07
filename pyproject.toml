@@ -7,7 +7,6 @@ requires-python = ">=3.9"
 dependencies = [
     "black>=25.9.0",
     "colorama>=0.4.6",
-    "extendable-enum>=1.0.1",
     "flake8>=7.3.0",
     "flake8-bugbear>=24.12.12",
     "grpcio-tools>=1.48.2",
