@@ -45,6 +45,15 @@ def set_setting(key: Settings, value: Union[str, bool]):
         f.write(msgpack.packb(settings))  # type: ignore
 
 
+def clear_setting(key: Settings):
+    logger.debug(f"clear_setting: {key.clean_name}")
+    settings = load_all_settings()
+    if key.key_name in settings:
+        settings.pop(key.key_name)
+        with SETTINGS_FILE.open("wb") as f:
+            f.write(msgpack.packb(settings))  # type: ignore
+
+
 def resolve_advanced_mode() -> bool:
     adv_mode = get_setting(Settings.ADVANCED_MODE)
     if adv_mode is None or isinstance(adv_mode, str):

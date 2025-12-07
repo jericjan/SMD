@@ -31,7 +31,12 @@ from smd.registry_access import (
     uninstall_context_menu,
 )
 from smd.steam_client import SteamInfoProvider
-from smd.storage.settings import get_setting, load_all_settings, set_setting
+from smd.storage.settings import (
+    clear_setting,
+    get_setting,
+    load_all_settings,
+    set_setting,
+)
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import VERSION
 from smd.structs import (
@@ -42,6 +47,7 @@ from smd.structs import (
     MainReturnCode,
     MidiFiles,
     ReleaseType,
+    SettingOperations,
     Settings,
 )
 from smd.updater import Updater
@@ -131,34 +137,45 @@ class UI:
                 + ("[ENCRYPTED]" if selected_key.hidden else str(value))
                 + Style.RESET_ALL
             )
-            if not prompt_confirm("Do you want to edit this setting?"):
+            operation: Optional[SettingOperations] = prompt_select(
+                "What do you want to do with this setting?",
+                list(SettingOperations),
+                cancellable=True,
+            )
+
+            if operation is None:
                 continue
 
-            new_settings_value: Union[str, bool]
-            if selected_key.type == bool:
-                new_settings_value = prompt_confirm(
-                    "Select the new value:", "Enable", "Disable"
-                )
-            elif isinstance(selected_key.type, list):
-                enum_val: Enum = prompt_select(
-                    "Select the new value:", selected_key.type
-                )
-                new_settings_value = enum_val.value
-            elif selected_key.type == str:
-                func = prompt_secret if selected_key.hidden else prompt_text
-                new_settings_value = func("Enter the new value:")
-            else:
-                raise Exception("Unhandled setting type. Shouldn't happen.")
-            set_setting(selected_key, new_settings_value)
+            if operation == SettingOperations.DELETE:
+                clear_setting(selected_key)
+                continue
 
-            if selected_key == Settings.PLAY_MUSIC:
-                if value is True and new_settings_value is False:
-                    self.kill_midi_player()
-                elif value is False and new_settings_value is True:
-                    self.init_midi_player()
+            if operation == SettingOperations.EDIT:
+                new_settings_value: Union[str, bool]
+                if selected_key.type == bool:
+                    new_settings_value = prompt_confirm(
+                        "Select the new value:", "Enable", "Disable"
+                    )
+                elif isinstance(selected_key.type, list):
+                    enum_val: Enum = prompt_select(
+                        "Select the new value:", selected_key.type
+                    )
+                    new_settings_value = enum_val.value
+                elif selected_key.type == str:
+                    func = prompt_secret if selected_key.hidden else prompt_text
+                    new_settings_value = func("Enter the new value:")
+                else:
+                    raise Exception("Unhandled setting type. Shouldn't happen.")
+                set_setting(selected_key, new_settings_value)
 
-            if selected_key == Settings.APPLIST_FOLDER:
-                self.app_list_man = AppListManager(self.steam_path, self.provider)
+                if selected_key == Settings.PLAY_MUSIC:
+                    if value is True and new_settings_value is False:
+                        self.kill_midi_player()
+                    elif value is False and new_settings_value is True:
+                        self.init_midi_player()
+
+                if selected_key == Settings.APPLIST_FOLDER:
+                    self.app_list_man = AppListManager(self.steam_path, self.provider)
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator

@@ -121,6 +121,11 @@ class Settings(Enum):
         return self.value.type
 
 
+class SettingOperations(Enum):
+    EDIT = "Edit"
+    DELETE = "Delete"
+
+
 class LoggedInUser(NamedTuple):
     """A user in loginusers.vdf"""
 
