@@ -287,7 +287,7 @@ class UI:
 
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
-        steam_proc = SteamProcess(self.steam_path)
+        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
 
         parsed_lua = lua_manager.fetch_lua()
         if parsed_lua is None:
@@ -334,7 +334,7 @@ class UI:
         downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
-        steam_proc = SteamProcess(self.steam_path)
+        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
         parsed_lua = lua_manager.fetch_lua(
             LuaChoice.ADD_LUA if file else None, override_path=file
         )
@@ -469,7 +469,7 @@ class UI:
         applist_ids = [x.app_id for x in self.app_list_man.get_local_ids()]
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
-        steam_proc = SteamProcess(self.steam_path)
+        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
         explored_ids: list[int] = []
         for lib in steam_libs:
             steamapps = lib / "steamapps"

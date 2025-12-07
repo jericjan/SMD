@@ -4,9 +4,7 @@ from pathlib import Path
 
 import psutil
 
-from smd.prompts import prompt_confirm, prompt_file
-from smd.storage.settings import get_setting, set_setting
-from smd.structs import Settings
+from smd.prompts import prompt_confirm
 
 
 def is_proc_running(process_name: str):
@@ -20,8 +18,9 @@ def is_proc_running(process_name: str):
 
 
 class SteamProcess:
-    def __init__(self, steam_path: Path):
+    def __init__(self, steam_path: Path, applist_folder: Path):
         self.steam_path = steam_path
+        self.injector_dir = applist_folder.parent
         self.exe_name = "steam.exe"
         self.wait_time = 3
 
@@ -32,22 +31,36 @@ class SteamProcess:
         print(" Done!")
 
     def resolve_injector_path(self):
-        if (injector_path_str := get_setting(Settings.INJECTOR_EXE)) is None:
-            injector_path = prompt_file(
-                "Paste the path of DLLInjector.exe "
-                "(or steam.exe if you're on Stealth Mode)"
-            )
-            injector_path_str = str(injector_path.resolve())
-            set_setting(Settings.INJECTOR_EXE, injector_path_str)
-        return injector_path_str
+        candidates = ["DLLInjector.exe", "steam.exe"]
+        matches = [
+            x for x in map(lambda x: (self.injector_dir / x), candidates) if x.exists()
+        ]
+        if len(matches) == 1:
+            return str(matches[0].resolve())
+        if len(matches) == 0:
+            return None
+        print(f"The following were found: {', '.join(x.name for x in matches)}")
+        if prompt_confirm("Is your GreenLuma installation in Normal Mode right now?"):
+            return str(matches[0].resolve())
+        renamed_path = matches[0].parent / (matches[0].name + ".backup")
+        matches[0].rename(renamed_path)
+        print(
+            "You must be in stealth mode then. "
+            f"You shouldn't leave {candidates[0]} in that folder! I've renamed it "
+            f"to {renamed_path.name} for you."
+        )
+        return str(matches[1].resolve())
 
     def prompt_launch_or_restart(self):
         if not prompt_confirm("Would like me to restart/start Steam for you?"):
             return False
         while is_proc_running(self.exe_name):
-            self.kill()
+            self.kill()  # TODO: run kill command once and just continuosly wait
             time.sleep(self.wait_time)
         injector = self.resolve_injector_path()
+        if injector is None:
+            print("Could not find any matching executables. Launch it yourself.")
+            return
         print("Launching Steam...")
         subprocess.Popen(
             injector, creationflags=subprocess.DETACHED_PROCESS, shell=False,

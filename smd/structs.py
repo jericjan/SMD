@@ -118,12 +118,6 @@ class Settings(Enum):
     TRACK_GREENLUMA_ACH = SettingItem(
         "gl_track_ach", "Track Achievements via Greenluma", False, bool
     )
-    INJECTOR_EXE = SettingItem(
-        "injector_exe",
-        "Injector Executable (or steam.exe)",
-        False,
-        SettingCustomTypes.FILE,
-    )
     STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True, str)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False, bool)
 
