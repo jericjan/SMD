@@ -26,9 +26,7 @@ class SteamProcess:
 
     def kill(self):
         exe = self.steam_path / self.exe_name
-        print("Killing Steam...", flush=True, end="")
         subprocess.run([str(exe), "-shutdown"])
-        print(" Done!")
 
     def resolve_injector_path(self):
         candidates = ["DLLInjector.exe", "steam.exe"]
@@ -54,9 +52,12 @@ class SteamProcess:
     def prompt_launch_or_restart(self):
         if not prompt_confirm("Would like me to restart/start Steam for you?"):
             return False
-        while is_proc_running(self.exe_name):
-            self.kill()  # TODO: run kill command once and just continuosly wait
-            time.sleep(self.wait_time)
+        if is_proc_running(self.exe_name):
+            print("Killing Steam...", flush=True, end="")
+            self.kill()
+            while is_proc_running(self.exe_name):
+                time.sleep(self.wait_time)
+            print(" Done!")
         injector = self.resolve_injector_path()
         if injector is None:
             print("Could not find any matching executables. Launch it yourself.")
