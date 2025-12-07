@@ -8,15 +8,17 @@ from colorama import Fore, Style
 
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
-from smd.prompts import (
-    prompt_confirm,
-    prompt_file,
-    prompt_select,
-    prompt_text,
-)
+from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.strings import STEAM_WEB_API_KEY
-from smd.structs import LuaChoice, LuaEndpoint, LuaResult, NamedIDs, Settings
+from smd.structs import (
+    LuaChoice,
+    LuaChoiceReturnCode,
+    LuaEndpoint,
+    LuaResult,
+    NamedIDs,
+    Settings,
+)
 from smd.utils import enter_path, root_folder, run_fzf
 from smd.zip import read_lua_from_zip
 
@@ -36,14 +38,14 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
         return LuaResult(None, None, LuaChoice.ADD_LUA)
     lua_path: Optional[Path] = prompt_select(
         "Choose a game:",
-        [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()]
-        + [("(Add a lua file instead)", None)],
+        [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()],
         fuzzy=True,
-        max_height=10
+        max_height=10,
+        cancellable=True
     )
     if lua_path is None or not lua_path.exists():
-        return LuaResult(None, None, LuaChoice.ADD_LUA)
-    return LuaResult(lua_path, None, None)
+        return LuaResult(None, None, LuaChoiceReturnCode.GO_BACK)
+    return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)
 
 
 def add_new_lua(file: Optional[Path] = None) -> LuaResult:
@@ -55,21 +57,21 @@ def add_new_lua(file: Optional[Path] = None) -> LuaResult:
     lua_path = file if file else prompt_file(
         "Drag a .lua file (or .zip w/ .lua inside) into here "
         "then press Enter.\n"
-        "Leave it blank to switch to selecting a saved .lua:",
+        "Leave it blank to go back:",
         allow_blank=True,
     )
 
     if lua_path.samefile(Path.cwd()):  # Blank input
         # Switch to other option
-        return LuaResult(None, None, LuaChoice.SELECT_SAVED_LUA)
+        return LuaResult(None, None, LuaChoiceReturnCode.GO_BACK)
 
     if lua_path.suffix == ".zip":
         lua_contents = read_lua_from_zip(lua_path)
         if lua_contents is None:
             print("Could not find .lua in ZIP file.")
-            return LuaResult(None, None, None)
-        return LuaResult(lua_path, lua_contents, None)
-    return LuaResult(lua_path, None, None)
+            return LuaResult(None, None, LuaChoiceReturnCode.LOOP)
+        return LuaResult(lua_path, lua_contents, LuaChoiceReturnCode.LOOP)
+    return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)
 
 
 def search_game() -> Optional[str]:
@@ -141,7 +143,11 @@ def download_lua(dest: Path) -> LuaResult:
         assert match is not None  # lmao
         return match.group()
 
-    source: LuaEndpoint = prompt_select("Select an endpoint:", list(LuaEndpoint))
+    source: Optional[LuaEndpoint] = prompt_select(
+        "Select an endpoint:", list(LuaEndpoint), cancellable=True
+    )
+    if source is None:
+        return LuaResult(None, None, LuaChoiceReturnCode.GO_BACK)
 
     app_id: str = prompt_text(
         "Enter the App ID or Store link. Leave it blank to search for games:",
@@ -154,7 +160,7 @@ def download_lua(dest: Path) -> LuaResult:
         if x := search_game():
             app_id = x
         else:
-            return LuaResult(None, None, None)
+            return LuaResult(None, None, LuaChoiceReturnCode.LOOP)
 
     if source == LuaEndpoint.OUREVERYDAY:
         lua_path = get_oureverday(dest, app_id)
@@ -162,11 +168,6 @@ def download_lua(dest: Path) -> LuaResult:
         lua_path = get_manilua(dest, app_id)
 
     if lua_path is None:
-        if prompt_confirm(
-            "Could not find it. Try again?", false_msg="No (Add a .lua instead)"
-        ):
-            return LuaResult(None, None, None)
-        print("Switching to manual .lua selection...")
-        return LuaResult(None, None, LuaChoice.ADD_LUA)
+        return LuaResult(None, None, LuaChoiceReturnCode.LOOP)
 
-    return LuaResult(lua_path, None, None)
+    return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)

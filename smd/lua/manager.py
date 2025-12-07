@@ -7,8 +7,15 @@ from typing import Optional
 from colorama import Fore, Style
 
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
+from smd.prompts import prompt_select
 from smd.storage.named_ids import get_named_ids
-from smd.structs import DepotKeyPair, LuaChoice, LuaParsedInfo, RawLua  # type: ignore
+from smd.structs import (
+    DepotKeyPair,
+    LuaChoice,
+    LuaChoiceReturnCode,
+    LuaParsedInfo,
+    RawLua,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +28,9 @@ class LuaManager:
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
 
-    def get_raw_lua(self, choice: LuaChoice, override: Optional[Path] = None) -> RawLua:
+    def get_raw_lua(
+        self, choice: LuaChoice, override: Optional[Path] = None
+    ) -> Optional[RawLua]:
         """Return the lua path and contents"""
         while True:
             if choice == LuaChoice.SELECT_SAVED_LUA:
@@ -30,6 +39,12 @@ class LuaManager:
                 result = add_new_lua(override)
             elif choice == LuaChoice.AUTO_DOWNLOAD:
                 result = download_lua(self.saved_lua)
+
+            switch = result.switch_choice
+            if isinstance(switch, LuaChoice):
+                choice = switch
+            elif switch == LuaChoiceReturnCode.GO_BACK:
+                return None
 
             if result.path is not None:
                 lua_path = result.path
@@ -45,14 +60,13 @@ class LuaManager:
                         override = None
                         continue
                 break
-
-            if result.switch_choice is not None:
-                choice = result.switch_choice
         return RawLua(lua_path, lua_contents)
 
     def fetch_lua(
-        self, choice: LuaChoice, override: Optional[Path] = None
-    ) -> LuaParsedInfo:
+        self,
+        override_choice: Optional[LuaChoice] = None,
+        override_path: Optional[Path] = None,
+    ) -> Optional[LuaParsedInfo]:
         """Depending on the choice, fetch a lua file then parse the contents"""
         depot_no_key_regex = re.compile(
             r"^\s*addappid\s*\(\s*(\d+)\s*\)", flags=re.MULTILINE
@@ -68,7 +82,16 @@ class LuaManager:
 
         while True:
             ids_with_no_key: list[str] = []
-            lua = self.get_raw_lua(choice, override)
+            choice: Optional[LuaChoice] = (
+                override_choice
+                if override_choice
+                else prompt_select("Choose:", list(LuaChoice), cancellable=True)
+            )
+            if choice is None:
+                return None
+            lua = self.get_raw_lua(choice, override_path)
+            if lua is None:
+                continue
             if not (any_addappid := general_regex.search(lua.contents)):
                 print("App ID not found. Try again.")
                 continue

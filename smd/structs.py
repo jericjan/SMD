@@ -14,6 +14,13 @@ class LuaChoice(Enum):
     AUTO_DOWNLOAD = "Automatically download a .lua file"
 
 
+class LuaChoiceReturnCode(Enum):
+    GO_BACK = auto()
+    "Exit and go back to the LuaChoice selection screen"
+    LOOP = auto()
+    "Doesn't actually get read, but basically retry if chosen lua method fails"
+
+
 class MainMenu(Enum):
     MANAGE_LUA = "Process a .lua file"
     UPDATE_ALL_MANIFESTS = "Update manifests for all outdated games"
@@ -143,8 +150,8 @@ class LuaResult(NamedTuple):
     "The lua file's path if it exists"
     contents: Optional[str]
     "The string contents of the lua file"
-    switch_choice: Optional["LuaChoice"]
-    "A LuaChoice to switch to"
+    switch_choice: Union["LuaChoice", "LuaChoiceReturnCode"]
+    "A LuaChoice to switch to."
 
 
 class GenEmuMode(Enum):

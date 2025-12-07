@@ -274,17 +274,12 @@ class UI:
         if not prompt_confirm("Continue?"):
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_choice: Optional[LuaChoice] = prompt_select(
-            "Choose:", list(LuaChoice), cancellable=True
-        )
-
-        if lua_choice is None:
-            return MainReturnCode.LOOP_NO_PROMPT
-
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
 
-        parsed_lua = lua_manager.fetch_lua(lua_choice)
+        parsed_lua = lua_manager.fetch_lua()
+        if parsed_lua is None:
+            return MainReturnCode.LOOP_NO_PROMPT
         lua_manager.backup_lua(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         decrypt = prompt_confirm(
@@ -320,22 +315,16 @@ class UI:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        if file:
-            lua_choice = LuaChoice.ADD_LUA
-        else:
-            lua_choice: Optional[LuaChoice] = prompt_select(
-                "Choose:", list(LuaChoice), cancellable=True
-            )
-
-        if lua_choice is None:
-            return MainReturnCode.LOOP_NO_PROMPT
-
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
 
-        parsed_lua = lua_manager.fetch_lua(lua_choice, file)
+        parsed_lua = lua_manager.fetch_lua(
+            LuaChoice.ADD_LUA if file else None, override_path=file
+        )
+        if parsed_lua is None:
+            return MainReturnCode.LOOP_NO_PROMPT
         set_stats_and_achievements(int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
         self.app_list_man.add_ids(parsed_lua)
@@ -356,9 +345,13 @@ class UI:
         return MainReturnCode.LOOP
 
     def manage_context_menu(self) -> MainReturnCode:
-        choice = prompt_select(
-            "Select an operation for the context menu:", list(ContextMenuOptions)
+        choice: Optional[ContextMenuOptions] = prompt_select(
+            "Select an operation for the context menu:",
+            list(ContextMenuOptions),
+            cancellable=True,
         )
+        if choice is None:
+            return MainReturnCode.LOOP_NO_PROMPT
         if choice == ContextMenuOptions.INSTALL:
             install_context_menu()
         elif choice == ContextMenuOptions.UNINSTALL:
@@ -370,9 +363,13 @@ class UI:
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
 
-        release_type: ReleaseType = prompt_select(
-            "Which type of release would you like to update to?", list(ReleaseType)
+        release_type: Optional[ReleaseType] = prompt_select(
+            "Which type of release would you like to update to?",
+            list(ReleaseType),
+            cancellable=True,
         )
+        if release_type is None:
+            return MainReturnCode.LOOP_NO_PROMPT
         print("Making request to github...", end="", flush=True)
         if release_type == ReleaseType.STABLE:
             resp = Updater.get_latest_stable()
@@ -475,6 +472,8 @@ class UI:
                     LuaChoice.ADD_LUA,
                     lua_manager.saved_lua / f"{acf.id}.lua" if in_backup else None,
                 )
+                if parsed_lua is None:
+                    return MainReturnCode.LOOP_NO_PROMPT
                 if not in_backup:
                     lua_manager.backup_lua(parsed_lua)
                 print(
