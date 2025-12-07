@@ -80,6 +80,14 @@ class GreenLumaVersions(Enum):
         return self.value
 
 
+class SettingCustomTypes(Enum):
+    DIR = auto()
+    FILE = auto()
+
+
+SettingType = Union[type, list[Enum], SettingCustomTypes]
+
+
 class SettingItem(NamedTuple):
     key_name: str
     "The key name of the setting (used in the savefile)"
@@ -87,7 +95,7 @@ class SettingItem(NamedTuple):
     "The name of the setting as displayed in the Settings menu"
     hidden: bool
     "Whether the item is hidden (e.g. sensitive info)"
-    type: Union[type, list[Enum]]
+    type: SettingType
     "Type of the setting"
 
 
@@ -95,7 +103,9 @@ class SettingItem(NamedTuple):
 class Settings(Enum):
     ADVANCED_MODE = SettingItem("advanced_mode", "Advanced Mode", False, bool)
     MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True, str)
-    STEAM_PATH = SettingItem("steam_path", "Steam Installation Path", False, str)
+    STEAM_PATH = SettingItem(
+        "steam_path", "Steam Installation Path", False, SettingCustomTypes.DIR
+    )
     STEAM_USER = SettingItem("steam_user", "Steam Username", False, str)
     STEAM_PASS = SettingItem("steam_pass", "Steam Password", True, str)
     STEAM32_ID = SettingItem("steam32_id", "Steam32 ID", False, str)
@@ -103,10 +113,16 @@ class Settings(Enum):
         "greenluma_version", "GreenLuma Version", False, list(GreenLumaVersions)
     )
     APPLIST_FOLDER = SettingItem(
-        "applist_folder", "GreenLuma AppList Folder", False, str
+        "applist_folder", "GreenLuma AppList Folder", False, SettingCustomTypes.DIR
     )
     TRACK_GREENLUMA_ACH = SettingItem(
         "gl_track_ach", "Track Achievements via Greenluma", False, bool
+    )
+    INJECTOR_EXE = SettingItem(
+        "injector_exe",
+        "Injector Executable (or steam.exe)",
+        False,
+        SettingCustomTypes.FILE,
     )
     STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True, str)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False, bool)
@@ -127,7 +143,7 @@ class Settings(Enum):
         return self.value.hidden
 
     @property
-    def type(self) -> Union[type, list[Enum]]:
+    def type(self) -> SettingType:
         return self.value.type
 
 

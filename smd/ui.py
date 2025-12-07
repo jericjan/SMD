@@ -21,6 +21,7 @@ from smd.midi import MidiPlayer
 from smd.prompts import (
     prompt_confirm,
     prompt_dir,
+    prompt_file,
     prompt_secret,
     prompt_select,
     prompt_text,
@@ -47,6 +48,7 @@ from smd.structs import (
     MainReturnCode,
     MidiFiles,
     ReleaseType,
+    SettingCustomTypes,
     SettingOperations,
     Settings,
 )
@@ -164,6 +166,14 @@ class UI:
                 elif selected_key.type == str:
                     func = prompt_secret if selected_key.hidden else prompt_text
                     new_settings_value = func("Enter the new value:")
+                elif selected_key.type == SettingCustomTypes.DIR:
+                    new_settings_value = str(
+                        prompt_dir("Enter the new directory:").resolve()
+                    )
+                elif selected_key.type == SettingCustomTypes.FILE:
+                    new_settings_value = str(
+                        prompt_file("Enter the new file path:").resolve()
+                    )
                 else:
                     raise Exception("Unhandled setting type. Shouldn't happen.")
                 set_setting(selected_key, new_settings_value)
@@ -336,6 +346,7 @@ class UI:
         acf.write_acf(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         downloader.download_manifests(parsed_lua)
+
         print(
             Fore.GREEN + "\nSuccess! Close Steam and run DLLInjector again "
             "(or not depending on how you installed Greenluma). "
