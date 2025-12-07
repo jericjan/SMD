@@ -1,3 +1,16 @@
+## 4.3.0-beta.2 (2025-12-07)
+
+### Feat
+
+- add auto start/restart steam after lua processing
+- add more places to press "Back"
+- remember GL achievement tracking instead of prompting every time
+- add setting deletion
+
+### Fix
+
+- handle files and dirs properly when changing settings
+
 ## 4.3.0-beta.1 (2025-12-06)
 
 ### Fix

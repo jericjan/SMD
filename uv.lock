@@ -1809,7 +1809,7 @@ client = [
 
 [[package]]
 name = "steam-manifest-decrypt"
-version = "4.3.0b1"
+version = "4.3.0-beta.2"
 source = { virtual = "." }
 dependencies = [
     { name = "black" },
