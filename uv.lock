@@ -381,6 +381,15 @@ wheels = [
 ]
 
 [[package]]
+name = "configupdater"
+version = "3.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2b/f4/603bd8a65e040b23d25b5843836297b0f4e430f509d8ed2ef8f072fb4127/ConfigUpdater-3.2.tar.gz", hash = "sha256:9fdac53831c1b062929bf398b649b87ca30e7f1a735f3fbf482072804106306b", size = 140603 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/f0/b59cb7613d9d0f866b6ff247c5953ad78363c27ff5d684a2a98899ab8220/ConfigUpdater-3.2-py2.py3-none-any.whl", hash = "sha256:0f65a041627d7693840b4dd743581db4c441c97195298a29d075f91b79539df2", size = 34688 },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1809,11 +1818,12 @@ client = [
 
 [[package]]
 name = "steam-manifest-decrypt"
-version = "4.3.0-beta.2"
+version = "4.3.0b2"
 source = { virtual = "." }
 dependencies = [
     { name = "black" },
     { name = "colorama" },
+    { name = "configupdater" },
     { name = "flake8" },
     { name = "flake8-bugbear" },
     { name = "grpcio-tools" },
@@ -1847,6 +1857,7 @@ dev = [
 requires-dist = [
     { name = "black", specifier = ">=25.9.0" },
     { name = "colorama", specifier = ">=0.4.6" },
+    { name = "configupdater", specifier = ">=3.2" },
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "flake8-bugbear", specifier = ">=24.12.12" },
     { name = "grpcio-tools", specifier = ">=1.48.2" },
