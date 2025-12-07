@@ -1,9 +1,12 @@
+from functools import partial
 import subprocess
+import threading
 import time
 from pathlib import Path
 
 import psutil
 
+from smd.fun import Konami, replace_boot_image
 from smd.prompts import prompt_confirm
 
 
@@ -50,7 +53,12 @@ class SteamProcess:
         return str(matches[1].resolve())
 
     def prompt_launch_or_restart(self):
-        if not prompt_confirm("Would like me to restart/start Steam for you?"):
+        watcher = Konami(on_success=partial(replace_boot_image, self.injector_dir))
+        t = threading.Thread(target=watcher.listen, daemon=True)
+        t.start()
+        do_start = prompt_confirm("Would like me to restart/start Steam for you?")
+        watcher.stop()
+        if not do_start:
             return False
         if is_proc_running(self.exe_name):
             print("Killing Steam...", flush=True, end="")
