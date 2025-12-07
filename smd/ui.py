@@ -1,4 +1,3 @@
-from enum import Enum
 import functools
 import os
 import shutil
@@ -6,18 +5,19 @@ import subprocess
 import sys
 import zipfile
 from collections import OrderedDict
+from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 
-from smd.storage.acf import ACFParser
 from smd.applist import AppListManager
 from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.midi import MidiPlayer
+from smd.processes import SteamProcess
 from smd.prompts import (
     prompt_confirm,
     prompt_dir,
@@ -32,6 +32,7 @@ from smd.registry_access import (
     uninstall_context_menu,
 )
 from smd.steam_client import SteamInfoProvider
+from smd.storage.acf import ACFParser
 from smd.storage.settings import (
     clear_setting,
     get_setting,
@@ -286,6 +287,7 @@ class UI:
 
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
+        steam_proc = SteamProcess(self.steam_path)
 
         parsed_lua = lua_manager.fetch_lua()
         if parsed_lua is None:
@@ -308,12 +310,15 @@ class UI:
             for file in manifests:
                 shutil.move(file, dst / file.name)
                 print(f"{file.name} moved")
+        auto_launch = steam_proc.prompt_launch_or_restart()
         print(Fore.GREEN + "\nSuccess! ", end="")
         if not move_files:
-            print(
+            extra_msg = (
                 "Close Steam and run DLLInjector again "
                 "(or not depending on how you installed Greenluma). "
-                'Your game should show up in the library ready to "update"',
+            ) if not auto_launch else ""
+            print(
+                extra_msg + 'Your game should show up in the library ready to "update"',
                 end="",
             )
         print(Style.RESET_ALL)
@@ -329,7 +334,7 @@ class UI:
         downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
-
+        steam_proc = SteamProcess(self.steam_path)
         parsed_lua = lua_manager.fetch_lua(
             LuaChoice.ADD_LUA if file else None, override_path=file
         )
@@ -346,10 +351,13 @@ class UI:
         acf.write_acf(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         downloader.download_manifests(parsed_lua)
-
-        print(
-            Fore.GREEN + "\nSuccess! Close Steam and run DLLInjector again "
+        auto_launch = steam_proc.prompt_launch_or_restart()
+        extra_msg = (
+            "Close Steam and run DLLInjector again "
             "(or not depending on how you installed Greenluma). "
+        ) if not auto_launch else ""
+        print(
+            Fore.GREEN + f"\nSuccess! {extra_msg}"
             'Your game should show up in the library ready to "update"'
             + Style.RESET_ALL
         )
@@ -461,6 +469,7 @@ class UI:
         applist_ids = [x.app_id for x in self.app_list_man.get_local_ids()]
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
+        steam_proc = SteamProcess(self.steam_path)
         explored_ids: list[int] = []
         for lib in steam_libs:
             steamapps = lib / "steamapps"
@@ -493,6 +502,7 @@ class UI:
                     + Style.RESET_ALL
                 )
                 downloader.download_manifests(parsed_lua, auto_manifest=True)
+        steam_proc.prompt_launch_or_restart()
         print(
             Fore.GREEN + "\nSuccess! All game manifests have been updated!\n"
             "Try updating them via Steam."
