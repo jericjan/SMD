@@ -49,3 +49,11 @@ def b64_encrypt(key: bytes, plaintext: str):
     box = SecretBox(base64.b64decode(key))
     ciphertext = box.encrypt(plaintext.encode())
     return base64.b64encode(ciphertext)
+
+
+def generate_key_and_ciphertext(plaintext: str):
+    key = base64.b64encode(os.urandom(SecretBox.KEY_SIZE))
+    ciphertext = b64_encrypt(key, plaintext)
+    print("Key: ", key)
+    print("Cipher text: ", ciphertext)
+    return key, ciphertext
