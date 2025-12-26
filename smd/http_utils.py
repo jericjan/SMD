@@ -4,6 +4,7 @@ import msvcrt
 from contextlib import contextmanager
 from tempfile import TemporaryFile
 from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
+from urllib.parse import urlparse
 
 import httpx
 from tqdm import tqdm  # type: ignore
@@ -85,6 +86,12 @@ async def _wait_for_enter():
         await asyncio.sleep(0.05)
 
 
+def get_base_domain(url: str):
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url
+
+
 # Lowkey don't remember why i wrote it like this.
 # It uses a default timeout of 10s but i think it still got stuck?
 async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
@@ -99,13 +106,17 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     # Yes, I'm aware it's not actually "encrypted" since I included the password
     # Shut up.
     template_url = b64_decrypt(
-        b"+GM38vRJxeVFvupQLdBtFXmkXf9wNVIewrUgeepdZ/k=",
-        b"0qbgZnBuui43SVL4LnCAk9hC5aQC7C+ycMuPMsHUDPUcqWJ6JJ2CJOzbNWI2xjqp1IRZCAE5yKQseS3+CiZ88QorosG1KfLQw2Vj0q5pVfVFrO37lA==",
+        b'gzTYiUdY7dR2oFPM+cUEUpSnLYn17uq09F8PATpFKT8=',
+        b'rok2PaPQ2T0CF3RZXe+AfytF7i+Yo/kEykq4hnPSSrhRDeESOARdQD4+SzqZqeG5C5U4fAiuEUuPpr1CaXl9V/Xv9EcZdWk1BbyUqCXP8FHkqdGm',
     )
     url = template_url.format(manifest_id=manifest_id)
     print("Getting request code...")
 
-    request_task = asyncio.create_task(get_request(url))
+    headers = {
+        "Referer": get_base_domain(url),
+    }
+
+    request_task = asyncio.create_task(get_request(url, headers=headers))
     cancel_task = asyncio.create_task(_wait_for_enter())
 
     done, pending = await asyncio.wait(
