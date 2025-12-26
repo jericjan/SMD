@@ -10,7 +10,7 @@ from colorama import Fore, Style
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
 from smd.http_utils import get_gmrc, get_request_raw
-from smd.manifest.crypto import decrypt_manifest
+from smd.manifest.crypto import decrypt_and_save_manifest
 from smd.manifest.id_resolver import (
     IManifestStrategy,
     InnerDepotManifestStrategy,
@@ -188,7 +188,7 @@ class ManifestDownloader:
 
             if manifest:
                 if decrypt:
-                    decrypt_manifest(manifest, final_manifest_loc, dec_key)
+                    decrypt_and_save_manifest(manifest, final_manifest_loc, dec_key)
                 else:
                     extracted = read_nth_file_from_zip_bytes(0, manifest)
                     if not extracted:

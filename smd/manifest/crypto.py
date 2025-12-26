@@ -123,7 +123,9 @@ def view_manifest(manifest_file: bytes):
     )
 
 
-def decrypt_manifest(encrypted_file: bytes, output_filepath: Path, dec_key: str):
+def decrypt_and_save_manifest(
+    encrypted_file: bytes, output_filepath: Path, dec_key: str
+):
     """Decrypts a manifest file, given a decryption key
 
     Args:
