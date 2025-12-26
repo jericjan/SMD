@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import shutil
-import time
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urljoin
@@ -21,7 +20,7 @@ from smd.manifest.id_resolver import (
     SharedDepotManifestStrategy,
     StandardManifestStrategy,
 )
-from smd.prompts import prompt_select
+from smd.prompts import prompt_confirm, prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.structs import (  # type: ignore
     DepotManifestMap,
@@ -161,11 +160,19 @@ class ManifestDownloader:
                 continue
             while True:
                 req_code = asyncio.run(get_gmrc(manifest_id))
-                print(f"Request code is: {req_code}")
                 if req_code is not None:
+                    print(f"Request code is: {req_code}")
                     break
-                print("openst.top died. Trying again in 1s")
-                time.sleep(1)
+                if prompt_confirm(
+                    "Request code endpoint died. Would you like to try again?"
+                ):
+                    continue
+
+                req_code = prompt_text(
+                    "Paste the Manifest Request Code here:",
+                    validator=lambda x: x.isdigit(),
+                )
+                break
 
             # You can get cdn urls by running download_sources in steam console
             cdn_server = cast(ContentServer, cdn.get_content_server())
