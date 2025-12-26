@@ -2,7 +2,7 @@ import asyncio
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Optional, cast
 from urllib.parse import urljoin
 
 import gevent
@@ -117,16 +117,55 @@ class ManifestDownloader:
 
         return DepotManifestMap(manifest_ids)
 
-    def download_manifests(
-        self, lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
-    ):
-        """Gets latest manifest IDs and downloads respective manifests"""
+    def get_cdn_client(self):
         while True:
             try:
                 cdn = CDNClient(self.provider.client)
                 break
             except gevent.Timeout:
                 print("CDN Client timed out. Trying again.")
+        return cdn
+
+    def download_single_manifest(
+        self, depot_id: str, manifest_id: str, cdn_client: Optional[CDNClient] = None
+    ):
+        """Returns an encrypted manifest file as bytes"""
+        if cdn_client is None:
+            cdn_client = self.get_cdn_client()
+        req_code = self.resolve_gmrc(manifest_id)
+        cdn_server = cast(ContentServer, cdn_client.get_content_server())
+        cdn_server_name = f"http{'s' if cdn_server.https else ''}://{cdn_server.host}"
+        manifest_url = urljoin(
+            cdn_server_name, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
+        )
+
+        logger.debug(f"Download manifest from {manifest_url}")
+        return get_request_raw(manifest_url)
+
+    def resolve_gmrc(self, manifest_id: str):
+        while True:
+            req_code = asyncio.run(get_gmrc(manifest_id))
+            if req_code is not None:
+                print(f"Request code is: {req_code}")
+                break
+            if prompt_confirm(
+                "Request code endpoint died. Would you like to try again?",
+                false_msg="No (Manually input request code)",
+            ):
+                continue
+
+            req_code = prompt_text(
+                "Paste the Manifest Request Code here:",
+                validator=lambda x: x.isdigit(),
+            )
+            break
+        return req_code
+
+    def download_manifests(
+        self, lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
+    ):
+        """Gets latest manifest IDs and downloads respective manifests"""
+        cdn = self.get_cdn_client()
         manifest_ids = self.get_manifest_ids(lua, auto_manifest)
 
         manifest_paths: list[Path] = []
@@ -158,33 +197,7 @@ class ManifestDownloader:
                 if not final_manifest_loc.exists():
                     shutil.move(possible_saved_manifest, final_manifest_loc)
                 continue
-            while True:
-                req_code = asyncio.run(get_gmrc(manifest_id))
-                if req_code is not None:
-                    print(f"Request code is: {req_code}")
-                    break
-                if prompt_confirm(
-                    "Request code endpoint died. Would you like to try again?"
-                ):
-                    continue
-
-                req_code = prompt_text(
-                    "Paste the Manifest Request Code here:",
-                    validator=lambda x: x.isdigit(),
-                )
-                break
-
-            # You can get cdn urls by running download_sources in steam console
-            cdn_server = cast(ContentServer, cdn.get_content_server())
-            cdn_server_name = (
-                f"http{'s' if cdn_server.https else ''}://{cdn_server.host}"
-            )
-            manifest_url = urljoin(
-                cdn_server_name, f"depot/{depot_id}/manifest/{manifest_id}/5/{req_code}"
-            )
-
-            logger.debug(f"Download manifest from {manifest_url}")
-            manifest = get_request_raw(manifest_url)
+            manifest = self.download_single_manifest(depot_id, manifest_id, cdn)
 
             if manifest:
                 if decrypt:
