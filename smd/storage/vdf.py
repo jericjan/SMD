@@ -69,7 +69,9 @@ def get_steam_libs(steam_path: Path):
     vdf_data = vdf_load(lib_folders)
     paths: list[Path] = []
     for library in vdf_data["libraryfolders"].values():
-        if (path := Path(library["path"])).exists():
-            paths.append(path)
-
+        try:
+            if (path := Path(library["path"])).exists():
+                paths.append(path)
+        except Exception:
+            pass
     return paths
