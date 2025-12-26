@@ -1,3 +1,24 @@
+## 4.3.0-rc.0 (2025-12-26)
+
+### Feat
+
+- add workshop manifest download
+- add easter egg
+- remove injector exe setting and instead get the exe dynamically
+
+### Fix
+
+- disable vim mode when fuzzy searching via prompt_select
+- safely ignore when a steam library path is not a valid file system
+- update MRC endpoint
+- ask to try again instead of immediately retrying in 1s when MRC endpoint fails
+- run steam kill command only once
+
+### Refactor
+
+- separate responsibilities for download_manifests
+- rename decrypt_manifest to decrypt_and_save_manifest
+
 ## 4.3.0-beta.2 (2025-12-07)
 
 ### Feat
