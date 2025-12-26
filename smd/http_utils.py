@@ -18,26 +18,33 @@ logger = logging.getLogger(__name__)
 
 
 @overload
-async def get_request(url: str) -> Union[str, None]: ...
-
-
-@overload
-async def get_request(url: str, type: Literal["text"]) -> Union[str, None]: ...
+async def get_request(
+    url: str,
+    type: Literal["text"] = "text",
+    timeout: int = 10,
+    headers: Optional[dict[str, str]] = None,
+) -> Union[str, None]: ...
 
 
 @overload
 async def get_request(
-    url: str, type: Literal["json"]
+    url: str,
+    type: Literal["json"],
+    timeout: int = 10,
+    headers: Optional[dict[str, str]] = None,
 ) -> Union[dict[Any, Any], None]: ...
 
 
 async def get_request(
-    url: str, type: Literal["text", "json"] = "text", timeout: int = 10
+    url: str,
+    type: Literal["text", "json"] = "text",
+    timeout: int = 10,
+    headers: Optional[dict[str, str]] = None,
 ) -> Union[str, dict[Any, Any], None]:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             logger.debug(f"Making request to {url}")
-            response = await client.get(url)
+            response = await client.get(url, headers=headers)
 
         if response.status_code == 200:
             try:
