@@ -3,13 +3,23 @@
 import hashlib
 import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Literal, NamedTuple, Optional, overload
 
+from colorama import Fore, Style
+
 from smd.applist import AppListManager
+from smd.manifest.downloader import ManifestDownloader
+from smd.manifest.ugc_resolver import (
+    IUgcIdStrategy,
+    StandardUgcIdStrategy,
+    UgcIDResolver,
+    WorkshopItemContext,
+)
 from smd.prompts import (
     prompt_confirm,
     prompt_file,
@@ -296,6 +306,37 @@ class GameHandler:
         chosen = prompt_select("Choose the exe:", windows_exes)
         return app_info.path / chosen
 
+    def download_workshop_manifest(self, app_id: str):
+        strats: list[IUgcIdStrategy] = [StandardUgcIdStrategy()]
+        ugc_resolver = UgcIDResolver(strats)
+        regex = re.compile(
+            r"(?<=steamcommunity.com\/sharedfiles\/filedetails\/\?id=)\d+|^\d+$"
+        )
+
+        def validate(x: str) -> bool:
+            return bool(regex.search(x))
+
+        def filter(x: str) -> int:
+            match = regex.search(x)
+            assert match is not None  # lmao
+            return int(match.group())
+
+        workshop_id: int = prompt_text(
+            "Paste workshop item URL or item ID:",
+            validator=validate,
+            filter=filter
+        )
+        ctx = WorkshopItemContext(self.provider.client, workshop_id)
+        ugc_id, method = ugc_resolver.resolve(ctx)
+        print(f"Found UGC ID via {method} method: {ugc_id}")
+        downloader = ManifestDownloader(self.provider, self.steam_root)
+        downloader.download_workshop_item(app_id, str(ugc_id))
+        print(
+            Fore.GREEN
+            + "Workshop item manifest downloaded! Try downloading it now."
+            + Style.RESET_ALL
+        )
+
     def execute_choice(self, choice: GameSpecificChoices) -> MainReturnCode:
         app_info = self.get_game()
         if app_info is None:
@@ -315,4 +356,6 @@ class GameHandler:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         elif choice == MainMenu.DLC_CHECK:
             self.app_list_man.dlc_check(self.provider, int(app_info.app_id))
+        elif choice == MainMenu.DL_WORKSHOP_ITEM:
+            self.download_workshop_manifest(app_info.app_id)
         return MainReturnCode.LOOP

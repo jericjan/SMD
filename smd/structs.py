@@ -25,6 +25,7 @@ class MainMenu(Enum):
     MANAGE_LUA = "Process a .lua file"
     UPDATE_ALL_MANIFESTS = "Update manifests for all outdated games"
     DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
+    DL_WORKSHOP_ITEM = "Download workshop item manifest"
     DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
@@ -42,6 +43,7 @@ GameSpecificChoices = Literal[
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
     MainMenu.DLC_CHECK,
+    MainMenu.DL_WORKSHOP_ITEM
 ]
 
 GAME_SPECIFIC_CHOICES = (
@@ -49,6 +51,7 @@ GAME_SPECIFIC_CHOICES = (
     MainMenu.REMOVE_DRM,
     MainMenu.DL_USER_GAME_STATS,
     MainMenu.DLC_CHECK,
+    MainMenu.DL_WORKSHOP_ITEM
 )
 
 

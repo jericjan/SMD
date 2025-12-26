@@ -161,6 +161,18 @@ class ManifestDownloader:
             break
         return req_code
 
+    def download_workshop_item(self, app_id: str, ugc_id: str):
+        manifest = self.download_single_manifest(app_id, ugc_id)
+        if manifest:
+            extracted = read_nth_file_from_zip_bytes(0, manifest)
+            if not extracted:
+                raise Exception("File isn't a ZIP. This shouldn't happen.")
+            final_manifest_loc = (
+                self.steam_path / f"depotcache/{app_id}_{ugc_id}.manifest"
+            )
+            with final_manifest_loc.open("wb") as f:
+                f.write(extracted.read())
+
     def download_manifests(
         self, lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
     ):
