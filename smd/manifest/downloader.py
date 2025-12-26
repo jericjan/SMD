@@ -85,8 +85,10 @@ class ManifestDownloader:
             main_app_data = self.provider.get_single_app_info(app_id)
 
         context = ManifestContext(
-            app_id=app_id, app_data=main_app_data, provider=self.provider,
-            auto=auto_fetch
+            app_id=app_id,
+            app_data=main_app_data,
+            provider=self.provider,
+            auto=auto_fetch,
         )
 
         strats: list[IManifestStrategy] = []
@@ -117,8 +119,7 @@ class ManifestDownloader:
         return DepotManifestMap(manifest_ids)
 
     def download_manifests(
-        self,
-        lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
+        self, lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
     ):
         """Gets latest manifest IDs and downloads respective manifests"""
         while True:
@@ -185,7 +186,7 @@ class ManifestDownloader:
                     extracted = read_nth_file_from_zip_bytes(0, manifest)
                     if not extracted:
                         raise Exception("File isn't a ZIP. This shouldn't happen.")
-                    with final_manifest_loc.open('wb') as f:
+                    with final_manifest_loc.open("wb") as f:
                         f.write(extracted.read())
 
                 manifest_paths.append(final_manifest_loc)
