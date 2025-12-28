@@ -11,7 +11,7 @@ from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 
-from smd.applist import AppListManager
+from smd.app_injector.applist import AppListManager
 from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter

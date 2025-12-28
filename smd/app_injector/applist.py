@@ -9,6 +9,7 @@ from colorama import Fore, Style
 from rich.console import Console
 from rich.table import Column, Table
 
+from smd.app_injector.base import AppInjectionManager
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
@@ -64,7 +65,7 @@ class ParsedDLC:
         self.in_applist = True if depot_id in local_ids else False
 
 
-class AppListManager:
+class AppListManager(AppInjectionManager):
     def __init__(self, steam_path: Path, provider: SteamInfoProvider):
         self.max_id_limit = 134
         self.steam_path = steam_path

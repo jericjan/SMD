@@ -12,7 +12,7 @@ from typing import Literal, NamedTuple, Optional, overload
 
 from colorama import Fore, Style
 
-from smd.applist import AppListManager
+from smd.app_injector.applist import AppListManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.manifest.ugc_resolver import (
     IUgcIdStrategy,
