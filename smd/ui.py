@@ -26,11 +26,6 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
-from smd.registry_access import (
-    install_context_menu,
-    set_stats_and_achievements,
-    uninstall_context_menu,
-)
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
@@ -56,6 +51,16 @@ from smd.structs import (
 from smd.updater import Updater
 from smd.utils import enter_path, root_folder
 
+if sys.platform == "win32":
+    from smd.registry_access import (
+        install_context_menu,
+        set_stats_and_achievements,
+        uninstall_context_menu,
+    )
+else:
+    install_context_menu = lambda: None
+    set_stats_and_achievements = lambda: False
+    uninstall_context_menu = lambda: None
 
 def music_toggle_decorator(func):  # type: ignore
     """

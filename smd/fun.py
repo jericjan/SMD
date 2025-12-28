@@ -1,14 +1,21 @@
-from pathlib import Path
-import shutil
-import time
 import ctypes
+import shutil
+import sys
+import time
 from collections import deque
+from pathlib import Path
 from typing import Callable
-import winsound
 
 from smd.storage.ini_config import edit_ini_option
 from smd.utils import root_folder
 
+if sys.platform == "win32":
+    import winsound
+else:
+    class winsound:
+        @staticmethod
+        def Beep(*args):
+            return None
 
 class Konami:
     def __init__(self, on_success: Callable[[], None]):

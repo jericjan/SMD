@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import msvcrt
+import sys
 from contextlib import contextmanager
 from tempfile import TemporaryFile
 from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
@@ -11,6 +11,18 @@ from tqdm import tqdm  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_text
 from smd.secret_store import b64_decrypt
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    class msvcrt:
+        @staticmethod
+        def kbhit():
+            return False
+
+        @staticmethod
+        def getch():
+            return None
 
 if TYPE_CHECKING:
     from tempfile import _TemporaryFileWrapper  # pyright: ignore[reportPrivateUsage]
@@ -115,6 +127,9 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     headers = {
         "Referer": get_base_domain(url),
     }
+
+    if sys.platform != "win32":
+        return await get_request(url, headers=headers)
 
     request_task = asyncio.create_task(get_request(url, headers=headers))
     cancel_task = asyncio.create_task(_wait_for_enter())

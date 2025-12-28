@@ -1,4 +1,5 @@
 import logging
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, Optional
@@ -6,15 +7,20 @@ from typing import Callable, Optional
 from colorama import Fore, Style
 
 from smd.prompts import prompt_dir
-from smd.registry_access import find_steam_path_from_registry
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import Settings
+
+if sys.platform == "win32":
+    from smd.registry_access import find_steam_path_from_registry
+else:
+    find_steam_path_from_registry = lambda: None
 
 logger = logging.getLogger(__name__)
 
 
 def validate_steam_path(path: Optional[Path]) -> bool:
-    return path is not None and (path / "steam.exe").exists()
+    executable = "steam.exe" if sys.platform == "win32" else "steam.sh"
+    return path is not None and (path / executable).exists()
 
 
 class PathFinderStrategy(ABC):
