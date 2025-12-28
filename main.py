@@ -16,7 +16,7 @@ from smd.steam_client import SteamInfoProvider
 from smd.steam_path import init_steam_path
 from smd.storage.settings import resolve_advanced_mode
 from smd.strings import VERSION
-from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode
+from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode, OSType
 from smd.ui import UI
 from smd.utils import root_folder
 
@@ -50,7 +50,12 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
     logger.debug(f"Steam path is {steam_path.resolve()}")
 
-    logger.debug(f"AppList path is {ui.app_list_man.applist_folder.resolve()}")
+    if ui.app_list_man:
+        logger.debug(f"AppList path is {ui.app_list_man.applist_folder.resolve()}")
+    elif ui.sls_man:
+        logger.debug(
+            f"SLSSteam config file path is {ui.sls_man.sls_config_path.resolve()}"
+        )
 
     print("\n==========================================\n")
     advanced_mode = resolve_advanced_mode()
@@ -137,13 +142,20 @@ if __name__ == "__main__":
 └────────────────────────────────────────┘ """
         + Style.RESET_ALL
     )
+
+    os_type = (
+        OSType.WINDOWS
+        if sys.platform == "win32"
+        else (OSType.LINUX if sys.platform == "linux" else OSType.OTHER)
+    )
+
     try:
         client = SteamClient()
         logger.debug(f"Steam client init in {time.time() - start_time}s")
         provider = SteamInfoProvider(client)
         steam_path = init_steam_path()
         logger.debug(f"Steam path init in {time.time() - start_time}s")
-        ui = UI(provider, steam_path)
+        ui = UI(provider, steam_path, os_type)
     except Exception:
         dump_crash()
         input("Press Enter to exit the program...")

@@ -118,6 +118,12 @@ class Settings(Enum):
     APPLIST_FOLDER = SettingItem(
         "applist_folder", "GreenLuma AppList Folder", False, SettingCustomTypes.DIR
     )
+    SLS_CONFIG_LOCATION = SettingItem(
+        "sls_config_loc",
+        "SLSSteam Config File Location",
+        False,
+        SettingCustomTypes.FILE,
+    )
     TRACK_GREENLUMA_ACH = SettingItem(
         "gl_track_ach", "Track Achievements via Greenluma", False, bool
     )
@@ -260,3 +266,9 @@ class ContextMenuOptions(Enum):
 class ReleaseType(Enum):
     PRERELEASE = "Pre-release (Buggy)"
     STABLE = "Stable"
+
+
+class OSType(Enum):
+    WINDOWS = auto()
+    LINUX = auto()
+    OTHER = auto()

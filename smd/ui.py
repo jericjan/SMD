@@ -26,6 +26,7 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
+from smd.app_injector.sls import SLSManager
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
@@ -43,6 +44,7 @@ from smd.structs import (
     LuaChoice,
     MainReturnCode,
     MidiFiles,
+    OSType,
     ReleaseType,
     SettingCustomTypes,
     SettingOperations,
@@ -88,10 +90,19 @@ class UI:
         self,
         provider: SteamInfoProvider,
         steam_path: Path,
+        os_type: OSType
     ):
         self.provider = provider
         self.steam_path = steam_path
-        self.app_list_man = AppListManager(steam_path, self.provider)
+        self.app_list_man = (
+            AppListManager(steam_path, self.provider)
+            if os_type == OSType.WINDOWS
+            else None
+        )
+        self.os_type = os_type
+        self.sls_man = (
+            SLSManager(steam_path, provider) if os_type == OSType.LINUX else None
+        )
 
         self.init_midi_player()
 
@@ -191,7 +202,10 @@ class UI:
                     elif value is False and new_settings_value is True:
                         self.init_midi_player()
 
-                if selected_key == Settings.APPLIST_FOLDER:
+                if (
+                    selected_key == Settings.APPLIST_FOLDER
+                    and self.os_type == OSType.WINDOWS
+                ):
                     self.app_list_man = AppListManager(self.steam_path, self.provider)
         return MainReturnCode.LOOP_NO_PROMPT
 
@@ -255,6 +269,9 @@ class UI:
 
     @music_toggle_decorator
     def applist_menu(self) -> MainReturnCode:
+        if self.app_list_man is None:
+            print("Not supported for this OS")
+            return MainReturnCode.LOOP_NO_PROMPT
         return self.app_list_man.display_menu(self.provider)
 
     def select_steam_library(self):
@@ -271,10 +288,15 @@ class UI:
 
     @music_toggle_decorator
     def handle_game_specific(self, choice: GameSpecificChoices) -> MainReturnCode:
+        injection_manager = self.app_list_man or self.sls_man
+        if injection_manager is None:
+            print("Unsupported OS for this action.")
+            return MainReturnCode.LOOP_NO_PROMPT
+
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
         handler = GameHandler(
-            self.steam_path, lib_path, self.provider, self.app_list_man
+            self.steam_path, lib_path, self.provider, injection_manager
         )
         return handler.execute_choice(choice)
 
@@ -293,7 +315,11 @@ class UI:
 
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
-        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+        steam_proc = (
+            SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+            if self.app_list_man
+            else None
+        )
 
         parsed_lua = lua_manager.fetch_lua()
         if parsed_lua is None:
@@ -316,7 +342,11 @@ class UI:
             for file in manifests:
                 shutil.move(file, dst / file.name)
                 print(f"{file.name} moved")
-        auto_launch = steam_proc.prompt_launch_or_restart()
+        if steam_proc:
+            auto_launch = steam_proc.prompt_launch_or_restart()
+        else:
+            auto_launch = False
+
         print(Fore.GREEN + "\nSuccess! ", end="")
         if not move_files:
             extra_msg = (
@@ -340,16 +370,25 @@ class UI:
         downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
-        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+        steam_proc = (
+            SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+            if self.app_list_man
+            else None
+        )
         parsed_lua = lua_manager.fetch_lua(
             LuaChoice.ADD_LUA if file else None, override_path=file
         )
         if parsed_lua is None:
             return MainReturnCode.LOOP_NO_PROMPT
         set_stats_and_achievements(int(parsed_lua.app_id))
-        print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
-        self.app_list_man.add_ids(parsed_lua)
-        self.app_list_man.dlc_check(self.provider, int(parsed_lua.app_id))
+        if self.app_list_man:
+            print(Fore.YELLOW + "\nAdding to AppList folder:" + Style.RESET_ALL)
+            self.app_list_man.add_ids(parsed_lua)
+            self.app_list_man.dlc_check(self.provider, int(parsed_lua.app_id))
+        elif self.sls_man:
+            print(Fore.YELLOW + "\nAdding to SLSSteam config:" + Style.RESET_ALL)
+            self.sls_man.add_ids(parsed_lua)
+            self.sls_man.dlc_check(self.provider, int(parsed_lua.app_id))
         print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
         config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)
@@ -357,7 +396,10 @@ class UI:
         acf.write_acf(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         downloader.download_manifests(parsed_lua)
-        auto_launch = steam_proc.prompt_launch_or_restart()
+        if steam_proc:
+            auto_launch = steam_proc.prompt_launch_or_restart()
+        else:
+            auto_launch = False
         extra_msg = (
             "Close Steam and run DLLInjector again "
             "(or not depending on how you installed Greenluma). "
@@ -384,6 +426,10 @@ class UI:
         return MainReturnCode.LOOP_NO_PROMPT
 
     def check_updates(self, test: bool = False) -> MainReturnCode:
+        if self.os_type == OSType.LINUX:
+            print("Updating isn't supported yet on linux.")
+            return MainReturnCode.LOOP_NO_PROMPT
+
         if not getattr(sys, "frozen", False):
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
@@ -467,15 +513,30 @@ class UI:
                 ]
             )
         command = convert(["cmd", "/k", str(updater.resolve())])
-        subprocess.Popen(command, creationflags=subprocess.DETACHED_PROCESS, shell=True)
+        subprocess.Popen(
+            command, creationflags=subprocess.DETACHED_PROCESS, shell=True  # type:ignore
+        )
         return MainReturnCode.LOOP_NO_PROMPT
 
     def update_all_manifests(self) -> MainReturnCode:
+        if self.app_list_man is None and self.sls_man is None:
+            print("This OS is not supported for this action.")
+            return MainReturnCode.LOOP_NO_PROMPT
         steam_libs = get_steam_libs(self.steam_path)
-        applist_ids = [x.app_id for x in self.app_list_man.get_local_ids()]
+        if self.app_list_man:
+            applist_ids = [x.app_id for x in self.app_list_man.get_local_ids()]
+        elif self.sls_man:
+            applist_ids = self.sls_man.get_local_ids()
+        else:
+            raise Exception("Unreachable code.")
+
         lua_manager = LuaManager()
         downloader = ManifestDownloader(self.provider, self.steam_path)
-        steam_proc = SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+        steam_proc = (
+            SteamProcess(self.steam_path, self.app_list_man.applist_folder)
+            if self.app_list_man
+            else None
+        )
         explored_ids: list[int] = []
         for lib in steam_libs:
             steamapps = lib / "steamapps"
@@ -508,7 +569,8 @@ class UI:
                     + Style.RESET_ALL
                 )
                 downloader.download_manifests(parsed_lua, auto_manifest=True)
-        steam_proc.prompt_launch_or_restart()
+        if steam_proc:
+            steam_proc.prompt_launch_or_restart()
         print(
             Fore.GREEN + "\nSuccess! All game manifests have been updated!\n"
             "Try updating them via Steam."
