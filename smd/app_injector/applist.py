@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
 from colorama import Fore, Style
 from rich.console import Console
@@ -13,7 +13,7 @@ from smd.app_injector.base import AppInjectionManager
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
 from smd.prompts import prompt_confirm, prompt_dir, prompt_select, prompt_text
-from smd.steam_client import SteamInfoProvider, get_product_info
+from smd.steam_client import ParsedDLC, SteamInfoProvider, get_product_info
 from smd.storage.settings import get_setting, set_setting
 from smd.structs import (
     AppIDInfo,
@@ -30,39 +30,6 @@ from smd.structs import (
 from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)
-
-
-class ParsedDLC:
-
-    def __init__(
-        self,
-        depot_id: int,
-        dlc_data: dict[str, Any],
-        parent_data: dict[str, Any],
-        local_ids: list[int],
-    ):
-        self.id = depot_id
-        self.name: str = enter_path(dlc_data, "common", "name")
-        depots = enter_path(dlc_data, "depots")
-        parent_depots: dict[str, Union[dict[str, Any], str]] = enter_path(
-            parent_data, "depots"
-        )
-
-        parent_depots_resolved = [
-            (x.get("dlcappid") if isinstance(x, dict) else None)
-            for x in parent_depots.values()
-        ]
-        self.release_state = enter_path(dlc_data, "common", "releasestate")
-        self.type = (
-            (
-                DLCTypes.DEPOT
-                if depots or str(depot_id) in parent_depots_resolved
-                else DLCTypes.NOT_DEPOT
-            )
-            if self.release_state == "released"
-            else DLCTypes.UNRELEASED
-        )
-        self.in_applist = True if depot_id in local_ids else False
 
 
 class AppListManager(AppInjectionManager):

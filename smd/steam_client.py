@@ -1,12 +1,14 @@
 import json
 import time
-from typing import Any
+from typing import Any, Union
 
 import gevent
 from steam.client import SteamClient  # type: ignore
 
-from smd.structs import ProductInfo  # type: ignore
+from smd.structs import DLCTypes, ProductInfo  # type: ignore
 import logging
+
+from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)
 
@@ -76,3 +78,35 @@ class SteamInfoProvider:
     def get_single_app_info(self, app_id: int) -> dict[str, Any]:
         result = self.get_app_info([app_id])
         return result.get(app_id, {})
+
+
+class ParsedDLC:
+    def __init__(
+        self,
+        depot_id: int,
+        dlc_data: dict[str, Any],
+        parent_data: dict[str, Any],
+        local_ids: list[int],
+    ):
+        self.id = depot_id
+        self.name: str = enter_path(dlc_data, "common", "name")
+        depots = enter_path(dlc_data, "depots")
+        parent_depots: dict[str, Union[dict[str, Any], str]] = enter_path(
+            parent_data, "depots"
+        )
+
+        parent_depots_resolved = [
+            (x.get("dlcappid") if isinstance(x, dict) else None)
+            for x in parent_depots.values()
+        ]
+        self.release_state = enter_path(dlc_data, "common", "releasestate")
+        self.type = (
+            (
+                DLCTypes.DEPOT
+                if depots or str(depot_id) in parent_depots_resolved
+                else DLCTypes.NOT_DEPOT
+            )
+            if self.release_state == "released"
+            else DLCTypes.UNRELEASED
+        )
+        self.in_applist = True if depot_id in local_ids else False
