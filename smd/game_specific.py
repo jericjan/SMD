@@ -12,7 +12,7 @@ from typing import Literal, NamedTuple, Optional, overload
 
 from colorama import Fore, Style
 
-from smd.app_injector.applist import AppListManager
+from smd.app_injector.base import AppInjectionManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.manifest.ugc_resolver import (
     IUgcIdStrategy,
@@ -58,12 +58,12 @@ class GameHandler:
         steam_root: Path,
         library_path: Path,
         provider: SteamInfoProvider,
-        app_list_man: AppListManager,
+        injection_manager: AppInjectionManager,
     ):
         self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps"
         self.provider = provider
-        self.app_list_man = app_list_man
+        self.injection_manager = injection_manager
 
     def get_game(self) -> Optional[ACFInfo]:
         games: list[tuple[AppName, ACFInfo]] = []
@@ -355,7 +355,7 @@ class GameHandler:
         elif choice == MainMenu.DL_USER_GAME_STATS:
             self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
         elif choice == MainMenu.DLC_CHECK:
-            self.app_list_man.dlc_check(self.provider, int(app_info.app_id))
+            self.injection_manager.dlc_check(self.provider, int(app_info.app_id))
         elif choice == MainMenu.DL_WORKSHOP_ITEM:
             self.download_workshop_manifest(app_info.app_id)
         return MainReturnCode.LOOP
