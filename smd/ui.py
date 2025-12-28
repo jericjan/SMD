@@ -58,9 +58,10 @@ if sys.platform == "win32":
         uninstall_context_menu,
     )
 else:
-    install_context_menu = lambda: None
-    set_stats_and_achievements = lambda: False
-    uninstall_context_menu = lambda: None
+    install_context_menu = lambda: None  # noqa: E731
+    set_stats_and_achievements = lambda *args: False  # type: ignore # noqa: E731
+    uninstall_context_menu = lambda: None  # noqa: E731
+
 
 def music_toggle_decorator(func):  # type: ignore
     """
