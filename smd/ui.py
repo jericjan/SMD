@@ -125,6 +125,15 @@ class UI:
 
     @music_toggle_decorator
     def edit_settings_menu(self) -> MainReturnCode:
+        win_only = [Settings.APPLIST_FOLDER, Settings.GL_VERSION]
+        linux_only = [Settings.SLS_CONFIG_LOCATION]
+        if self.os_type == OSType.WINDOWS:
+            ignore = linux_only
+        elif self.os_type == OSType.LINUX:
+            ignore = win_only
+        else:
+            ignore = []
+
         while True:
             saved_settings = load_all_settings()
             selected_key: Optional[Settings] = prompt_select(
@@ -143,7 +152,7 @@ class UI:
                         ),
                         x,
                     )
-                    for x in Settings
+                    for x in Settings if x not in ignore
                 ],
                 cancellable=True,
             )
