@@ -19,17 +19,18 @@ certifi==2025.10.5
     #   requests
 cffi==2.0.0
     # via
-    #   gevent
+    #   cryptography
     #   pynacl
 charset-normalizer==3.4.3
     # via requests
 click==8.1.8
     # via black
 colorama==0.4.6
-    # via
-    #   steam-manifest-decrypt (pyproject.toml)
-    #   click
-    #   tqdm
+    # via steam-manifest-decrypt (pyproject.toml)
+configupdater==3.2
+    # via steam-manifest-decrypt (pyproject.toml)
+cryptography==46.0.3
+    # via secretstorage
 exceptiongroup==1.3.0
     # via anyio
 flake8==7.3.0
@@ -77,6 +78,10 @@ jaraco-context==6.0.1
     # via keyring
 jaraco-functools==4.3.0
     # via keyring
+jeepney==0.9.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==25.6.0
     # via steam-manifest-decrypt (pyproject.toml)
 markdown-it-py==3.0.0
@@ -102,8 +107,6 @@ pathspec==0.12.1
     # via black
 pathvalidate==3.3.1
     # via steam-manifest-decrypt (pyproject.toml)
-pefile==2023.2.7
-    # via pyinstaller
 pfzy==0.3.4
     # via inquirerpy
 platformdirs==4.4.0
@@ -115,6 +118,8 @@ protobuf==3.20.3
     #   steam-manifest-decrypt (pyproject.toml)
     #   grpcio-tools
     #   steam
+psutil==7.2.0
+    # via steam-manifest-decrypt (pyproject.toml)
 pycodestyle==2.14.0
     # via flake8
 pycparser==2.23
@@ -137,14 +142,14 @@ pyperclip==1.11.0
     # via steam-manifest-decrypt (pyproject.toml)
 pytokens==0.2.0
     # via black
-pywin32-ctypes==0.2.3
-    # via
-    #   keyring
-    #   pyinstaller
+pyyaml==6.0.3
+    # via steam-manifest-decrypt (pyproject.toml)
 requests==2.32.5
     # via steam
 rich==14.2.0
     # via steam-manifest-decrypt (pyproject.toml)
+secretstorage==3.3.3
+    # via keyring
 setuptools==80.9.0
     # via
     #   grpcio-tools
@@ -165,6 +170,7 @@ typing-extensions==4.15.0
     # via
     #   anyio
     #   black
+    #   cryptography
     #   exceptiongroup
     #   grpcio
 urllib3==2.5.0

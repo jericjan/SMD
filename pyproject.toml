@@ -23,6 +23,7 @@ dependencies = [
     "pyinstaller>=6.16.0",
     "pynacl>=1.6.0",
     "pyperclip>=1.11.0",
+    "pyyaml>=6.0.3",
     "rich>=14.2.0",
     "steam[client]>=1.4.4",
     "tqdm>=4.67.1",
