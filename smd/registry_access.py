@@ -71,7 +71,8 @@ def read_subkey(hive: int, key_path: str, sub_key_name: str):
 
 
 def set_stats_and_achievements(app_id: int):
-    """Sets the SkipStatsAndAchievements key (GreenLuma) for a game."""
+    """Sets the SkipStatsAndAchievements key (GreenLuma) for a game.
+    Returns success status"""
     if (selected_version := get_setting(Settings.GL_VERSION)) is None:
         selected_version = get_greenluma_key()
         set_setting(Settings.GL_VERSION, selected_version)
