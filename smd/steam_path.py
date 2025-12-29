@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_steam_path(path: Optional[Path]) -> bool:
-    executable = "steam.exe" if sys.platform == "win32" else "steam.sh"
-    return path is not None and (path / executable).exists()
+    return path is not None and (path / "steamapps").exists()
 
 
 class PathFinderStrategy(ABC):
