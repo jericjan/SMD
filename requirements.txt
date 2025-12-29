@@ -73,9 +73,13 @@ inquirerpy @ git+https://github.com/kazhala/InquirerPy@714d9068896c1a1f9f4d1354f
 isort==6.1.0
     # via steam-manifest-decrypt (pyproject.toml)
 jaraco-classes==3.4.0
-    # via keyring
+    # via
+    #   keyring
+    #   keyrings-alt
 jaraco-context==6.0.1
-    # via keyring
+    # via
+    #   keyring
+    #   keyrings-alt
 jaraco-functools==4.3.0
     # via keyring
 jeepney==0.9.0
@@ -83,6 +87,8 @@ jeepney==0.9.0
     #   keyring
     #   secretstorage
 keyring==25.6.0
+    # via steam-manifest-decrypt (pyproject.toml)
+keyrings-alt==5.0.2
     # via steam-manifest-decrypt (pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
