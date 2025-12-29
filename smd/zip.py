@@ -65,3 +65,15 @@ def read_nth_file_from_zip_bytes(nth: int, bytes: bytes):
             return BytesIO(f.read(f.filelist[nth].filename))
     except zipfile.BadZipFile:
         return
+
+
+def zip_folder(folder_path: Path, output_path: Path):
+    """ZIPs to a BytesIO then to the actual file to prevent infinite recursion"""
+    tmp = BytesIO()
+    with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file in folder_path.rglob('*'):
+            if file.is_file():
+                zipf.write(file, arcname=file.relative_to(folder_path))
+    tmp.seek(0)
+    with output_path.open("wb") as f:
+        f.write(tmp.read())
