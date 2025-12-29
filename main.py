@@ -34,9 +34,7 @@ logger.addHandler(fh)
 
 
 def dump_crash():
-    print(
-        "There was an error. You can also find this in crash.log:\n" + Fore.RED
-    )
+    print("There was an error. You can also find this in crash.log:\n" + Fore.RED)
     with Path("crash.log").open("w+", encoding="utf-8") as f:
         traceback.print_exc(file=f)
         f.seek(0)
@@ -59,7 +57,23 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
     print("\n==========================================\n")
     advanced_mode = resolve_advanced_mode()
-    exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
+    if ui.os_type == OSType.WINDOWS:
+        exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
+    elif ui.os_type == OSType.LINUX:
+        exclude = [
+            MainMenu.MANAGE_LUA,
+            MainMenu.UPDATE_ALL_MANIFESTS,
+            MainMenu.DLC_CHECK,
+            MainMenu.INSTALL_MENU,
+            MainMenu.CHECK_UPDATES,
+            MainMenu.CRACK_GAME,
+            MainMenu.REMOVE_DRM,
+            MainMenu.DL_USER_GAME_STATS,
+            MainMenu.OFFLINE_FIX
+        ]
+    else:
+        exclude = []
+
     if first_launch:
         logger.debug(f"Took {time.time() - start_time}s to start")
     if args.file and first_launch:

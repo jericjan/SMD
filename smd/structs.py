@@ -1,5 +1,6 @@
 """Aliases, Enums, NamedTuples, etc go here"""
 
+import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
@@ -24,14 +25,22 @@ class LuaChoiceReturnCode(Enum):
 class MainMenu(Enum):
     MANAGE_LUA = "Process a .lua file"
     UPDATE_ALL_MANIFESTS = "Update manifests for all outdated games"
-    DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
+    if sys.platform == "win32":
+        DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
+    else:
+        DL_MANIFEST_ONLY = "Download manifests"
     DL_WORKSHOP_ITEM = "Download workshop item manifest"
     DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
     REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
     DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
     OFFLINE_FIX = "Offline Mode Fix"
-    MANAGE_APPLIST = "Manage AppList IDs"
+    if sys.platform == "win32":
+        MANAGE_APPLIST = "Manage AppList IDs"
+    elif sys.platform == "linux":
+        MANAGE_APPLIST = "Manage SLSSteam IDs"
+    else:
+        MANAGE_APPLIST = "Manage injected IDs"
     CHECK_UPDATES = "Check for updates"
     INSTALL_MENU = "Install/Uninstall Context Menu"
     SETTINGS = "Settings"
