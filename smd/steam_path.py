@@ -8,12 +8,12 @@ from colorama import Fore, Style
 
 from smd.prompts import prompt_dir
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import Settings
+from smd.structs import OSType, Settings
 
 if sys.platform == "win32":
     from smd.registry_access import find_steam_path_from_registry
 else:
-    find_steam_path_from_registry = lambda: None
+    find_steam_path_from_registry = lambda: None  # noqa: E731
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,13 @@ class RegistryFinder(PathFinderStrategy):
         if validate_steam_path(path):
             return path
         return None
+
+
+class LinuxFinder(PathFinderStrategy):
+    def find(self) -> Optional[Path]:
+        steam_dir = (Path.home() / ".steam/root").resolve()
+        if steam_dir.exists():
+            return steam_dir
 
 
 class UserInputFinder(PathFinderStrategy):
@@ -81,12 +88,18 @@ class SteamPathService:
         print(f"Your Steam path is {colorized}")
 
 
-def init_steam_path():
+def init_steam_path(os_type: OSType):
     """Finds steam path and saves it to settings if it's new"""
     settings_strat = SettingsFinder()
+    os_specific_finder: list[PathFinderStrategy] = []
+    if os_type == OSType.WINDOWS:
+        os_specific_finder.append(RegistryFinder())
+    elif os_type == OSType.LINUX:
+        os_specific_finder.append(LinuxFinder())
+
     strategies: list[PathFinderStrategy] = [
         settings_strat,
-        RegistryFinder(),
+        *os_specific_finder,
         UserInputFinder(validator=validate_steam_path),
     ]
 

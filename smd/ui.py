@@ -279,7 +279,7 @@ class UI:
     @music_toggle_decorator
     def applist_menu(self) -> MainReturnCode:
         if self.app_list_man is None:
-            print("Not supported for this OS")
+            print("Functionality for linux will be implemented soon.")
             return MainReturnCode.LOOP_NO_PROMPT
         return self.app_list_man.display_menu(self.provider)
 

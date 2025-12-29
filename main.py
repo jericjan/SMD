@@ -167,7 +167,7 @@ if __name__ == "__main__":
         client = SteamClient()
         logger.debug(f"Steam client init in {time.time() - start_time}s")
         provider = SteamInfoProvider(client)
-        steam_path = init_steam_path()
+        steam_path = init_steam_path(os_type)
         logger.debug(f"Steam path init in {time.time() - start_time}s")
         ui = UI(provider, steam_path, os_type)
     except Exception:
