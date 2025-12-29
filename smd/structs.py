@@ -230,7 +230,9 @@ class DepotKeyPair:
 @dataclass
 class RawLua:
     path: Path
+    "can be either a lua file or ZIP file"
     contents: str
+    "content of the lua file"
 
 
 @dataclass
