@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import zipfile
 from collections import OrderedDict
 from enum import Enum
@@ -52,6 +53,7 @@ from smd.structs import (
 )
 from smd.updater import Updater
 from smd.utils import enter_path, root_folder
+from smd.zip import zip_folder
 
 if sys.platform == "win32":
     from smd.registry_access import (
@@ -349,10 +351,35 @@ class UI:
             default=False,
         )
         if move_files:
-            dst = prompt_dir("Paste in here the folder you'd like to move them to:")
+            dst = prompt_dir(
+                "Paste in here the folder you'd like to move them to "
+                "(Blank defaults to Downloads folder):"
+            )
+            default_dir = False
+            unique_name = f"{parsed_lua.app_id}_{time.time()}"
+            if str(dst) == ".":
+                default_dir = True
+                dst = Path.home() / f"Downloads/{unique_name}"
+                dst.mkdir(parents=True, exist_ok=True)
             for file in manifests:
                 shutil.move(file, dst / file.name)
                 print(f"{file.name} moved")
+            do_zip = prompt_confirm(
+                "Would you like to ZIP these files along with the lua? "
+                "(Can be used for ACCELA on Linux)"
+            )
+            if do_zip:
+                with (dst / f"{parsed_lua.app_id}.lua").open(
+                    "w", encoding="utf-8"
+                ) as f:
+                    f.write(parsed_lua.contents)
+                if default_dir:
+                    zip_folder(dst, dst.parent / f"{unique_name}.zip")
+                    shutil.rmtree(dst)
+                else:
+                    zip_folder(dst, dst / f"{unique_name}.zip")
+                    for file in map(lambda x: dst / x.name, manifests):
+                        file.unlink(missing_ok=True)
         if steam_proc:
             auto_launch = steam_proc.prompt_launch_or_restart()
         else:
