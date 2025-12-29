@@ -167,8 +167,10 @@ class ManifestDownloader:
             extracted = read_nth_file_from_zip_bytes(0, manifest)
             if not extracted:
                 raise Exception("File isn't a ZIP. This shouldn't happen.")
+            depotcache = self.steam_path / "depotcache"
+            depotcache.mkdir(exist_ok=True)
             final_manifest_loc = (
-                self.steam_path / f"depotcache/{app_id}_{ugc_id}.manifest"
+                depotcache / f"{app_id}_{ugc_id}.manifest"
             )
             with final_manifest_loc.open("wb") as f:
                 f.write(extracted.read())
@@ -200,8 +202,10 @@ class ManifestDownloader:
             possible_saved_manifest = (
                 Path.cwd() / f"manifests/{depot_id}_{manifest_id}.manifest"
             )
+            depotcache = self.steam_path / "depotcache"
+            depotcache.mkdir(exist_ok=True)
             final_manifest_loc = (
-                self.steam_path / f"depotcache/{depot_id}_{manifest_id}.manifest"
+                depotcache / f"{depot_id}_{manifest_id}.manifest"
             )
 
             if possible_saved_manifest.exists():
