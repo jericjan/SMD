@@ -1,3 +1,10 @@
+## 4.3.0 (2025-12-30)
+
+### Fix
+
+- remote single-quote characters in dir names
+- create depotcache folder when it doesn't exist.
+
 ## 4.3.0-rc.0 (2025-12-26)
 
 ### Feat
