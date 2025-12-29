@@ -322,7 +322,7 @@ class UI:
         if not prompt_confirm("Continue?"):
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_manager = LuaManager()
+        lua_manager = LuaManager(self.os_type)
         downloader = ManifestDownloader(self.provider, self.steam_path)
         steam_proc = (
             SteamProcess(self.steam_path, self.app_list_man.applist_folder)
@@ -375,7 +375,7 @@ class UI:
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
 
-        lua_manager = LuaManager()
+        lua_manager = LuaManager(self.os_type)
         downloader = ManifestDownloader(self.provider, self.steam_path)
         config = ConfigVDFWriter(self.steam_path)
         acf = ACFWriter(lib_path)
@@ -539,7 +539,7 @@ class UI:
         else:
             raise Exception("Unreachable code.")
 
-        lua_manager = LuaManager()
+        lua_manager = LuaManager(self.os_type)
         downloader = ManifestDownloader(self.provider, self.steam_path)
         steam_proc = (
             SteamProcess(self.steam_path, self.app_list_man.applist_folder)

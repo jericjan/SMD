@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from colorama import Fore, Style
 
+from smd.fzf import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_manilua, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
@@ -17,9 +18,10 @@ from smd.structs import (
     LuaEndpoint,
     LuaResult,
     NamedIDs,
+    OSType,
     Settings,
 )
-from smd.utils import enter_path, root_folder, run_fzf
+from smd.utils import enter_path, root_folder
 from smd.zip import read_lua_from_zip
 
 
@@ -74,7 +76,7 @@ def add_new_lua(file: Optional[Path] = None) -> LuaResult:
     return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)
 
 
-def search_game() -> Optional[str]:
+def search_game(os_type: OSType) -> Optional[str]:
     """Using fzf, lets a user search for a game, then returns game ID"""
     all_games_file = (root_folder() / "all_games.txt")
     if all_games_file.exists():
@@ -119,7 +121,7 @@ def search_game() -> Optional[str]:
             f.write('\n'.join(games_str))
     else:
         games_str = all_games_file
-    selection = run_fzf(games_str)
+    selection = run_fzf(games_str, os_type)
     if selection:
         match = re.search(r"(?<=\[ID=)\d+(?=\]$)", selection)
         assert match is not None
@@ -128,7 +130,7 @@ def search_game() -> Optional[str]:
         return res
 
 
-def download_lua(dest: Path) -> LuaResult:
+def download_lua(dest: Path, os_type: OSType) -> LuaResult:
     """Downloads a lua file from the available endpoints"""
 
     reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
@@ -157,7 +159,7 @@ def download_lua(dest: Path) -> LuaResult:
     )
 
     if not app_id:
-        if x := search_game():
+        if x := search_game(os_type):
             app_id = x
         else:
             return LuaResult(None, None, LuaChoiceReturnCode.LOOP)

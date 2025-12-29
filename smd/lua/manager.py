@@ -14,6 +14,7 @@ from smd.structs import (
     LuaChoice,
     LuaChoiceReturnCode,
     LuaParsedInfo,
+    OSType,
     RawLua,
 )
 
@@ -22,11 +23,12 @@ logger = logging.getLogger(__name__)
 
 class LuaManager:
     def __init__(
-        self,
+        self, os_type: OSType
     ):
         """Might need refactor. Does I/O on init"""
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
+        self.os_type = os_type
 
     def get_raw_lua(
         self, choice: LuaChoice, override: Optional[Path] = None
@@ -38,7 +40,7 @@ class LuaManager:
             elif choice == LuaChoice.ADD_LUA:
                 result = add_new_lua(override)
             elif choice == LuaChoice.AUTO_DOWNLOAD:
-                result = download_lua(self.saved_lua)
+                result = download_lua(self.saved_lua, self.os_type)
 
             switch = result.switch_choice
             if isinstance(switch, LuaChoice):
