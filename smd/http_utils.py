@@ -145,7 +145,7 @@ async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
     return result
 
 
-def get_game_name(app_id: str):
+def get_game_name(app_id: str) -> str:
     """Converts an App ID to a game name"""
     official_info = asyncio.run(
         get_request(

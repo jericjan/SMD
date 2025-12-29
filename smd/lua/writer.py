@@ -37,7 +37,7 @@ class ACFWriter:
                     "AppID": lua.app_id,
                     "Universe": "1",
                     "name": app_name,
-                    "installdir": sanitize_filename(app_name),
+                    "installdir": sanitize_filename(app_name).replace("'", ""),
                     "StateFlags": "4",
                 }
             }
