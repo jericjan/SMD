@@ -79,11 +79,19 @@ coll = COLLECT(
     name='main',
 )
 
+import sys
 import zipfile
+
 from main import VERSION
+from smd.strings import LINUX_RELEASE_PREFIX, WINDOWS_RELEASE_PREFIX
 
 main_folder = Path.cwd() / "dist/main"
-zip_file = main_folder.parent / f"SMD_{VERSION}.zip"
+prefix = 'unsupported'
+if sys.platform == "win32":
+    prefix = WINDOWS_RELEASE_PREFIX
+elif sys.platform == "linux":
+    prefix = LINUX_RELEASE_PREFIX
+zip_file = main_folder.parent / f"{prefix}_SMD_{VERSION}.zip"
 
 if zip_file.exists():
     zip_file.unlink()

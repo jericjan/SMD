@@ -13,6 +13,7 @@ from typing import Callable, Optional, Union
 from colorama import Fore, Style
 
 from smd.app_injector.applist import AppListManager
+from smd.app_injector.sls import SLSManager
 from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
@@ -27,7 +28,6 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
-from smd.app_injector.sls import SLSManager
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
@@ -37,7 +37,7 @@ from smd.storage.settings import (
     set_setting,
 )
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
-from smd.strings import VERSION
+from smd.strings import LINUX_RELEASE_PREFIX, VERSION, WINDOWS_RELEASE_PREFIX
 from smd.structs import (
     ContextMenuOptions,
     GameSpecificChoices,
@@ -463,7 +463,7 @@ class UI:
             uninstall_context_menu()
         return MainReturnCode.LOOP_NO_PROMPT
 
-    def check_updates(self, test: bool = False) -> MainReturnCode:
+    def check_updates(self, os_type: OSType, test: bool = False) -> MainReturnCode:
         if self.os_type == OSType.LINUX:
             print("Updating isn't supported yet on linux.")
             return MainReturnCode.LOOP_NO_PROMPT
@@ -498,6 +498,23 @@ class UI:
         if not prompt_confirm("Would you like to update?"):
             return MainReturnCode.LOOP_NO_PROMPT
         download_url = enter_path(resp, "assets", 0, "browser_download_url")
+        assets = resp.get("assets")
+        if assets is None:
+            print("This release has no files attached.")
+            return MainReturnCode.LOOP_NO_PROMPT
+        download_url = None
+        for asset in assets:
+            if os_type == OSType.WINDOWS:
+                target_prefix = WINDOWS_RELEASE_PREFIX
+            elif os_type == OSType.LINUX:
+                target_prefix = LINUX_RELEASE_PREFIX
+            else:
+                print("Unsupported OS. Cannot update.")
+                return MainReturnCode.LOOP_NO_PROMPT
+            url = asset.get("browser_download_url")
+            if url and url.startswith(target_prefix):
+                download_url = url
+                break
         if not download_url:
             print("Couldn't find the download URL :(")
             return MainReturnCode.LOOP_NO_PROMPT
