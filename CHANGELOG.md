@@ -1,3 +1,29 @@
+## 4.4.0-beta.0 (2025-12-31)
+
+### Feat
+
+- add add-to-desktop.sh file for generating desktop file for linux
+- add OS prefix to release file names
+- add default location if manifest transfer location is blank and also ask to zip manifests + lua
+- add `SLSSteam Config File Location` setting and general SLSSteam config handling
+
+### Fix
+
+- clarify location when manifest files are moved/zipped
+- remove warning text for minimal manifest download when on linux
+- get linux steam automatically via ~/.steam/root
+- check for steamapps folder instead of steam.exe for cross-platform functionality
+- hide and change main menu items based on OS
+- remove OS-specific settings
+
+### Refactor
+
+- move archive logic from main.spec to archive.py
+- move fzf func to fzf.py
+- change GameHandler to accept generic AppInjectionManager
+- move ParsedDLC class to steam_client.py
+- move applist to app_injector and add base.py
+
 ## 4.3.0 (2025-12-30)
 
 ### Fix
