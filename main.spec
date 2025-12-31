@@ -46,6 +46,7 @@ datas=[
         ("LICENSE", "."),
         ("third_party_licenses", "third_party_licenses"),
         ("static", "static"),
+        ("icon.ico", ".")
 ]
 
 c_files = ["c/*.dll", "c/*.sf2", "c/*.mid"]
