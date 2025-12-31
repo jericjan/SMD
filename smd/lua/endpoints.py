@@ -31,22 +31,22 @@ def get_oureverday(dest: Path, app_id: str):
     return lua_path
 
 
-def get_manilua(dest: Path, app_id: str):
-    url = f"https://www.piracybound.com/api/game/{app_id}"
+def get_morrenus(dest: Path, app_id: str):
+    url = f"https://manifest.morrenus.xyz/api/v1/manifest/{app_id}"
 
-    if (manilua_key := get_setting(Settings.MANILUA_KEY)) is None:
-        manilua_key = prompt_secret(
-            "Paste your manilua API key here: ",
-            lambda x: x.startswith("manilua"),
-            "That's not a manilua key!",
+    if (morrenus_key := get_setting(Settings.MORRENUS_KEY)) is None:
+        morrenus_key = prompt_secret(
+            "Paste your morrenus API key here: ",
+            lambda x: x.startswith("smm"),
+            "That's not a morrenus key!",
             long_instruction=(
-                "Go the manilua website and request an API key. It's free."
+                "Go the morrenus website and request an API key. It's free."
             ),
         ).strip()
-        set_setting(Settings.MANILUA_KEY, manilua_key)
+        set_setting(Settings.MORRENUS_KEY, morrenus_key)
 
     headers = {
-        "Authorization": f"Bearer {manilua_key}",
+        "Authorization": f"Bearer {morrenus_key}",
     }
 
     logger.debug(f"Downloading lua files from {url}")
