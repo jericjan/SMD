@@ -350,6 +350,9 @@ class UI:
             "Would you like to transfer these files to another folder?",
             default=False,
         )
+        dst = None
+        do_zip = None
+        target_zip = None
         if move_files:
             dst = prompt_dir(
                 "Paste in here the folder you'd like to move them to "
@@ -374,10 +377,12 @@ class UI:
                 ) as f:
                     f.write(parsed_lua.contents)
                 if default_dir:
-                    zip_folder(dst, dst.parent / f"{unique_name}.zip")
+                    target_zip = dst.parent / f"{unique_name}.zip"
+                    zip_folder(dst, target_zip)
                     shutil.rmtree(dst)
                 else:
-                    zip_folder(dst, dst / f"{unique_name}.zip")
+                    target_zip = dst / f"{unique_name}.zip"
+                    zip_folder(dst, target_zip)
                     for file in map(lambda x: dst / x.name, manifests):
                         file.unlink(missing_ok=True)
         if steam_proc:
@@ -386,7 +391,12 @@ class UI:
             auto_launch = False
 
         print(Fore.GREEN + "\nSuccess! ", end="")
-        if not move_files:
+        if move_files and dst:
+            if do_zip and target_zip:
+                print(f"Files have been zipped to {target_zip}")
+            else:
+                print(f"Files can be found in {dst}")
+        else:
             extra_msg = (
                 "Close Steam and run DLLInjector again "
                 "(or not depending on how you installed Greenluma). "
