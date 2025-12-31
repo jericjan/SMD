@@ -1,0 +1,1 @@
+uv run pyinstaller --clean --noconfirm main.spec
