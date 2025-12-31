@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 from pathlib import Path
 
 upx_excludes = [
@@ -16,30 +17,42 @@ tree = Tree("third_party")
 
 third_party_files = []
 
+ignore_files = [
+    "third_party/gbe_fork_tools/generate_emu_config/output/",
+    "third_party/gbe_fork_tools/generate_emu_config/backup/",
+]
+
+if sys.platform == "linux":
+    ignore_files.extend(
+        ["third_party/fzf", "third_party/gbe_fork", "third_party/steamless"]
+    )
+
 # excludes in Tree doesn't work some reason
 for _, file, _ in tree:
     if not any(
         file_is_inside_dir(Path(file), Path(x))
-        for x in (
-            "third_party/gbe_fork_tools/generate_emu_config/output/",
-            "third_party/gbe_fork_tools/generate_emu_config/backup/",
-        )
+        for x in ignore_files
     ):
         third_party_files.append((file, Path(file).parent if Path(file).is_file() else file))
+
+datas=[
+        *third_party_files,
+        ("LICENSE", "."),
+        ("third_party_licenses", "third_party_licenses"),
+        ("static", "static"),
+]
+
+c_files = ["c/*.dll", "c/*.sf2", "c/*.mid"]
+
+for c_file in c_files:
+    if list(Path.cwd().glob(c_file)):
+        datas.append((c_file, "c"))
 
 a = Analysis(
     ["main.py"],
     pathex=[],
     binaries=[],
-    datas=[
-        *third_party_files,
-        ("LICENSE", "."),
-        ("third_party_licenses", "third_party_licenses"),
-        ("static", "static"),
-        ("c/*.dll", "c"),
-        ("c/*.sf2", "c"),
-        ("c/*.mid", "c")
-    ],
+    datas=datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
