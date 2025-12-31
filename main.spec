@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import shutil
 import sys
 from pathlib import Path
 
@@ -99,4 +100,6 @@ coll = COLLECT(
     name='main',
 )
 
+if sys.platform == "linux":
+    shutil.copy("add-to-desktop.sh", Path.cwd() / "dist/main")
 archive()
