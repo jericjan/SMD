@@ -71,7 +71,7 @@ class AppListChoice(Enum):
 
 class LuaEndpoint(Enum):
     OUREVERYDAY = "oureveryday (quick but could be limited)"
-    MORRENUS = "Morrenus (more stuff, needs API key)"
+    MORRENUS = "Morrenus (more stuff, needs API key, has a daily limit)"
 
 
 class MainReturnCode(Enum):
