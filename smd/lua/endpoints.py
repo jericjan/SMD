@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import logging
+import requests
 from pathlib import Path
 
 from colorama import Fore, Style
@@ -30,7 +31,6 @@ def get_oureverday(dest: Path, app_id: str):
         f.write(lua_contents)
     return lua_path
 
-
 def get_morrenus(dest: Path, app_id: str):
     url = f"https://manifest.morrenus.xyz/api/v1/manifest/{app_id}"
 
@@ -49,33 +49,47 @@ def get_morrenus(dest: Path, app_id: str):
         "Authorization": f"Bearer {morrenus_key}",
     }
 
-    logger.debug(f"Downloading lua files from {url}")
-    lua_bytes = b''
-    while True:
-        with download_to_tempfile(url, headers) as tf:
-            if tf is None:
-                if prompt_confirm("Try again?"):
-                    continue
-                break
+    response = requests.get("https://manifest.morrenus.xyz/api/v1/user/stats", headers=headers)
+    data = response.json()
+    usage = data["daily_usage"]
+    limit = data["daily_limit"]
+    state = data["can_make_requests"]
 
-            data = tf.read()
-            lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
-            if lua_bytes is None:
-                tf.seek(0)
-                try:
-                    print(
-                        Fore.RED + json.dumps(json.load(tf), indent=2) + Style.RESET_ALL
-                    )
-                except json.JSONDecodeError:
-                    print(
-                        "Did not receive a ZIP file or JSON: \n" + tf.read().decode()
-                    )
-                except UnicodeDecodeError:
-                    pass
-        break
+    if not state:
+        print(
+            Fore.RED + f"Daily limit exceeded you used {usage}/{limit}" + Style.RESET_ALL
+        )
+    else:
+        logger.debug(f"Downloading lua files from {url}")
+        lua_bytes = b''
+        while True:
+            with download_to_tempfile(url, headers) as tf:
+                if tf is None:
+                    if prompt_confirm("Try again?"):
+                        continue
+                    break
 
-    lua_path = dest / f"{app_id}.lua"
-    if lua_bytes:
-        with lua_path.open("wb") as f:
-            f.write(lua_bytes)
-        return lua_path
+                data = tf.read()
+                print(
+                    Fore.GREEN + f"Morrenus Daily Limit: {usage}/{limit}" + Style.RESET_ALL
+                )
+                lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
+                if lua_bytes is None:
+                    tf.seek(0)
+                    try:
+                        print(
+                            Fore.RED + json.dumps(json.load(tf), indent=2) + Style.RESET_ALL
+                        )
+                    except json.JSONDecodeError:
+                        print(
+                            "Did not receive a ZIP file or JSON: \n" + tf.read().decode()
+                        )
+                    except UnicodeDecodeError:
+                        pass
+            break
+
+        lua_path = dest / f"{app_id}.lua"
+        if lua_bytes:
+            with lua_path.open("wb") as f:
+                f.write(lua_bytes)
+            return lua_path
