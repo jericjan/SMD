@@ -8,7 +8,7 @@ from colorama import Fore, Style
 
 from smd.fzf import run_fzf
 from smd.http_utils import download_to_tempfile
-from smd.lua.endpoints import get_manilua, get_oureverday
+from smd.lua.endpoints import get_morrenus, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
 from smd.storage.settings import get_setting, set_setting
 from smd.strings import STEAM_WEB_API_KEY
@@ -166,8 +166,8 @@ def download_lua(dest: Path, os_type: OSType) -> LuaResult:
 
     if source == LuaEndpoint.OUREVERYDAY:
         lua_path = get_oureverday(dest, app_id)
-    elif source == LuaEndpoint.MANILUA:
-        lua_path = get_manilua(dest, app_id)
+    elif source == LuaEndpoint.MORRENUS:
+        lua_path = get_morrenus(dest, app_id)
 
     if lua_path is None:
         return LuaResult(None, None, LuaChoiceReturnCode.LOOP)

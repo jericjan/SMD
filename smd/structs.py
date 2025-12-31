@@ -71,7 +71,7 @@ class AppListChoice(Enum):
 
 class LuaEndpoint(Enum):
     OUREVERYDAY = "oureveryday (quick but could be limited)"
-    MANILUA = "Manilua (more stuff, needs API key)"
+    MORRENUS = "Morrenus (more stuff, needs API key)"
 
 
 class MainReturnCode(Enum):
@@ -114,7 +114,7 @@ class SettingItem(NamedTuple):
 # Note: values are only obtained through get_setting() in utils.py
 class Settings(Enum):
     ADVANCED_MODE = SettingItem("advanced_mode", "Advanced Mode", False, bool)
-    MANILUA_KEY = SettingItem("manilua_key", "Manilua API Key", True, str)
+    MORRENUS_KEY = SettingItem("morrenus_key", "Morrenus API Key", True, str)
     STEAM_PATH = SettingItem(
         "steam_path", "Steam Installation Path", False, SettingCustomTypes.DIR
     )
