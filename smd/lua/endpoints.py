@@ -85,7 +85,7 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
                 data = tf.read()
                 print(
                     Fore.GREEN
-                    + f"Morrenus Daily Limit: {usage}/{limit}"
+                    + f"Morrenus Daily Limit: {usage+1}/{limit}"
                     + Style.RESET_ALL
                 )
                 lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
@@ -111,3 +111,4 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
             with lua_path.open("wb") as f:
                 f.write(lua_bytes)
             return lua_path
+
