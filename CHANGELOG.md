@@ -1,3 +1,9 @@
+## 4.4.0-beta.2 (2026-02-06)
+
+### Fix
+
+- change release name prefixes to be compatible with older versions
+
 ## 4.4.0-beta.1 (2026-02-06)
 
 ### Feat
