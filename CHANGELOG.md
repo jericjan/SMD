@@ -1,3 +1,14 @@
+## 4.4.0-beta.1 (2026-02-06)
+
+### Feat
+
+- add support for legacy workshop items that use direct download links
+- replace Manilua with Morrenus
+
+### Fix
+
+- point to the correct settings.bin path when launching SMD via right-click context menu
+
 ## 4.4.0-beta.0 (2025-12-31)
 
 ### Feat
