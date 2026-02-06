@@ -1,15 +1,15 @@
-from pathlib import Path
+import logging
 from typing import Any, Union, cast
 
 import msgpack  # type: ignore
 
 from smd.secret_store import keyring_decrypt, keyring_encrypt
 from smd.structs import Settings
-import logging
+from smd.utils import root_folder
 
 logger = logging.getLogger(__name__)
 
-SETTINGS_FILE = Path.cwd() / "settings.bin"
+SETTINGS_FILE = root_folder(outside_internal=True) / "settings.bin"
 
 
 def load_all_settings() -> dict[Any, Any]:
