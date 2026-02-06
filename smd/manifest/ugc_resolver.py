@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import gevent
 from steam.client import SteamClient  # type: ignore
@@ -20,6 +20,21 @@ class WorkshopItemContext:
     "AKA PublishedFileId"
 
 
+@dataclass
+class HContentFile:
+    """Modern workshop items with manifest"""
+    ugc_id: int
+
+
+@dataclass
+class DirectDownloadUrl:
+    """Legacy workshop items with direct download URL"""
+    url: str
+
+
+WorkshopContent = Union[HContentFile, DirectDownloadUrl]
+
+
 class IUgcIdStrategy(ABC):
     @property
     @abstractmethod
@@ -28,7 +43,7 @@ class IUgcIdStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_ugc_id(self, ctx: WorkshopItemContext) -> Optional[int]:
+    def get_content(self, ctx: WorkshopItemContext) -> Optional[WorkshopContent]:
         pass
 
 
@@ -88,22 +103,26 @@ class StandardUgcIdStrategy(IUgcIdStrategy):
                 continue
             break
 
-    def get_ugc_id(self, ctx: WorkshopItemContext) -> Optional[int]:
+    def get_content(self, ctx: WorkshopItemContext) -> Optional[WorkshopContent]:
         details = self._get_workshop_items_details(ctx)
         if details:
-            return details.hcontent_file
+            if details.file_url:
+                # details.file_url is used for older workshop items
+                # (it's also not a manifest but a direct DL)
+                return DirectDownloadUrl(details.file_url)
+            return HContentFile(details.hcontent_file)
 
 
 class UgcIDResolver:
     def __init__(self, strategies: List[IUgcIdStrategy]):
         self.strategies = strategies
 
-    def resolve(self, ctx: WorkshopItemContext) -> tuple[int, str]:
+    def resolve(self, ctx: WorkshopItemContext) -> tuple[WorkshopContent, str]:
         """Iterates strategies until a UGC ID is found.
         Returns UGC ID and strategy name"""
         for strategy in self.strategies:
-            manifest = strategy.get_ugc_id(ctx)
-            if manifest is not None:
-                return manifest, strategy.name
+            content = strategy.get_content(ctx)
+            if content is not None:
+                return content, strategy.name
 
         raise Exception(f"Unable to resolve manifest for depot {ctx.workshop_id}")

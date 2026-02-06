@@ -15,6 +15,7 @@ from colorama import Fore, Style
 from smd.app_injector.base import AppInjectionManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.manifest.ugc_resolver import (
+    DirectDownloadUrl,
     IUgcIdStrategy,
     StandardUgcIdStrategy,
     UgcIDResolver,
@@ -327,15 +328,21 @@ class GameHandler:
             filter=filter
         )
         ctx = WorkshopItemContext(self.provider.client, workshop_id)
-        ugc_id, method = ugc_resolver.resolve(ctx)
-        print(f"Found UGC ID via {method} method: {ugc_id}")
-        downloader = ManifestDownloader(self.provider, self.steam_root)
-        downloader.download_workshop_item(app_id, str(ugc_id))
-        print(
-            Fore.GREEN
-            + "Workshop item manifest downloaded! Try downloading it now."
-            + Style.RESET_ALL
-        )
+        content, method = ugc_resolver.resolve(ctx)
+        if isinstance(content, DirectDownloadUrl):
+            print("This is a legacy workshop item. "
+                  "It can be directly downloaded through"
+                  " the following URL. It's just a ZIP file:\n"
+                  f"{Fore.BLUE + content.url + Style.RESET_ALL}")
+        else:  # HContentFile type
+            print(f"Found UGC ID via {method} method: {content.ugc_id}")
+            downloader = ManifestDownloader(self.provider, self.steam_root)
+            downloader.download_workshop_item(app_id, str(content.ugc_id))
+            print(
+                Fore.GREEN
+                + "Workshop item manifest downloaded! Try downloading it now."
+                + Style.RESET_ALL
+            )
 
     def execute_choice(self, choice: GameSpecificChoices) -> MainReturnCode:
         app_info = self.get_game()
