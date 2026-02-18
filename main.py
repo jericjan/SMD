@@ -99,7 +99,7 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
         return ui.handle_game_specific(menu_choice)
 
     if menu_choice == MainMenu.CHECK_UPDATES:
-        return ui.check_updates()
+        return ui.check_updates(ui.os_type)
 
     if menu_choice == MainMenu.DL_MANIFEST_ONLY:
         return ui.process_lua_minimal()
