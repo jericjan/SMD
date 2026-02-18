@@ -69,10 +69,15 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
     if not state:
         print(
             Fore.RED
-            + f"Daily limit exceeded! You used {usage}/{limit}"
+            + f"Daily limit exceeded! You used {usage if usage else '??'}/"
+            f"{limit if limit else '??'}"
             + Style.RESET_ALL
         )
     else:
+        if not usage or not limit:
+            if not prompt_confirm("Could not get usage limits. "
+                                  "Would you like to continue regardless?"):
+                return
         logger.debug(f"Downloading lua files from {url}")
         lua_bytes = b''
         while True:
@@ -85,7 +90,8 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
                 data = tf.read()
                 print(
                     Fore.GREEN
-                    + f"Morrenus Daily Limit: {usage+1}/{limit}"
+                    + "Morrenus Daily Limit: "
+                    f"{usage+1 if usage else '??'}/{limit if limit else '??'}"
                     + Style.RESET_ALL
                 )
                 lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
@@ -111,4 +117,3 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
             with lua_path.open("wb") as f:
                 f.write(lua_bytes)
             return lua_path
-
