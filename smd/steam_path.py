@@ -1,4 +1,5 @@
 import logging
+import shutil
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -42,6 +43,15 @@ class LinuxFinder(PathFinderStrategy):
         steam_dir = (Path.home() / ".steam/root").resolve()
         if steam_dir.exists():
             return steam_dir
+
+
+class EnvFinder(PathFinderStrategy):
+    def find(self) -> Optional[Path]:
+        steam_dir_str = shutil.which("steam")
+        if steam_dir_str:
+            steam_dir = Path(steam_dir_str).parent.resolve()
+            if validate_steam_path(steam_dir):
+                return steam_dir
 
 
 class UserInputFinder(PathFinderStrategy):
@@ -100,6 +110,7 @@ def init_steam_path(os_type: OSType):
     strategies: list[PathFinderStrategy] = [
         settings_strat,
         *os_specific_finder,
+        EnvFinder(),
         UserInputFinder(validator=validate_steam_path),
     ]
 
