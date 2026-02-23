@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 class SLSManager(AppInjectionManager):
     def __init__(self, steam_path: Path, provider: SteamInfoProvider):
+        super().__init__(provider)
         self.steam_path = steam_path
-        self.provider = provider
 
         saved_path = get_setting(Settings.SLS_CONFIG_LOCATION)
         self.sls_config_path = (
