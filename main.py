@@ -57,11 +57,11 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
     print("\n==========================================\n")
     advanced_mode = resolve_advanced_mode()
+    default_blacklist = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
     if ui.os_type == OSType.WINDOWS:
-        exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
+        exclude = default_blacklist
     elif ui.os_type == OSType.LINUX:
         exclude = [
-            # MainMenu.MANAGE_LUA,
             MainMenu.UPDATE_ALL_MANIFESTS,
             MainMenu.DLC_CHECK,
             MainMenu.INSTALL_MENU,
@@ -70,7 +70,7 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
             MainMenu.REMOVE_DRM,
             MainMenu.DL_USER_GAME_STATS,
             MainMenu.OFFLINE_FIX
-        ]
+        ] + default_blacklist
     else:
         exclude = []
 

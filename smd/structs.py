@@ -25,10 +25,7 @@ class LuaChoiceReturnCode(Enum):
 class MainMenu(Enum):
     MANAGE_LUA = "Process a .lua file"
     UPDATE_ALL_MANIFESTS = "Update manifests for all outdated games"
-    if sys.platform == "win32":
-        DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
-    else:
-        DL_MANIFEST_ONLY = "Download manifests"
+    DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
     DL_WORKSHOP_ITEM = "Download workshop item manifest"
     DLC_CHECK = "Check DLC status of a game"
     CRACK_GAME = "Crack a game (gbe_fork)"
