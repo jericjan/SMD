@@ -61,7 +61,7 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
         exclude = [MainMenu.DL_MANIFEST_ONLY] if not advanced_mode else []
     elif ui.os_type == OSType.LINUX:
         exclude = [
-            MainMenu.MANAGE_LUA,
+            # MainMenu.MANAGE_LUA,
             MainMenu.UPDATE_ALL_MANIFESTS,
             MainMenu.DLC_CHECK,
             MainMenu.INSTALL_MENU,
