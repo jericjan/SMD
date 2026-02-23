@@ -280,10 +280,11 @@ class UI:
 
     @music_toggle_decorator
     def applist_menu(self) -> MainReturnCode:
-        if self.app_list_man is None:
-            print("Functionality for linux will be implemented soon.")
-            return MainReturnCode.LOOP_NO_PROMPT
-        return self.app_list_man.display_menu(self.provider)
+        if self.sls_man is not None:
+            return self.sls_man.display_menu()
+        elif self.app_list_man is not None:
+            return self.app_list_man.display_menu()
+        return MainReturnCode.LOOP_NO_PROMPT
 
     def select_steam_library(self):
         steam_libs = get_steam_libs(self.steam_path)
@@ -437,26 +438,52 @@ class UI:
             print(Fore.YELLOW + "\nAdding to SLSSteam config:" + Style.RESET_ALL)
             self.sls_man.add_ids(parsed_lua)
             self.sls_man.dlc_check(self.provider, int(parsed_lua.app_id))
-        print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
-        config.add_decryption_keys_to_config(parsed_lua)
         lua_manager.backup_lua(parsed_lua)
-        print(Fore.YELLOW + "\nACF Writing:" + Style.RESET_ALL)
-        acf.write_acf(parsed_lua)
+        if self.app_list_man:
+            print(Fore.YELLOW + "\nAdding Decryption Keys:" + Style.RESET_ALL)
+            config.add_decryption_keys_to_config(parsed_lua)
+            print(Fore.YELLOW + "\nACF Writing:" + Style.RESET_ALL)
+            acf.write_acf(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
-        downloader.download_manifests(parsed_lua)
+        manifests = downloader.download_manifests(parsed_lua)
+
+        if self.sls_man:
+            unique_name = f"{parsed_lua.app_id}_{time.time()}"
+            # TODO: this tmp dir really isnt needed
+            dst = Path.home() / f"Downloads/{unique_name}"
+            dst.mkdir(parents=True, exist_ok=True)
+            for file in manifests:
+                shutil.move(file, dst / file.name)
+            with (dst / f"{parsed_lua.app_id}.lua").open(
+                "w", encoding="utf-8"
+            ) as f:
+                f.write(parsed_lua.contents)
+            target_zip = dst.parent / f"{unique_name}.zip"
+            zip_folder(dst, target_zip)
+            shutil.rmtree(dst)
+            print(
+                f"{Fore.GREEN}SUCCESS!{Style.RESET_ALL}"
+                "\nFiles have been zipped to:"
+                f"\n{Fore.YELLOW}{target_zip}{Style.RESET_ALL}\n\n"
+                "Drag that to ACCELA and paste this when it asks you for a folder:\n"
+                f"{Fore.YELLOW}{lib_path.resolve()}{Style.RESET_ALL}\n"
+                "After that, just restart SLSsteam.\n"
+            )
         if steam_proc:
             auto_launch = steam_proc.prompt_launch_or_restart()
         else:
             auto_launch = False
-        extra_msg = (
-            "Close Steam and run DLLInjector again "
-            "(or not depending on how you installed Greenluma). "
-        ) if not auto_launch else ""
-        print(
-            Fore.GREEN + f"\nSuccess! {extra_msg}"
-            'Your game should show up in the library ready to "update"'
-            + Style.RESET_ALL
-        )
+
+        if self.app_list_man:
+            extra_msg = (
+                "Close Steam and run DLLInjector again "
+                "(or not depending on how you installed Greenluma). "
+            ) if not auto_launch else ""
+            print(
+                Fore.GREEN + f"\nSuccess! {extra_msg}"
+                'Your game should show up in the library ready to "update"'
+                + Style.RESET_ALL
+            )
         return MainReturnCode.LOOP
 
     def manage_context_menu(self) -> MainReturnCode:

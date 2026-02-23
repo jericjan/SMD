@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from colorama import Fore, Style
 from rich.console import Console
@@ -11,7 +11,7 @@ from rich.table import Column, Table
 from smd.app_injector.base import AppInjectionManager
 from smd.lua.writer import ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
-from smd.prompts import prompt_confirm, prompt_file
+from smd.prompts import prompt_confirm, prompt_file, prompt_select
 from smd.steam_client import ParsedDLC, SteamInfoProvider
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.yaml import YAMLParser
@@ -54,9 +54,15 @@ class SLSManager(AppInjectionManager):
             )
 
     def get_local_ids(self) -> list[int]:
+        _, _, apps = self.parse_sls_config()
+        return apps
+
+    def parse_sls_config(self) -> tuple[YAMLParser, dict[str, Any], list[int]]:
+        """Parse SLS config file"""
         parser = YAMLParser(self.sls_config_path)
         data = parser.read()
-        return data.get("AdditionalApps", [])
+        apps = data.get("AdditionalApps", [])
+        return parser, data, apps
 
     def add_ids(
         self, data: Union[int, list[int], LuaParsedInfo], skip_check: bool = False
@@ -79,6 +85,48 @@ class SLSManager(AppInjectionManager):
 
         if changes > 0:
             parser.write(yaml_data)
+
+    def prompt_id_deletion(self):
+        parser, data, local_ids = self.parse_sls_config()
+        if not local_ids:
+            print(
+                "There's nothing added to the SLS config file. "
+                "Try adding one manually or automatically when you "
+                "add a game with the tool."
+            )
+            return
+
+        self._populate_id_map(local_ids)
+
+        organized = self._organize_ids(local_ids)
+
+        # list of tuple(app name, app id)
+        menu_items = self._menu_items_from_organized(organized)
+        if len(menu_items) < len(local_ids):
+            logger.warning(
+                "There are less menu items than actual IDs inside SLSsteam config."
+            )
+
+        ids_to_delete_list: Optional[list[int]] = prompt_select(
+            "Select IDs to delete from SLSsteam:",
+            menu_items,
+            multiselect=True,
+            long_instruction="Press Space to select items, "
+            "and Enter to confirm selections. Ctrl+Z to cancel.",
+            mandatory=False,
+        )
+        if ids_to_delete_list is None:
+            print("No IDs selected. Doing nothing")
+            return
+        ids_to_delete = set(ids_to_delete_list)
+        self._prompt_include_depots(ids_to_delete, organized)
+        print(f"Deleting {ids_to_delete}")
+        for local_id in ids_to_delete:
+            try:
+                local_ids.remove(local_id)
+            except ValueError:
+                pass
+        parser.write(data)
 
     def dlc_check(self, provider: SteamInfoProvider, base_id: int) -> None:
         print("Checking for DLC...")
@@ -111,7 +159,7 @@ class SLSManager(AppInjectionManager):
                     "ID",
                     "Name",
                     "Type",
-                    Column(header="In AppList?", justify="center"),
+                    Column(header="In SLSsteam?", justify="center"),
                     Column(header="Has Key?", justify="center"),
                     Column(header="Has Manifest?", justify="center"),
                 )
@@ -143,9 +191,9 @@ class SLSManager(AppInjectionManager):
                 if len(unowned_non_depot_dlcs) > 0:
                     print(
                         "This game has pre-installed DLCs that aren't "
-                        "in the AppList."
+                        "in SLSsteam's config file."
                     )
-                    if prompt_confirm("Do you want to add these to the AppList?"):
+                    if prompt_confirm("Do you want to add these to SLSsteam?"):
                         self.add_ids(unowned_non_depot_dlcs, skip_check=False)
                 elif len(unowned_non_depot_dlcs) == 0 and non_depot_dlc_count > 0:
                     print("All pre-installed DLCs are already enabled.")
