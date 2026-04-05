@@ -7,7 +7,17 @@ from typing import Any, Optional, Union
 
 import vdf  # type: ignore
 
+from smd.structs import OSType  # type: ignore
+
 logger = logging.getLogger(__name__)
+
+
+def get_os_type() -> OSType:
+    return (
+        OSType.WINDOWS
+        if sys.platform == "win32"
+        else (OSType.LINUX if sys.platform == "linux" else OSType.OTHER)
+    )
 
 
 def root_folder(outside_internal: bool = False):
