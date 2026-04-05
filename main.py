@@ -63,7 +63,6 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
     elif ui.os_type == OSType.LINUX:
         exclude = [
             MainMenu.UPDATE_ALL_MANIFESTS,
-            MainMenu.DLC_CHECK,
             MainMenu.INSTALL_MENU,
             MainMenu.CHECK_UPDATES,
             MainMenu.CRACK_GAME,
