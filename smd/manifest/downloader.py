@@ -236,6 +236,7 @@ class ManifestDownloader:
                 print("One of the endpoints had a manifest. Skipping download...")
                 if not final_manifest_loc.exists():
                     shutil.move(possible_saved_manifest, final_manifest_loc)
+                manifest_paths.append(final_manifest_loc)
                 continue
             manifest, is_zipped = self.download_single_manifest(
                 depot_id, manifest_id, cdn
