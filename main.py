@@ -65,7 +65,6 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
             MainMenu.UPDATE_ALL_MANIFESTS,
             MainMenu.INSTALL_MENU,
             MainMenu.CHECK_UPDATES,
-            MainMenu.REMOVE_DRM,
             MainMenu.DL_USER_GAME_STATS,
             MainMenu.OFFLINE_FIX
         ] + default_blacklist
