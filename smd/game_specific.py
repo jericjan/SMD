@@ -307,6 +307,8 @@ class GameHandler:
         if len(windows_exes) == 1:
             return app_info.path / windows_exes[0]
 
+        windows_exes = list(set(windows_exes))
+
         chosen = prompt_select("Choose the exe:", windows_exes)
         return app_info.path / chosen
 
