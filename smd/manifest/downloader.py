@@ -1,8 +1,9 @@
 import asyncio
+from io import BytesIO
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional, Union, cast
 from urllib.parse import urljoin
 
 import gevent
@@ -20,8 +21,9 @@ from smd.manifest.id_resolver import (
     SharedDepotManifestStrategy,
     StandardManifestStrategy,
 )
-from smd.prompts import prompt_confirm, prompt_select, prompt_text
+from smd.prompts import prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
+from smd.storage.settings import resolve_morrenus_key
 from smd.structs import (  # type: ignore
     DepotManifestMap,
     LuaParsedInfo,
@@ -126,13 +128,29 @@ class ManifestDownloader:
                 print("CDN Client timed out. Trying again.")
         return cdn
 
+    def download_morrenus_manifest(self, depot_id: str, manifest_id: str):
+        morrenus_key = resolve_morrenus_key()
+        url = (
+            "https://manifest.morrenus.xyz/api/v1/generate/manifest?"
+            f"depot_id={depot_id}&manifest_id={manifest_id}&api_key={morrenus_key}"
+        )
+        return get_request_raw(url)
+
     def download_single_manifest(
         self, depot_id: str, manifest_id: str, cdn_client: Optional[CDNClient] = None
-    ):
-        """Returns an encrypted manifest file as bytes"""
+    ) -> tuple[Union[bytes, None], bool]:
+        """Returns (encrypted manifest file as bytes, is_zipped (direct from Steam) )"""
         if cdn_client is None:
             cdn_client = self.get_cdn_client()
         req_code = self.resolve_gmrc(manifest_id)
+        if req_code is None:
+            print("Failed to get request code. Trying Morrenus... ", end="", flush=True)
+            manifest = self.download_morrenus_manifest(depot_id, manifest_id)
+            if manifest:
+                print("Success!")
+                return manifest, False
+            print("Failed!")
+            return manifest, False
         cdn_server = cast(ContentServer, cdn_client.get_content_server())
         cdn_server_name = f"http{'s' if cdn_server.https else ''}://{cdn_server.host}"
         manifest_url = urljoin(
@@ -140,7 +158,7 @@ class ManifestDownloader:
         )
 
         logger.debug(f"Download manifest from {manifest_url}")
-        return get_request_raw(manifest_url)
+        return get_request_raw(manifest_url), True
 
     def resolve_gmrc(self, manifest_id: str):
         while True:
@@ -148,12 +166,15 @@ class ManifestDownloader:
             if req_code is not None:
                 print(f"Request code is: {req_code}")
                 break
-            if prompt_confirm(
+            choice: int = prompt_select(
                 "Request code endpoint died. Would you like to try again?",
-                false_msg="No (Manually input request code)",
-            ):
+                [("Yes", 0), ("No (Manually input request code)", 1),
+                 ("Try something else.", 2)]
+            )
+            if choice == 0:
                 continue
-
+            if choice == 2:
+                return
             req_code = prompt_text(
                 "Paste the Manifest Request Code here:",
                 validator=lambda x: x.isdigit(),
@@ -162,11 +183,14 @@ class ManifestDownloader:
         return req_code
 
     def download_workshop_item(self, app_id: str, ugc_id: str):
-        manifest = self.download_single_manifest(app_id, ugc_id)
+        manifest, is_zipped = self.download_single_manifest(app_id, ugc_id)
         if manifest:
-            extracted = read_nth_file_from_zip_bytes(0, manifest)
-            if not extracted:
-                raise Exception("File isn't a ZIP. This shouldn't happen.")
+            if is_zipped:
+                extracted = read_nth_file_from_zip_bytes(0, manifest)
+                if not extracted:
+                    raise Exception("File isn't a ZIP. This shouldn't happen.")
+            else:
+                extracted = BytesIO(manifest)
             depotcache = self.steam_path / "depotcache"
             depotcache.mkdir(exist_ok=True)
             final_manifest_loc = (
@@ -213,15 +237,20 @@ class ManifestDownloader:
                 if not final_manifest_loc.exists():
                     shutil.move(possible_saved_manifest, final_manifest_loc)
                 continue
-            manifest = self.download_single_manifest(depot_id, manifest_id, cdn)
+            manifest, is_zipped = self.download_single_manifest(
+                depot_id, manifest_id, cdn
+            )
 
             if manifest:
                 if decrypt:
                     decrypt_and_save_manifest(manifest, final_manifest_loc, dec_key)
                 else:
-                    extracted = read_nth_file_from_zip_bytes(0, manifest)
-                    if not extracted:
-                        raise Exception("File isn't a ZIP. This shouldn't happen.")
+                    if is_zipped:
+                        extracted = read_nth_file_from_zip_bytes(0, manifest)
+                        if not extracted:
+                            raise Exception("File isn't a ZIP. This shouldn't happen.")
+                    else:
+                        extracted = BytesIO(manifest)
                     with final_manifest_loc.open("wb") as f:
                         f.write(extracted.read())
 

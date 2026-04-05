@@ -10,9 +10,8 @@ from typing import Optional
 from colorama import Fore, Style
 
 from smd.http_utils import download_to_tempfile, get_request
-from smd.prompts import prompt_confirm, prompt_secret
-from smd.storage.settings import get_setting, set_setting
-from smd.structs import Settings
+from smd.prompts import prompt_confirm
+from smd.storage.settings import resolve_morrenus_key
 from smd.zip import read_lua_from_zip
 
 logger = logging.getLogger(__name__)
@@ -35,16 +34,7 @@ def get_oureverday(dest: Path, app_id: str):
 def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
     url = f"https://manifest.morrenus.xyz/api/v1/manifest/{app_id}"
 
-    if (morrenus_key := get_setting(Settings.MORRENUS_KEY)) is None:
-        morrenus_key = prompt_secret(
-            "Paste your morrenus API key here: ",
-            lambda x: x.startswith("smm"),
-            "That's not a morrenus key!",
-            long_instruction=(
-                "Go the morrenus website and request an API key. It's free."
-            ),
-        ).strip()
-        set_setting(Settings.MORRENUS_KEY, morrenus_key)
+    morrenus_key = resolve_morrenus_key()
 
     headers = {
         "Authorization": f"Bearer {morrenus_key}",

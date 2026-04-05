@@ -3,6 +3,7 @@ from typing import Any, Union, cast
 
 import msgpack  # type: ignore
 
+from smd.prompts import prompt_secret
 from smd.secret_store import keyring_decrypt, keyring_encrypt
 from smd.structs import Settings
 from smd.utils import root_folder
@@ -60,3 +61,17 @@ def resolve_advanced_mode() -> bool:
         adv_mode = False
         set_setting(Settings.ADVANCED_MODE, adv_mode)
     return adv_mode
+
+
+def resolve_morrenus_key() -> str:
+    if (morrenus_key := get_setting(Settings.MORRENUS_KEY)) is None:
+        morrenus_key = prompt_secret(
+            "Paste your morrenus API key here: ",
+            lambda x: x.startswith("smm"),
+            "That's not a morrenus key!",
+            long_instruction=(
+                "Go the morrenus website and request an API key. It's free."
+            ),
+        ).strip()
+        set_setting(Settings.MORRENUS_KEY, morrenus_key)
+    return morrenus_key
