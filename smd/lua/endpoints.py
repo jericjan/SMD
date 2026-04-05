@@ -64,7 +64,7 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
             + Style.RESET_ALL
         )
     else:
-        if not usage or not limit:
+        if usage is None or limit is None:
             if not prompt_confirm("Could not get usage limits. "
                                   "Would you like to continue regardless?"):
                 return
@@ -81,7 +81,8 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
                 print(
                     Fore.GREEN
                     + "Morrenus Daily Limit: "
-                    f"{usage+1 if usage else '??'}/{limit if limit else '??'}"
+                    f"{usage+1 if usage is not None else '??'}/"
+                    f"{limit if limit is not None else '??'}"
                     + Style.RESET_ALL
                 )
                 lua_bytes = read_lua_from_zip(io.BytesIO(data), decode=False)
