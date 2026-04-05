@@ -229,7 +229,7 @@ class GameHandler:
 
         gse_app_folder = Path.home() / f"AppData/Roaming/GSE Saves/{app_id}"
 
-        if not gse_app_folder.exists():
+        if not gse_app_folder.exists() and get_os_type() == OSType.WINDOWS:
             print("GSE Saves folder doesn't exist. Creating...")
             gse_app_folder.mkdir(parents=True)
 
