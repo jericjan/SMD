@@ -18,7 +18,7 @@ from smd.game_specific import GameHandler
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
-from smd.midi import MidiPlayer
+from smd.midi import MidiFiles, MidiPlayer
 from smd.processes import SteamProcess
 from smd.prompts import (
     prompt_confirm,
@@ -44,7 +44,6 @@ from smd.structs import (
     LoggedInUser,
     LuaChoice,
     MainReturnCode,
-    MidiFiles,
     OSType,
     ReleaseType,
     SettingCustomTypes,

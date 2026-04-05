@@ -1,10 +1,17 @@
 import ctypes
+from enum import Enum
+import logging
 from pathlib import Path
 
-from smd.structs import MidiFiles
-import logging
+from smd.utils import root_folder
 
 logger = logging.getLogger(__name__)
+
+
+class MidiFiles(Enum):
+    MIDI_PLAYER_DLL = root_folder() / "c/midi_player_lib.dll"
+    SOUNDFONT = root_folder() / "c/Extended_Super_Mario_64_Soundfont.sf2"
+    MIDI = root_folder() / "c/th105_broken_moon_redpaper_.mid"
 
 
 class MidiPlayer:
