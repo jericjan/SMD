@@ -36,10 +36,11 @@ from smd.structs import (
     GenEmuMode,
     MainMenu,
     MainReturnCode,
+    OSType,
     ProductInfo,
     Settings,
 )
-from smd.utils import enter_path, root_folder
+from smd.utils import enter_path, get_os_type, root_folder
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +123,9 @@ class GameHandler:
                 )
 
         tools_folder = root_folder() / "third_party/gbe_fork_tools/generate_emu_config/"
-        config_exe = tools_folder / "generate_emu_config.exe"
+        config_exe = tools_folder / (
+            "generate_emu_config" + (".exe" if get_os_type() == OSType.WINDOWS else "")
+        )
         if (
             (user := get_setting(Settings.STEAM_USER)) is None
             or (password := get_setting(Settings.STEAM_PASS)) is None
