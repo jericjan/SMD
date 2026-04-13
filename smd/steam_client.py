@@ -52,7 +52,8 @@ def _get_product_info(client: SteamClient, app_ids: list[int]) -> ProductInfo:
 @dataclass
 class SteamInfoProvider:
     """Wrapper for SteamClient to handle API calls and caching.
-    Meant to be initialized at any point in code since ClassVars will keep share the same data"""
+    Meant to be initialized at any point in code since
+    ClassVars will keep share the same data"""
 
     _client: ClassVar[Optional[SteamClient]] = None
     _cache: ClassVar[dict[int, Any]] = {}
@@ -90,6 +91,19 @@ class SteamInfoProvider:
     def get_single_app_info(self, app_id: int) -> dict[str, Any]:
         result = self.get_app_info([app_id])
         return result.get(app_id, {})
+
+    def expand_dlc(self, app_data: dict[str, Any]):
+        """
+        Given data from get_single_app_info, expand all DLC info using `listofdlc` key.
+        """
+        extended = app_data.get("extended", {})
+        dlc_list_str = extended.get("listofdlc", "")
+        if dlc_list_str:
+            dlc_ids = [int(x) for x in dlc_list_str.split(",")]
+            dlc_data = self.get_app_info(dlc_ids)
+        else:
+            dlc_data = {}
+        return dlc_data
 
 
 class ParsedDLC:

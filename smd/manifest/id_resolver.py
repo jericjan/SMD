@@ -14,7 +14,7 @@ class ManifestContext:
     app_id: int
     "The base app ID"
     app_data: dict[str, Any]
-    "get_product_info data for app id"
+    "get_product_info data for app id, via SteamInfoProvider.get_single_app_info"
     provider: SteamInfoProvider
     auto: bool = True
     "whether the user chose to automatically get IDs or not"
@@ -23,15 +23,9 @@ class ManifestContext:
 
     @property
     def dlc_data(self) -> dict[int, Any]:
-        """Lazy loads DLC info"""
+        """Lazy loads all DLC info for the game"""
         if self._dlc_data is None:
-            extended = self.app_data.get("extended", {})
-            dlc_list_str = extended.get("listofdlc", "")
-            if dlc_list_str:
-                dlc_ids = [int(x) for x in dlc_list_str.split(",")]
-                self._dlc_data = self.provider.get_app_info(dlc_ids)
-            else:
-                self._dlc_data = {}
+            self._dlc_data = self.provider.expand_dlc(self.app_data)
         return self._dlc_data
 
 
