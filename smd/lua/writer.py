@@ -34,7 +34,7 @@ class ACFWriter:
             app_name = get_game_name(lua.app_id)
             acf_contents: dict[str, dict[str, str]] = {
                 "AppState": {
-                    "AppID": lua.app_id,
+                    "appid": lua.app_id,
                     "Universe": "1",
                     "name": app_name,
                     "installdir": sanitize_filename(app_name).replace("'", ""),

@@ -74,7 +74,7 @@ class GameHandler:
             app_state = app_acf.get("AppState", {})
             name = app_state.get("name")
             installdir = app_state.get("installdir")
-            app_id = app_state.get("appid")
+            app_id = app_state.get("appid") or app_state.get("AppID")
             games.append(
                 (name, ACFInfo(app_id, self.steamapps_path / "common" / installdir))
             )
