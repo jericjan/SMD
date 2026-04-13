@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 import json
 import time
-from typing import Any, Union
+from typing import Any, ClassVar, Optional, Union
 
 import gevent
 from steam.client import SteamClient  # type: ignore
@@ -48,15 +49,26 @@ def _get_product_info(client: SteamClient, app_ids: list[int]) -> ProductInfo:
     return ProductInfo(info)
 
 
+@dataclass
 class SteamInfoProvider:
-    """Wrapper for SteamClient to handle API calls and caching."""
+    """Wrapper for SteamClient to handle API calls and caching.
+    Meant to be initialized at any point in code since ClassVars will keep share the same data"""
 
-    def __init__(self, client: SteamClient):
-        self.client = client
-        self._cache: dict[int, Any] = {}
-        """A cache of app IDs and their data taken
-        from the `apps` key of `get_product_info`.
-        Values are False if it's not a base app ID"""
+    _client: ClassVar[Optional[SteamClient]] = None
+    _cache: ClassVar[dict[int, Any]] = {}
+    """A cache of app IDs and their data taken
+    from the `apps` key of `get_product_info`.
+    Values are False if it's not a base app ID"""
+
+    @property
+    def client(self) -> SteamClient:
+        client = type(self)._client
+        if client is None:
+            start_time = time.time()
+            client = SteamClient()
+            logger.debug(f"Steam client init in {time.time() - start_time}s")
+            type(self)._client = client
+        return client
 
     def get_app_info(self, app_ids: list[int]) -> dict[int, Any]:
         missing = [app_id for app_id in app_ids if app_id not in self._cache]
