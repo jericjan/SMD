@@ -1,3 +1,9 @@
+## 4.4.0-rc.1 (2026-04-16)
+
+### Fix
+
+- include gbe_fork and steamless in main.spec
+
 ## 4.4.0-rc.0 (2026-04-15)
 
 ### Feat
