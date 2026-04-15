@@ -26,7 +26,7 @@ It's best if you have `uv` installed. Download from Releases if you don't want t
 │       └───generate_emu_config.exe
 └───steamless
 ```
-4. Download my version of [aria2](https://github.com/jericjan/aria2) (has increased limits) and place it in `third_party\aria2c\aria2c.exe`.
+4. Download my version of [aria2](https://github.com/jericjan/aria2) (has increased limits) and place it in `third_party\aria2c\aria2c.exe`. For linux, you just need [axel](https://github.com/axel-download-accelerator/axel) installed on your system.
 5. Either run `uv run main.py` to directly run it or `uv run pyinstaller main.spec` to build it. You can also build it with `build.bat` for convenience.
 
 Optional (Requires GCC Compiler):
@@ -37,6 +37,11 @@ Optional (Requires GCC Compiler):
 
 # Pre-requisites
 This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but you'll have to specify the AppList folder location manually.
+
+On linux, you're also going to need these in your PATH variable (AKA just install them):
+- tar
+- fzf
+- [axel](https://github.com/axel-download-accelerator/axel)
 
 # Features
 - Downloads and decrypt latest manifest
