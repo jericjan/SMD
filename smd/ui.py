@@ -544,7 +544,7 @@ class UI:
                 print("Unsupported OS. Cannot update.")
                 return MainReturnCode.LOOP_NO_PROMPT
             url = asset.get("browser_download_url")
-            if url and url.startswith(target_prefix):
+            if url and asset.get("name", "").startswith(target_prefix):
                 download_url = url
                 break
         if not download_url:
