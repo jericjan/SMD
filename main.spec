@@ -31,7 +31,7 @@ ignore_files = [
 
 if sys.platform == "linux":
     ignore_files.extend(
-        ["third_party/fzf", "third_party/gbe_fork", "third_party/steamless"]
+        ["third_party/fzf"]
     )
 
 # excludes in Tree doesn't work some reason
