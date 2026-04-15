@@ -38,7 +38,7 @@ Optional (Requires GCC Compiler):
 # Pre-requisites
 This program requires that **GreenLuma** is installed, preferably in normal mode. Other modes work too but you'll have to specify the AppList folder location manually.
 
-On linux, you're also going to need these in your PATH variable (AKA just install them):
+On linux, you need a Native Steam installation (no Flatpak or Snap). You're also going to need these in your PATH variable (AKA just install them):
 - tar
 - fzf
 - [axel](https://github.com/axel-download-accelerator/axel)
