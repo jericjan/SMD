@@ -64,7 +64,6 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
         exclude = [
             MainMenu.UPDATE_ALL_MANIFESTS,
             MainMenu.INSTALL_MENU,
-            MainMenu.CHECK_UPDATES,
             MainMenu.DL_USER_GAME_STATS,
             MainMenu.OFFLINE_FIX
         ] + default_blacklist

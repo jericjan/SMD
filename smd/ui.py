@@ -500,10 +500,6 @@ class UI:
         return MainReturnCode.LOOP_NO_PROMPT
 
     def check_updates(self, os_type: OSType, test: bool = False) -> MainReturnCode:
-        if self.os_type == OSType.LINUX:
-            print("Updating isn't supported yet on linux.")
-            return MainReturnCode.LOOP_NO_PROMPT
-
         if not getattr(sys, "frozen", False):
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
@@ -555,58 +551,10 @@ class UI:
             print("Couldn't find the download URL :(")
             return MainReturnCode.LOOP_NO_PROMPT
         print(f"Download URL: {download_url}")
-        aria2c_exe = root_folder() / "third_party/aria2c/aria2c.exe"
-        subprocess.run(
-            [
-                aria2c_exe,
-                "-x",
-                "64",
-                "-k",
-                "1K",
-                "-s",
-                "64",
-                "-d",
-                str(Path.cwd().resolve()),
-                download_url,
-            ]
-        )
-        zip_name = Path(download_url).name
-        print(
-            Fore.GREEN
-            + "\n\nThe cursed update is about to begin. Prepare yourself."
-            + Style.RESET_ALL
-        )
-        tmp_dir = Path.cwd() / "tmp"
-        zip_path = Path.cwd() / zip_name
-        with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(tmp_dir)
-        zip_path.unlink(missing_ok=True)
-        updater = Path.cwd() / "tmp_updater.bat"
-        with updater.open("w", encoding="utf-8") as f:
-            nul = [">", "NUL"]
-            internal_dir = str(Path.cwd() / "_internal")
-            smd_exe = str(Path.cwd() / "SMD.exe")
-            tmp_dir = str(Path.cwd() / "tmp")
-            convert = subprocess.list2cmdline
-            f.writelines(
-                [
-                    "@echo off\n",
-                    "echo Killing SMD...\n",
-                    f"taskkill /F /PID {os.getpid()}\n",
-                    "echo SMD killed. Deleting old files...\n",
-                    convert(["rmdir", "/s", "/q", internal_dir, *nul]) + "\n",
-                    convert(["del", "/q", smd_exe, *nul]) + "\n",
-                    "echo Old files deleted. Moving in new files...\n",
-                    convert(["robocopy", "/E", "/MOVE", tmp_dir, str(Path.cwd()), *nul])
-                    + "\n",
-                    "echo UPDATE COMPLETE!!!! You can close this now\n",
-                    '(goto) 2>nul & del "%~f0"',
-                ]
-            )
-        command = convert(["cmd", "/k", str(updater.resolve())])
-        subprocess.Popen(
-            command, creationflags=subprocess.DETACHED_PROCESS, shell=True  # type:ignore
-        )
+        if os_type == OSType.WINDOWS:
+            Updater.download_for_windows(download_url)
+        elif os_type == OSType.LINUX:
+            Updater.download_for_linux(download_url)
         return MainReturnCode.LOOP_NO_PROMPT
 
     def update_all_manifests(self) -> MainReturnCode:
