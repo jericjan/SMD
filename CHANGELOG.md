@@ -1,3 +1,40 @@
+## 4.4.0-rc.0 (2026-04-15)
+
+### Feat
+
+- add linux update support
+- add gbe_fork functionality on linux
+- use morrenus as a fallback for single manifest downloads
+- add SLSsteam ID management for linux
+- remove "Process a lua file" option from linux blacklist
+
+### Fix
+
+- change all_games.txt to be downloaded outside of _internal folder
+- check name instead of url when checking target_prefix in check_updates()
+- use gitlab repo for oureveryday
+- correct appid capitalization in acf file parsing
+- properly connect Plugins folder to Steamless.CLI.exe
+- make Steamless.CLI.exe executable on linux
+- remove steamless option from linux menu choice blacklist
+- remove duplicate paths when selecting an exe for Steamless
+- include manifest path when  "One of the endpoints had a manifest." event happens
+- properly evaluate daily usage of 0 for morrenus
+- skip GSE Saves folder creation when not on windows
+- remove dlc check menu option from linux blacklist
+- hide DL_MANIFEST_ONLY behind advanced mode on linux just like on windows
+- add fallback to checking env vars for steam root path
+- handle rare use case when morrenus wont give usage data
+- use correct args for check_updates
+
+### Refactor
+
+- transfer inner depot DLC searching to SteamInfoProvider
+- use classvars for SteamInfoProvider for easy variable sharing across instances
+- add get_os_type in smd.utils for easy OS checking
+- move MidiFiles to smd.midi
+- move some common functions from AppListManager to parent class
+
 ## 4.4.0-beta.2 (2026-02-06)
 
 ### Fix
