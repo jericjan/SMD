@@ -1,7 +1,7 @@
 import asyncio
-from io import BytesIO
 import logging
 import shutil
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 from urllib.parse import urljoin
@@ -24,6 +24,7 @@ from smd.manifest.id_resolver import (
 from smd.prompts import prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import resolve_morrenus_key
+from smd.strings import MORRENUS_BASE_URL
 from smd.structs import (  # type: ignore
     DepotManifestMap,
     LuaParsedInfo,
@@ -131,7 +132,7 @@ class ManifestDownloader:
     def download_morrenus_manifest(self, depot_id: str, manifest_id: str):
         morrenus_key = resolve_morrenus_key()
         url = (
-            "https://manifest.morrenus.xyz/api/v1/generate/manifest?"
+            urljoin(MORRENUS_BASE_URL, "/api/v1/generate/manifest?") +
             f"depot_id={depot_id}&manifest_id={manifest_id}&api_key={morrenus_key}"
         )
         return get_request_raw(url)

@@ -4,9 +4,10 @@ import asyncio
 import io
 import json
 import logging
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin
 
 from colorama import Fore, Style
 
@@ -14,7 +15,11 @@ from smd.http_utils import download_to_tempfile, get_request
 from smd.prompts import prompt_confirm
 from smd.steam_client import SteamInfoProvider
 from smd.storage.settings import resolve_morrenus_key
-from smd.strings import OUREVERYDAY_COMMIT_INFO_URL, OUREVERYDAY_RAW_JSON_URL
+from smd.strings import (
+    MORRENUS_BASE_URL,
+    OUREVERYDAY_COMMIT_INFO_URL,
+    OUREVERYDAY_RAW_JSON_URL,
+)
 from smd.utils import root_folder
 from smd.zip import read_lua_from_zip
 
@@ -115,7 +120,7 @@ def get_oureverday(dest: Path, app_id: str):
 
 
 def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
-    url = f"https://manifest.morrenus.xyz/api/v1/manifest/{app_id}"
+    url = urljoin(MORRENUS_BASE_URL, f"/api/v1/manifest/{app_id}")
 
     morrenus_key = resolve_morrenus_key()
 
@@ -125,7 +130,7 @@ def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
 
     data = asyncio.run(
         get_request(
-            "https://manifest.morrenus.xyz/api/v1/user/stats",
+            urljoin(MORRENUS_BASE_URL, "/api/v1/user/stats"),
             type="json",
             headers=headers,
         )
