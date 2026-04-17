@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Literal
 
 from colorama import Fore, Style
 from colorama import init as color_init
-from steam.client import SteamClient  # type: ignore
 
+import tests.test_prereqs as prereqs
 from smd.prompts import prompt_confirm, prompt_select
 from smd.steam_client import SteamInfoProvider
 from smd.steam_path import init_steam_path
@@ -119,6 +119,12 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
 
 
 if __name__ == "__main__":
+    test_funcs = [x for x in dir(prereqs) if x.startswith("test_")]
+    for func_name in test_funcs:
+        try:
+            getattr(prereqs, func_name)()
+        except AssertionError as e:
+            print(Fore.YELLOW + "WARNING: " + str(e) + Style.RESET_ALL)
     os.chdir(root_folder(outside_internal=True))
     logger.debug(f"CWD is {str(Path.cwd().resolve())}")
     logger.debug(f"exe is {sys.executable}")

@@ -1,43 +1,70 @@
 import shutil
 import sys
-from pathlib import Path
+
+from smd.utils import root_folder
 
 
 def test_fzf():
     if sys.platform == "win32":
-        assert (Path.cwd() / "third_party/fzf/fzf.exe").exists()
+        file = (root_folder() / "third_party/fzf/fzf.exe")
+        assert (
+            file.exists()
+        ), f"\"{str(file.relative_to(root_folder(True)))}\" does not exist. "
+        "Please install it to that location"
     elif sys.platform == "linux":
-        assert shutil.which("fzf") is not None
+        assert shutil.which("fzf") is not None, "fzf is missing. Please install it"
 
 
+# Bundled in repo
 def test_gbe_fork():
-    gbe_fork_dir = Path.cwd() / "third_party/gbe_fork"
-    assert (gbe_fork_dir / "steam_api.dll").exists() and (
-        gbe_fork_dir / "steam_api64.dll"
-    ).exists()
+    gbe_fork_dir = root_folder() / "third_party/gbe_fork"
+    files = [
+        (gbe_fork_dir / "steam_api.dll"),
+        (gbe_fork_dir / "steam_api64.dll")
+    ]
+    for file in files:
+        assert (
+            file.exists()
+        ), f"\"{str(file.relative_to(root_folder(True)))}\" does not exist. "
+        "Please install it to that location"
 
 
 def test_gbe_fork_tools():
     exe = (
-        Path.cwd()
+        root_folder()
         / "third_party/gbe_fork_tools/generate_emu_config"
         / ("generate_emu_config" + ".exe" if sys.platform == "win32" else "")
     )
-    assert exe.exists()
+    assert exe.exists(), f'"{str(exe.relative_to(root_folder(True)))}" does not exist. '
+    "Please install it to that location"
 
 
+# Bundled in repo
 def test_steamless():
-    assert (Path.cwd() / "third_party/steamless/Steamless.CLI.exe").exists()
+    file = (root_folder() / "third_party/steamless/Steamless.CLI.exe")
+    assert (
+        file.exists()
+    ), f'"{str(file.relative_to(root_folder(True)))}" does not exist. '
+    "Please install it to that location"
 
 
 def test_downloader():
     if sys.platform == "win32":
-        assert (Path.cwd() / "third_party/aria2c/aria2c.exe").exists()
+        file = (root_folder() / "third_party/aria2c/aria2c.exe")
+        assert (
+            file.exists()
+        ), f'"{str(file.relative_to(root_folder(True)))}" does not exist. '
+        'Please install it to that location'
     elif sys.platform == "linux":
-        assert shutil.which("axel") is not None
+        assert shutil.which("axel") is not None, "axel is missing. Please install it"
 
 
 def test_midi():
-    assert (Path.cwd() / "c/midi_player_lib.dll").exists()
-    assert (Path.cwd() / "c/Extended_Super_Mario_64_Soundfont.sf2").exists()
-    assert (Path.cwd() / "c/th105_broken_moon_redpaper_.mid").exists()
+    files = [(root_folder() / "c/midi_player_lib.dll"),
+             (root_folder() / "c/Extended_Super_Mario_64_Soundfont.sf2"),
+             (root_folder() / "c/th105_broken_moon_redpaper_.mid"),
+             (root_folder() / "c/th105_broken_moon_redpaper_.mid")]
+    for file in files:
+        assert (
+            file.exists()
+        ), f'"{str(file.relative_to(root_folder(True)))}" does not exist'
