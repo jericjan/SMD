@@ -42,7 +42,7 @@ def get_oureverday(dest: Path, app_id: str):
             return
         json_data = asyncio.run(
             get_request(
-                OUREVERYDAY_RAW_JSON_URL.format(latest_hash),
+                OUREVERYDAY_RAW_JSON_URL.format(commit_hash=latest_hash),
                 "json",
             )
         )
