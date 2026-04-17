@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 
@@ -37,6 +38,9 @@ def test_gbe_fork_tools():
     )
     assert exe.exists(), f'"{str(exe.relative_to(root_folder(True)))}" does not exist. '
     "Please install it to that location"
+    assert os.access(
+        exe.absolute(), os.X_OK
+    ), f'"{str(exe.relative_to(root_folder(True)))}" is not executable.'
 
 
 # Bundled in repo
@@ -46,6 +50,9 @@ def test_steamless():
         file.exists()
     ), f'"{str(file.relative_to(root_folder(True)))}" does not exist. '
     "Please install it to that location"
+    assert os.access(
+        file.absolute(), os.X_OK
+    ), f'"{str(file.relative_to(root_folder(True)))}" is not executable.'
 
 
 def test_downloader():
@@ -62,7 +69,6 @@ def test_downloader():
 def test_midi():
     files = [(root_folder() / "c/midi_player_lib.dll"),
              (root_folder() / "c/Extended_Super_Mario_64_Soundfont.sf2"),
-             (root_folder() / "c/th105_broken_moon_redpaper_.mid"),
              (root_folder() / "c/th105_broken_moon_redpaper_.mid")]
     for file in files:
         assert (
