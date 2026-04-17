@@ -282,10 +282,14 @@ class GameHandler:
             print("Steamless failed...")
 
     def _prompt_manual_exe(self, app_info: ACFInfo):
-        subprocess.run(["explorer", app_info.path])
-        game_exe = prompt_file(
-            "Drag the game .exe here and press Enter:",
+        exes = [
+            (str(x.relative_to(app_info.path)), x) for x in app_info.path.rglob("*.exe")
+        ] + [("(It's still not here)", None)]
+        game_exe: Optional[Path] = prompt_select(
+            "Select the .exe:", exes, default=exes[0]
         )
+        if game_exe is None:
+            return prompt_file("Paste the path of the .exe:")
         return game_exe
 
     def _get_windows_execs(self, info: ProductInfo, app_id: int) -> list[str]:
@@ -309,7 +313,13 @@ class GameHandler:
 
         windows_exes = list(set(windows_exes))
 
-        chosen = prompt_select("Choose the exe:", windows_exes)
+        chosen: Optional[str] = prompt_select(
+            "Choose the exe:",
+            windows_exes + [("(The .exe I want isn't listed here)", None)],
+            default=windows_exes[0]
+        )
+        if chosen is None:
+            return self._prompt_manual_exe(app_info)
         return app_info.path / chosen
 
     def download_workshop_manifest(self, app_id: str):
