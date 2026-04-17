@@ -1,3 +1,13 @@
+## 4.4.0-rc.2 (2026-04-17)
+
+### Fix
+
+- use bool instead of boolean for midiplayer
+- warn user when any third_party software is missing
+- optionally list all exes in game folder (for game launcher cases) (steamless)
+- correct oureveryday string format typo
+- update new morrenus URL
+
 ## 4.4.0-rc.1 (2026-04-16)
 
 ### Fix
