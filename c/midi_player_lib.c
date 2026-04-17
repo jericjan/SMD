@@ -11,6 +11,8 @@
 #define TML_IMPLEMENTATION
 #include "tml.h"
 
+#include <stdbool.h>
+
 typedef struct
 {
     ma_device device;
@@ -48,7 +50,7 @@ static void AudioCallback(ma_device *pDevice, void *pOutput, const void *pInput,
 
             // Sets the instrument.
             case TML_PROGRAM_CHANGE:
-                boolean is_drums = msg->channel == 9;
+                bool is_drums = msg->channel == 9;
                 tsf_channel_set_presetnumber(g_Player->soundfont, msg->channel, msg->program, is_drums);
                 break;
 
