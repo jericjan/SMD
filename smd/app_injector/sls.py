@@ -69,7 +69,7 @@ class SLSManager(AppInjectionManager):
     ):
         parser = YAMLParser(self.sls_config_path)
         yaml_data = parser.read()
-        app_ids = yaml_data.get("AdditionalApps", [])
+        app_ids: list[int] = yaml_data.get("AdditionalApps", []) or []
         changes = 0
         if isinstance(data, int):
             data = [data]
