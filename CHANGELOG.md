@@ -1,3 +1,9 @@
+## 4.4.0-rc.3 (2026-04-21)
+
+### Fix
+
+- handle AdditionalApps bug when it is empty in SLS config file (4.4.0-beta.0 bug)
+
 ## 4.4.0-rc.2 (2026-04-17)
 
 ### Fix
