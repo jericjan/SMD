@@ -87,6 +87,11 @@ class GreenLumaVersions(Enum):
         return self.value
 
 
+class AchievementGenMode(Enum):
+    STABLE = "Stable"
+    EXPERIMENTAL = "Experimental"
+
+
 class SettingCustomTypes(Enum):
     DIR = auto()
     FILE = auto()
@@ -133,6 +138,12 @@ class Settings(Enum):
     )
     STEAM_WEB_API_KEY = SettingItem("steam_web_api_key", "Steam Web API Key", True, str)
     PLAY_MUSIC = SettingItem("play_music", "Play Music", False, bool)
+    ACHIEVE_GEN_MODE = SettingItem(
+        "achieve_gen_mode",
+        "(gbe_fork) Achievement Generation Mode",
+        False,
+        list(AchievementGenMode),
+    )
 
     @property
     def key_name(self) -> str:

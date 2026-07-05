@@ -12,6 +12,7 @@ from typing import Literal, NamedTuple, Optional, overload
 
 from colorama import Fore, Style
 
+from smd.ach_gen import gen_achievements
 from smd.app_injector.base import AppInjectionManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.manifest.ugc_resolver import (
@@ -32,6 +33,7 @@ from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
+    AchievementGenMode,
     GameSpecificChoices,
     GenEmuMode,
     MainMenu,
@@ -252,14 +254,22 @@ class GameHandler:
 
     def crack_dll(self, app_id: str, dll_path: Path):
         self._crack_dll_core(app_id, dll_path)
-        gen_achievements = prompt_confirm(
+        do_gen_achievements = prompt_confirm(
             "Would you like to generate config files for gbe_fork? "
             "(Contains achievement data)"
         )
-        if gen_achievements:
-            self.run_gen_emu(
-                app_id, GenEmuMode.STEAM_SETTINGS, dll_path.parent / "steam_settings"
-            )
+        if do_gen_achievements:
+            if (gen_mode := get_setting(Settings.ACHIEVE_GEN_MODE)) is None:
+                gen_mode = AchievementGenMode.STABLE.value
+                set_setting(Settings.ACHIEVE_GEN_MODE, gen_mode)
+            if AchievementGenMode(gen_mode) == AchievementGenMode.STABLE:
+                self.run_gen_emu(
+                    app_id,
+                    GenEmuMode.STEAM_SETTINGS,
+                    dll_path.parent / "steam_settings",
+                )
+            elif AchievementGenMode(gen_mode) == AchievementGenMode.EXPERIMENTAL:
+                gen_achievements(app_id,  dll_path.parent / "steam_settings")
 
     def apply_steamless(self, app_info: ACFInfo):
         game_exe = self.select_executable(app_info)
@@ -316,7 +326,7 @@ class GameHandler:
         chosen: Optional[str] = prompt_select(
             "Choose the exe:",
             windows_exes + [("(The .exe I want isn't listed here)", None)],
-            default=windows_exes[0]
+            default=windows_exes[0],
         )
         if chosen is None:
             return self._prompt_manual_exe(app_info)
@@ -338,17 +348,17 @@ class GameHandler:
             return int(match.group())
 
         workshop_id: int = prompt_text(
-            "Paste workshop item URL or item ID:",
-            validator=validate,
-            filter=filter
+            "Paste workshop item URL or item ID:", validator=validate, filter=filter
         )
         ctx = WorkshopItemContext(self.provider.client, workshop_id)
         content, method = ugc_resolver.resolve(ctx)
         if isinstance(content, DirectDownloadUrl):
-            print("This is a legacy workshop item. "
-                  "It can be directly downloaded through"
-                  " the following URL. It's just a ZIP file:\n"
-                  f"{Fore.BLUE + content.url + Style.RESET_ALL}")
+            print(
+                "This is a legacy workshop item. "
+                "It can be directly downloaded through"
+                " the following URL. It's just a ZIP file:\n"
+                f"{Fore.BLUE + content.url + Style.RESET_ALL}"
+            )
         else:  # HContentFile type
             print(f"Found UGC ID via {method} method: {content.ugc_id}")
             downloader = ManifestDownloader(self.provider, self.steam_root)
