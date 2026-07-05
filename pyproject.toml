@@ -54,5 +54,6 @@ version_files = [
 [dependency-groups]
 dev = [
     "commitizen>=4.10.0",
+    "jupyter>=1.1.1",
     "pre-commit>=4.3.0",
 ]

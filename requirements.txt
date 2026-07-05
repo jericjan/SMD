@@ -6,8 +6,6 @@ anyio==4.11.0
     # via httpx
 attrs==25.4.0
     # via flake8-bugbear
-backports-tarfile==1.2.0
-    # via jaraco-context
 black==25.9.0
     # via steam-manifest-decrypt (pyproject.toml)
 cachetools==6.2.1
@@ -33,10 +31,6 @@ colorama==0.4.6
     #   tqdm
 configupdater==3.2
     # via steam-manifest-decrypt (pyproject.toml)
-exceptiongroup==1.3.0
-    # via
-    #   anyio
-    #   pytest
 flake8==7.3.0
     # via
     #   steam-manifest-decrypt (pyproject.toml)
@@ -51,10 +45,6 @@ gevent-eventemitter==2.1
     # via steam
 greenlet==3.2.4
     # via gevent
-grpcio==1.75.1
-    # via grpcio-tools
-grpcio-tools==1.48.2
-    # via steam-manifest-decrypt (pyproject.toml)
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9
@@ -66,12 +56,6 @@ idna==3.10
     #   anyio
     #   httpx
     #   requests
-importlib-metadata==8.7.0
-    # via
-    #   isort
-    #   keyring
-    #   pyinstaller
-    #   pyinstaller-hooks-contrib
 iniconfig==2.1.0
     # via pytest
 inquirerpy @ git+https://github.com/kazhala/InquirerPy@714d9068896c1a1f9f4d1354f43f922cd5cfe16d
@@ -129,7 +113,6 @@ prompt-toolkit==3.0.52
 protobuf==3.20.3
     # via
     #   steam-manifest-decrypt (pyproject.toml)
-    #   grpcio-tools
     #   steam
 psutil==7.2.0
     # via steam-manifest-decrypt (pyproject.toml)
@@ -171,7 +154,6 @@ rich==14.2.0
     # via steam-manifest-decrypt (pyproject.toml)
 setuptools==80.9.0
     # via
-    #   grpcio-tools
     #   pyinstaller
     #   pyinstaller-hooks-contrib
     #   zope-event
@@ -181,18 +163,10 @@ sniffio==1.3.1
     # via anyio
 steam==1.4.4
     # via steam-manifest-decrypt (pyproject.toml)
-tomli==2.3.0
-    # via
-    #   black
-    #   pytest
 tqdm==4.67.1
     # via steam-manifest-decrypt (pyproject.toml)
 typing-extensions==4.15.0
-    # via
-    #   anyio
-    #   black
-    #   exceptiongroup
-    #   grpcio
+    # via anyio
 urllib3==2.5.0
     # via requests
 vdf==3.4
@@ -201,8 +175,6 @@ vdf==3.4
     #   steam
 wcwidth==0.2.14
     # via prompt-toolkit
-zipp==3.23.0
-    # via importlib-metadata
 zope-event==6.0
     # via gevent
 zope-interface==8.0.1
