@@ -1,10 +1,7 @@
 import functools
-import os
 import shutil
-import subprocess
 import sys
 import time
-import zipfile
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -51,7 +48,7 @@ from smd.structs import (
     Settings,
 )
 from smd.updater import Updater
-from smd.utils import enter_path, root_folder
+from smd.utils import enter_path
 from smd.zip import zip_folder
 
 if sys.platform == "win32":

@@ -29,12 +29,29 @@ def _clean_prompt(prompt: Union[BaseComplexPrompt, InputPrompt]):
 def prompt_select(
     msg: str,
     choices: list[Any],
-    default: Optional[Any] = None,
+    default: Any | None = None,
     fuzzy: bool = False,
     cancellable: bool = False,
-    exclude: Optional[list[Any]] = None,
+    exclude: list[Any] | None = None,
     **kwargs: Any,
-):
+) -> Any:
+    """Prompts the user for a item select menu
+
+    Args:
+        msg (str): The message
+        choices (list[Any]): Choices to pick from. Can be:
+            - Enum -> Name = Enum.value, Value = Enum
+            - Choice
+            - tuple of size 2 (e.g. `('Name', 'Value')`)
+            - Any object with a `__str__` method -> Value = object
+        default (Any | None, optional): The default choice to highlight first. Defaults to None.
+        fuzzy (bool, optional): Enable fuzzy searching of items. Defaults to False.
+        cancellable (bool, optional): Adds a [Back] button if True. Defaults to False.
+        exclude (list[Any] | None, optional): Exclude item from showing up if it's an Enum and is in this list. Defaults to None.
+
+    Returns:
+        Any: Type returned is the value in the respective selected Choice
+    """
     new_choices: list[Choice] = []
     for c in choices:
         if isinstance(c, Enum):
