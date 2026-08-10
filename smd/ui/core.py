@@ -3,9 +3,8 @@ import shutil
 import sys
 import time
 from collections import OrderedDict
-from enum import Enum
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 from colorama import Fore, Style
 
@@ -20,15 +19,11 @@ from smd.processes import SteamProcess
 from smd.prompts import (
     prompt_confirm,
     prompt_dir,
-    prompt_file,
-    prompt_secret,
     prompt_select,
-    prompt_text,
 )
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
-    clear_setting,
     get_setting,
     load_all_settings,
     set_setting,
@@ -43,10 +38,9 @@ from smd.structs import (
     MainReturnCode,
     OSType,
     ReleaseType,
-    SettingCustomTypes,
-    SettingOperations,
-    Settings,
 )
+from smd.ui.settings.prompt import SettingsMenuPrompt
+from smd.ui.settings.types import Settings
 from smd.updater import Updater
 from smd.utils import enter_path
 from smd.zip import zip_folder
@@ -84,12 +78,7 @@ def music_toggle_decorator(func):  # type: ignore
 
 
 class UI:
-    def __init__(
-        self,
-        provider: SteamInfoProvider,
-        steam_path: Path,
-        os_type: OSType
-    ):
+    def __init__(self, provider: SteamInfoProvider, steam_path: Path, os_type: OSType):
         self.provider = provider
         self.steam_path = steam_path
         self.app_list_man = (
@@ -132,88 +121,11 @@ class UI:
         else:
             ignore = []
 
-        while True:
-            saved_settings = load_all_settings()
-            selected_key: Optional[Settings] = prompt_select(
-                "Select a setting to change:",
-                [
-                    (
-                        x.clean_name
-                        + (
-                            " (unset)"
-                            if x.key_name not in saved_settings
-                            else (
-                                f": {saved_settings.get(x.key_name)}"
-                                if not x.hidden
-                                else ": [ENCRYPTED]"
-                            )
-                        ),
-                        x,
-                    )
-                    for x in Settings if x not in ignore
-                ],
-                cancellable=True,
-            )
-            if not selected_key:
-                break
-            value = saved_settings.get(selected_key.key_name)
-            value = value if value is not None else "(unset)"
-            print(
-                f"{selected_key.clean_name} is set to "
-                + Fore.YELLOW
-                + ("[ENCRYPTED]" if selected_key.hidden else str(value))
-                + Style.RESET_ALL
-            )
-            operation: Optional[SettingOperations] = prompt_select(
-                "What do you want to do with this setting?",
-                list(SettingOperations),
-                cancellable=True,
-            )
+        saved_settings = load_all_settings()
+        menu = SettingsMenuPrompt(self, ignore_list=ignore)
+        menu.saved_settings = saved_settings
+        menu.execute()
 
-            if operation is None:
-                continue
-
-            if operation == SettingOperations.DELETE:
-                clear_setting(selected_key)
-                continue
-
-            if operation == SettingOperations.EDIT:
-                new_settings_value: Union[str, bool]
-                if selected_key.type == bool:
-                    new_settings_value = prompt_confirm(
-                        "Select the new value:", "Enable", "Disable"
-                    )
-                elif isinstance(selected_key.type, list):
-                    enum_val: Enum = prompt_select(
-                        "Select the new value:", selected_key.type
-                    )
-                    new_settings_value = enum_val.value
-                elif selected_key.type == str:
-                    func = prompt_secret if selected_key.hidden else prompt_text
-                    new_settings_value = func("Enter the new value:")
-                elif selected_key.type == SettingCustomTypes.DIR:
-                    new_settings_value = str(
-                        prompt_dir("Enter the new directory:").resolve()
-                    )
-                elif selected_key.type == SettingCustomTypes.FILE:
-                    new_settings_value = str(
-                        prompt_file("Enter the new file path:").resolve()
-                    )
-                else:
-                    raise Exception("Unhandled setting type. Shouldn't happen.")
-                set_setting(selected_key, new_settings_value)
-
-                if selected_key == Settings.PLAY_MUSIC:
-                    if value is True and new_settings_value is False:
-                        self.kill_midi_player()
-                    elif value is False and new_settings_value is True:
-                        self.init_midi_player()
-
-                if (
-                    selected_key == Settings.APPLIST_FOLDER
-                    and self.os_type == OSType.WINDOWS
-                ):
-                    self.app_list_man = AppListManager(self.steam_path, self.provider)
         return MainReturnCode.LOOP_NO_PROMPT
 
     @music_toggle_decorator
@@ -395,9 +307,13 @@ class UI:
                 print(f"Files can be found in {dst}")
         else:
             extra_msg = (
-                "Close Steam and run DLLInjector again "
-                "(or not depending on how you installed Greenluma). "
-            ) if not auto_launch else ""
+                (
+                    "Close Steam and run DLLInjector again "
+                    "(or not depending on how you installed Greenluma). "
+                )
+                if not auto_launch
+                else ""
+            )
             print(
                 extra_msg + 'Your game should show up in the library ready to "update"',
                 end="",
@@ -450,9 +366,7 @@ class UI:
             dst.mkdir(parents=True, exist_ok=True)
             for file in manifests:
                 shutil.move(file, dst / file.name)
-            with (dst / f"{parsed_lua.app_id}.lua").open(
-                "w", encoding="utf-8"
-            ) as f:
+            with (dst / f"{parsed_lua.app_id}.lua").open("w", encoding="utf-8") as f:
                 f.write(parsed_lua.contents)
             target_zip = dst.parent / f"{unique_name}.zip"
             zip_folder(dst, target_zip)
@@ -472,9 +386,13 @@ class UI:
 
         if self.app_list_man:
             extra_msg = (
-                "Close Steam and run DLLInjector again "
-                "(or not depending on how you installed Greenluma). "
-            ) if not auto_launch else ""
+                (
+                    "Close Steam and run DLLInjector again "
+                    "(or not depending on how you installed Greenluma). "
+                )
+                if not auto_launch
+                else ""
+            )
             print(
                 Fore.GREEN + f"\nSuccess! {extra_msg}"
                 'Your game should show up in the library ready to "update"'
@@ -599,17 +517,13 @@ class UI:
                     return MainReturnCode.LOOP_NO_PROMPT
                 if not in_backup:
                     lua_manager.backup_lua(parsed_lua)
-                print(
-                    Fore.YELLOW
-                    + "\nDownloading Manifests:"
-                    + Style.RESET_ALL
-                )
+                print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
                 downloader.download_manifests(parsed_lua, auto_manifest=True)
         if steam_proc:
             steam_proc.prompt_launch_or_restart()
         print(
             Fore.GREEN + "\nSuccess! All game manifests have been updated!\n"
-            "Try updating them via Steam."
-            + Style.RESET_ALL
+            "Try updating them via Steam." + Style.RESET_ALL
         )
+        return MainReturnCode.LOOP
         return MainReturnCode.LOOP

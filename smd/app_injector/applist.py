@@ -19,8 +19,8 @@ from smd.structs import (
     AppListPathAndID,
     DLCTypes,
     LuaParsedInfo,
-    Settings,
 )
+from smd.ui.settings.types import Settings
 from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ import msgpack  # type: ignore
 
 from smd.prompts import prompt_secret
 from smd.secret_store import keyring_decrypt, keyring_encrypt
-from smd.structs import Settings
+from smd.ui.settings.types import Settings
 from smd.utils import root_folder
 
 logger = logging.getLogger(__name__)

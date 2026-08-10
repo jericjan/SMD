@@ -15,7 +15,8 @@ from smd.prompts import prompt_confirm, prompt_file, prompt_select
 from smd.steam_client import ParsedDLC, SteamInfoProvider
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.yaml import YAMLParser
-from smd.structs import DLCTypes, LuaParsedInfo, Settings
+from smd.structs import DLCTypes, LuaParsedInfo
+from smd.ui.settings.types import Settings
 from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)

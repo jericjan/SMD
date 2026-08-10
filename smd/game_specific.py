@@ -33,15 +33,14 @@ from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
-    AchievementGenMode,
     GameSpecificChoices,
     GenEmuMode,
     MainMenu,
     MainReturnCode,
     OSType,
     ProductInfo,
-    Settings,
 )
+from smd.ui.settings.types import AchievementGenMode, Settings
 from smd.utils import enter_path, get_os_type, root_folder
 
 logger = logging.getLogger(__name__)
@@ -269,7 +268,7 @@ class GameHandler:
                     dll_path.parent / "steam_settings",
                 )
             elif AchievementGenMode(gen_mode) == AchievementGenMode.EXPERIMENTAL:
-                gen_achievements(app_id,  dll_path.parent / "steam_settings")
+                gen_achievements(app_id, dll_path.parent / "steam_settings")
 
     def apply_steamless(self, app_info: ACFInfo):
         game_exe = self.select_executable(app_info)

@@ -9,7 +9,8 @@ from colorama import Fore, Style
 
 from smd.prompts import prompt_dir
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import OSType, Settings
+from smd.structs import OSType
+from smd.ui.settings.types import Settings
 
 if sys.platform == "win32":
     from smd.registry_access import find_steam_path_from_registry
@@ -63,7 +64,7 @@ class UserInputFinder(PathFinderStrategy):
         return prompt_dir(
             msg="Paste the path here (The folder that has steam.exe)",
             custom_check=self.validator,
-            custom_msg="Make sure the folder has steam.exe in it"
+            custom_msg="Make sure the folder has steam.exe in it",
         )
 
 

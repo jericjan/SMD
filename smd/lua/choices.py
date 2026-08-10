@@ -18,8 +18,8 @@ from smd.structs import (
     LuaResult,
     NamedIDs,
     OSType,
-    Settings,
 )
+from smd.ui.settings.types import Settings
 from smd.utils import enter_path, root_folder
 from smd.zip import read_lua_from_zip
 
@@ -42,7 +42,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
         [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()],
         fuzzy=True,
         max_height=10,
-        cancellable=True
+        cancellable=True,
     )
     if lua_path is None or not lua_path.exists():
         return LuaResult(None, None, LuaChoiceReturnCode.GO_BACK)
@@ -55,11 +55,15 @@ def add_new_lua(file: Optional[Path] = None) -> LuaResult:
     Returns:
         LuaResult:
     """
-    lua_path = file if file else prompt_file(
-        "Drag a .lua file (or .zip w/ .lua inside) into here "
-        "then press Enter.\n"
-        "Leave it blank to go back:",
-        allow_blank=True,
+    lua_path = (
+        file
+        if file
+        else prompt_file(
+            "Drag a .lua file (or .zip w/ .lua inside) into here "
+            "then press Enter.\n"
+            "Leave it blank to go back:",
+            allow_blank=True,
+        )
     )
 
     if lua_path.samefile(Path.cwd()):  # Blank input
@@ -77,7 +81,7 @@ def add_new_lua(file: Optional[Path] = None) -> LuaResult:
 
 def search_game(os_type: OSType) -> Optional[str]:
     """Using fzf, lets a user search for a game, then returns game ID"""
-    all_games_file = (root_folder(True) / "all_games.txt")
+    all_games_file = root_folder(True) / "all_games.txt"
     if all_games_file.exists():
         mtime = all_games_file.stat().st_mtime
         mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %I:%M %p")
@@ -90,18 +94,22 @@ def search_game(os_type: OSType) -> Optional[str]:
         download = True
     if download:
         if (api_key := get_setting(Settings.STEAM_WEB_API_KEY)) is None:
-            print("You don't have a Steam Web API Key yet. "
-                  "Steam needs this in order to browse through all the games.\n\n")
+            print(
+                "You don't have a Steam Web API Key yet. "
+                "Steam needs this in order to browse through all the games.\n\n"
+            )
             api_key = prompt_text("Paste your Steam Web API Key:")
             set_setting(Settings.STEAM_WEB_API_KEY, api_key)
         params: dict[str, str] = {"key": api_key, "max_results": "50000"}
         games: list[dict[str, Any]] = []
-        print("Steam has limited this endpoint to 50k IDs per requests, so "
-              "it'll be downloading a couple times. Don't be alarmed.")
+        print(
+            "Steam has limited this endpoint to 50k IDs per requests, so "
+            "it'll be downloading a couple times. Don't be alarmed."
+        )
         while True:
             with download_to_tempfile(
                 "https://api.steampowered.com/IStoreService/GetAppList/v1/",
-                params=params
+                params=params,
             ) as tf:
                 if tf is None:
                     continue
@@ -110,12 +118,12 @@ def search_game(os_type: OSType) -> Optional[str]:
             more = enter_path(resp, "response", "have_more_results")
             if not more:
                 break
-            params['last_appid'] = enter_path(resp, "response", "last_appid")
+            params["last_appid"] = enter_path(resp, "response", "last_appid")
         games_str = [
             x.get("name", "UNKNOWN GAME") + f" [ID={x.get('appid')}]" for x in games
         ]
         with all_games_file.open("w", encoding="utf=-8") as f:
-            f.write('\n'.join(games_str))
+            f.write("\n".join(games_str))
     else:
         games_str = all_games_file
     selection = run_fzf(games_str, os_type)
@@ -133,7 +141,7 @@ def download_lua(dest: Path, os_type: OSType) -> LuaResult:
     reg = re.compile(r"(?<=store\.steampowered\.com\/app\/)\d+|\d+")
 
     def validate_app_id(x: str) -> bool:
-        return bool(reg.search(x)) or x == ''
+        return bool(reg.search(x)) or x == ""
 
     def filter_app_id(x: str) -> str:
         if x == "":

@@ -7,7 +7,7 @@ from colorama import Fore, Style
 
 from smd.prompts import prompt_confirm, prompt_select
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import GreenLumaVersions, Settings
+from smd.ui.settings.types import GreenLumaVersions, Settings
 from smd.utils import root_folder
 
 

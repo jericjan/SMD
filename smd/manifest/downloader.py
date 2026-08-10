@@ -132,8 +132,8 @@ class ManifestDownloader:
     def download_morrenus_manifest(self, depot_id: str, manifest_id: str):
         morrenus_key = resolve_morrenus_key()
         url = (
-            urljoin(MORRENUS_BASE_URL, "/api/v1/generate/manifest?") +
-            f"depot_id={depot_id}&manifest_id={manifest_id}&api_key={morrenus_key}"
+            urljoin(MORRENUS_BASE_URL, "/api/v1/generate/manifest?")
+            + f"depot_id={depot_id}&manifest_id={manifest_id}&api_key={morrenus_key}"
         )
         return get_request_raw(url)
 
@@ -169,8 +169,11 @@ class ManifestDownloader:
                 break
             choice: int = prompt_select(
                 "Request code endpoint died. Would you like to try again?",
-                [("Yes", 0), ("No (Manually input request code)", 1),
-                 ("Try something else.", 2)]
+                [
+                    ("Yes", 0),
+                    ("No (Manually input request code)", 1),
+                    ("Try something else.", 2),
+                ],
             )
             if choice == 0:
                 continue
@@ -194,9 +197,7 @@ class ManifestDownloader:
                 extracted = BytesIO(manifest)
             depotcache = self.steam_path / "depotcache"
             depotcache.mkdir(exist_ok=True)
-            final_manifest_loc = (
-                depotcache / f"{app_id}_{ugc_id}.manifest"
-            )
+            final_manifest_loc = depotcache / f"{app_id}_{ugc_id}.manifest"
             with final_manifest_loc.open("wb") as f:
                 f.write(extracted.read())
 
@@ -229,9 +230,7 @@ class ManifestDownloader:
             )
             depotcache = self.steam_path / "depotcache"
             depotcache.mkdir(exist_ok=True)
-            final_manifest_loc = (
-                depotcache / f"{depot_id}_{manifest_id}.manifest"
-            )
+            final_manifest_loc = depotcache / f"{depot_id}_{manifest_id}.manifest"
 
             if possible_saved_manifest.exists():
                 print("One of the endpoints had a manifest. Skipping download...")

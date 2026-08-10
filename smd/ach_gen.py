@@ -5,7 +5,7 @@ import httpx
 
 from smd.prompts import prompt_text
 from smd.storage.settings import get_setting, set_setting
-from smd.structs import Settings
+from smd.ui.settings.types import Settings
 
 
 def gen_achievements(app_id: str, steam_settings_dir: Path):
