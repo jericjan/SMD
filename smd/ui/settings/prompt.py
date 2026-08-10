@@ -88,12 +88,18 @@ class SettingsMenuPrompt:
 
         val_style, val_str = self._setting_to_fmt_txt(selected)
 
-        return [
+        result = [
             ("fg:ansicyan bold", f"{selected.clean_name}\n"),
             (val_style, val_str),
             ("fg:ansigray", f"Key: {selected.key_name} | Type: {type_str}\n\n"),
-            ("", f"{selected.description}"),
         ]
+
+        if isinstance(selected.description, str):
+            result.append(("", selected.description))
+        else:
+            result.extend(selected.description)
+
+        return result
 
     def _run_tui(self) -> tuple[Settings, SettingOperations] | None:
         """Builds and runs the TUI, returning the user's intent."""
@@ -101,9 +107,14 @@ class SettingsMenuPrompt:
             self._get_menu_text,
             focusable=True,
             show_cursor=False,
-            get_cursor_position=lambda: Point(x=0, y=(self.current_index*2) + self.cursor_offset),
+            get_cursor_position=lambda: Point(
+                x=0, y=(self.current_index * 2) + self.cursor_offset
+            ),
         )
-        desc_control = FormattedTextControl(self._get_desc_text, show_cursor=False,)
+        desc_control = FormattedTextControl(
+            self._get_desc_text,
+            show_cursor=False,
+        )
 
         root_container = HSplit(
             [
@@ -144,7 +155,9 @@ class SettingsMenuPrompt:
         @kb.add("k")
         def _(event):
             self.current_index = (self.current_index - 1) % len(self.settings_list)
-            self.cursor_offset = 1 if self.current_index == len(self.settings_list) - 1 else 0
+            self.cursor_offset = (
+                1 if self.current_index == len(self.settings_list) - 1 else 0
+            )
 
         @kb.add("down")
         @kb.add("j")

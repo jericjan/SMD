@@ -24,7 +24,7 @@ class SettingItem(NamedTuple):
     "Whether the item is hidden (e.g. sensitive info)"
     type: SettingType
     "Type of the setting"
-    description: str
+    description: str | list[tuple[str, str]]
     "Description of the setting"
 
 
@@ -136,7 +136,12 @@ class Settings(Enum):
         "(gbe_fork) Achievement Generation Mode",
         False,
         list(AchievementGenMode),
-        "'Stable' uses gbe_fork's generate_emu_config, and 'Experimental' uses my custom version",
+        [
+            ("fg:ansigreen", "Stable"),
+            ("", " uses gbe_fork's generate_emu_config, and "),
+            ("fg:ansigreen", "Experimental"),
+            ("", " uses my custom version"),
+        ],
     )
 
     @property
@@ -159,5 +164,5 @@ class Settings(Enum):
         return self.value.type
 
     @property
-    def description(self) -> str:
+    def description(self) -> str | list[tuple[str, str]]:
         return self.value.description
