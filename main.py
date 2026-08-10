@@ -17,7 +17,7 @@ from smd.steam_path import init_steam_path
 from smd.storage.settings import resolve_advanced_mode
 from smd.strings import VERSION
 from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode, OSType
-from smd.ui import UI
+from smd.ui.core import UI
 from smd.utils import get_os_type, root_folder
 
 logger = logging.getLogger("smd")
