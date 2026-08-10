@@ -26,6 +26,7 @@ dependencies = [
     "pytest>=8.4.2",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
+    "ruff>=0.16.2",
     "steam[client]>=1.4.4",
     "tqdm>=4.67.1",
     "vdf>=3.4",
