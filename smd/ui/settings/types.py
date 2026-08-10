@@ -143,6 +143,27 @@ class Settings(Enum):
             ("", " uses my custom version"),
         ],
     )
+    SEND_TO_DDM = SettingItem(
+        "send_to_ddm",
+        "Send To DDM",
+        False,
+        bool,
+        "Whether or not qto automatically send obtained lua+manifest files to DDM"
+    )
+    DDM_PATH = SettingItem(
+        "ddm_path",
+        "DDM Path",
+        False,
+        SettingCustomTypes.FILE,
+        "The file path of your DepotDownloaderMod.exe"
+    )
+    DDM_OUTPUT_DIR = SettingItem(
+        "ddm_output_dir",
+        "DDM Output Directory",
+        False,
+        SettingCustomTypes.FILE,
+        "The directory where DDM downloads the games"
+    )
 
     @property
     def key_name(self) -> str:
