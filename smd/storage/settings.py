@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import msgpack  # type: ignore
 
@@ -31,7 +31,7 @@ def get_setting(key: Settings):
     return keyring_decrypt(value) if (value and key.hidden) else value
 
 
-def set_setting(key: Settings, value: Union[str, bool]):
+def set_setting(key: Settings, value: str | bool):
     if not isinstance(value, str) and not isinstance(
         value, bool
     ):  # pyright: ignore[reportUnnecessaryIsInstance]

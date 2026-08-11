@@ -5,7 +5,6 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional
 
 from colorama import Fore, Style
 
@@ -52,9 +51,9 @@ if sys.platform == "win32":
         uninstall_context_menu,
     )
 else:
-    install_context_menu = lambda: None  # noqa: E731
-    set_stats_and_achievements = lambda *args: False  # type: ignore # noqa: E731
-    uninstall_context_menu = lambda: None  # noqa: E731
+    install_context_menu = lambda: None
+    set_stats_and_achievements = lambda *args: False
+    uninstall_context_menu = lambda: None
 
 
 def music_toggle_decorator(func):  # type: ignore
@@ -175,7 +174,7 @@ class UI:
         offline_converter: Callable[[str], str] = lambda x: (
             "ONLINE" if x == "0" else "OFFLINE"
         )
-        chosen_user: Optional[LoggedInUser] = prompt_select(
+        chosen_user: LoggedInUser | None = prompt_select(
             "Select a user: ",
             [
                 (
@@ -208,7 +207,7 @@ class UI:
         steam_libs = get_steam_libs(self.steam_path)
         if len(steam_libs) == 1:
             return steam_libs[0]
-        steam_lib_path: Optional[Path] = prompt_select(
+        steam_lib_path: Path | None = prompt_select(
             "Select a Steam library location:",
             steam_libs,
             cancellable=True,
@@ -332,7 +331,7 @@ class UI:
         return MainReturnCode.LOOP
 
     @music_toggle_decorator
-    def process_lua_full(self, file: Optional[Path] = None) -> MainReturnCode:
+    def process_lua_full(self, file: Path | None = None) -> MainReturnCode:
         """Processes a .lua file and goes through all the usual steps"""
         if (lib_path := self.select_steam_library()) is None:
             return MainReturnCode.LOOP_NO_PROMPT
@@ -411,7 +410,7 @@ class UI:
         return MainReturnCode.LOOP
 
     def manage_context_menu(self) -> MainReturnCode:
-        choice: Optional[ContextMenuOptions] = prompt_select(
+        choice: ContextMenuOptions | None = prompt_select(
             "Select an operation for the context menu:",
             list(ContextMenuOptions),
             cancellable=True,
@@ -429,7 +428,7 @@ class UI:
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
 
-        release_type: Optional[ReleaseType] = prompt_select(
+        release_type: ReleaseType | None = prompt_select(
             "Which type of release would you like to update to?",
             list(ReleaseType),
             cancellable=True,

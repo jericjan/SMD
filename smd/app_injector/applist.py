@@ -3,7 +3,6 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union
 
 from colorama import Fore, Style
 from rich.console import Console
@@ -104,7 +103,7 @@ class AppListManager(AppInjectionManager):
         return ids
 
     def add_ids(
-        self, data: Union[int, list[int], LuaParsedInfo], skip_check: bool = False
+        self, data: int | list[int] | LuaParsedInfo, skip_check: bool = False
     ):
         """Adds IDs to the AppList folder"""
         if isinstance(data, int):
@@ -208,7 +207,7 @@ class AppListManager(AppInjectionManager):
         if len(menu_items) < len(local_ids):
             logger.warning("There are less menu items than actual IDs inside AppList.")
 
-        ids_to_delete_list: Optional[list[int]] = prompt_select(
+        ids_to_delete_list: list[int] | None = prompt_select(
             "Select IDs to delete from AppList:",
             menu_items,
             multiselect=True,
@@ -265,7 +264,7 @@ class AppListManager(AppInjectionManager):
                         Column(header="Has Key?", justify="center"),
                         Column(header="Has Manifest?", justify="center"),
                     )
-                    bool_map: dict[Optional[bool], str] = {
+                    bool_map: dict[bool | None, str] = {
                         True: "[green]O[/green]",
                         False: "[red]X[/red]",
                         None: "N/A",

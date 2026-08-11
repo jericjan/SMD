@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Optional, Union
 
 from smd.prompts import prompt_confirm, prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
@@ -24,7 +23,7 @@ class AppInjectionManager(ABC):
 
     @abstractmethod
     def add_ids(
-        self, data: Union[int, list[int], LuaParsedInfo], skip_check: bool = False
+        self, data: int | list[int] | LuaParsedInfo, skip_check: bool = False
     ) -> None:
         pass
 
@@ -49,7 +48,7 @@ class AppInjectionManager(ABC):
         self.add_ids(ids)
 
     def display_menu(self) -> MainReturnCode:
-        applist_choice: Optional[AppListChoice] = prompt_select(
+        applist_choice: AppListChoice | None = prompt_select(
             "Choose:", list(AppListChoice), cancellable=True
         )
         if applist_choice is None:

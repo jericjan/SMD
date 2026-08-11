@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from colorama import Fore, Style
 
@@ -37,7 +37,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
     if len(named_ids) == 0:
         print("You don't have any saved .lua files. Try adding some first.")
         return LuaResult(None, None, LuaChoice.ADD_LUA)
-    lua_path: Optional[Path] = prompt_select(
+    lua_path: Path | None = prompt_select(
         "Choose a game:",
         [(name, saved_lua / f"{app_id}.lua") for app_id, name in named_ids.items()],
         fuzzy=True,
@@ -49,7 +49,7 @@ def select_from_saved_luas(saved_lua: Path, named_ids: NamedIDs) -> LuaResult:
     return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)
 
 
-def add_new_lua(file: Optional[Path] = None) -> LuaResult:
+def add_new_lua(file: Path | None = None) -> LuaResult:
     """Prompts user to add a new .lua or ZIP file
 
     Returns:
@@ -79,7 +79,7 @@ def add_new_lua(file: Optional[Path] = None) -> LuaResult:
     return LuaResult(lua_path, None, LuaChoiceReturnCode.LOOP)
 
 
-def search_game(os_type: OSType) -> Optional[str]:
+def search_game(os_type: OSType) -> str | None:
     """Using fzf, lets a user search for a game, then returns game ID"""
     all_games_file = root_folder(True) / "all_games.txt"
     if all_games_file.exists():
@@ -150,7 +150,7 @@ def download_lua(dest: Path, os_type: OSType) -> LuaResult:
         assert match is not None  # lmao
         return match.group()
 
-    source: Optional[LuaEndpoint] = prompt_select(
+    source: LuaEndpoint | None = prompt_select(
         "Select an endpoint:", list(LuaEndpoint), cancellable=True
     )
     if source is None:
