@@ -21,7 +21,7 @@ from smd.prompts import (
     prompt_select,
     prompt_text,
 )
-from smd.storage.settings import clear_setting, set_setting
+from smd.storage.settings import clear_setting, load_all_settings, set_setting
 from smd.ui.settings.types import (
     SettingChangeCallback,
     SettingCustomTypes,
@@ -191,6 +191,7 @@ class SettingsMenuPrompt:
 
     def execute(self):
         """Runs the Settings TUI, then handles the user's intent"""
+        self.saved_settings = load_all_settings()
         while True:
             intent = self._run_tui()
 

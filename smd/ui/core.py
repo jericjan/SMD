@@ -121,11 +121,9 @@ class UI:
         else:
             ignore = []
 
-        saved_settings = load_all_settings()
         menu = SettingsMenuPrompt(
             ignore_list=ignore, on_setting_changed=self._handle_setting_change
         )
-        menu.saved_settings = saved_settings
         menu.execute()
 
         return MainReturnCode.LOOP_NO_PROMPT
