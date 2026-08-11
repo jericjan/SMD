@@ -86,8 +86,7 @@ class AppListManager(AppInjectionManager):
                 logger.debug(f"[get_local_ids] Ignored {file.name}")
                 continue
             file_idx = int(file.stem)
-            if file_idx > self.last_idx:
-                self.last_idx = file_idx
+            self.last_idx = max(self.last_idx, file_idx)
 
             contents = file.read_text(encoding="utf-8").strip()
 
