@@ -107,7 +107,7 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
         return ui.update_all_manifests()
 
     if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
-        _x: Literal[MainMenu.MANAGE_LUA] = menu_choice  # noqa: F841
+        _x: Literal[MainMenu.MANAGE_LUA] = menu_choice
 
     if args.file:
         path = Path(args.file)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         except AssertionError as e:
             print(Fore.YELLOW + "WARNING: " + str(e) + Style.RESET_ALL)
     os.chdir(root_folder(outside_internal=True))
-    logger.debug(f"CWD is {str(Path.cwd().resolve())}")
+    logger.debug(f"CWD is {Path.cwd().resolve()!s}")
     logger.debug(f"exe is {sys.executable}")
     start_time = time.time()
     parser = argparse.ArgumentParser(
@@ -189,8 +189,9 @@ if __name__ == "__main__":
             break
         elif return_code == MainReturnCode.LOOP_NO_PROMPT:
             continue
-        elif return_code == MainReturnCode.LOOP:
-            if not prompt_confirm("Go back to the Main Menu?", false_msg="No (Exit)"):
-                break
+        elif return_code == MainReturnCode.LOOP and not prompt_confirm(
+            "Go back to the Main Menu?", false_msg="No (Exit)"
+        ):
+            break
     if return_code is not None:
         print(Fore.GREEN + "\nSee You Next Time!\n" + Style.RESET_ALL)

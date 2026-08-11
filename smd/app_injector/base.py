@@ -1,10 +1,18 @@
-
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
 from smd.prompts import prompt_confirm, prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
-from smd.structs import AppIDInfo, AppListChoice, DepotOrAppID, LuaParsedInfo, MainReturnCode, OrganizedAppIDs, ProductInfo
+from smd.structs import (
+    AppIDInfo,
+    AppListChoice,
+    DepotOrAppID,
+    LuaParsedInfo,
+    MainReturnCode,
+    OrganizedAppIDs,
+    ProductInfo,
+)
 from smd.utils import enter_path
 
 
@@ -32,9 +40,7 @@ class AppInjectionManager(ABC):
         validator: Callable[[str], bool] = lambda x: all(
             [y.isdigit() for y in x.split()]
         )
-        digit_filter: Callable[[str], list[int]] = lambda x: [
-            int(y) for y in x.split()
-        ]
+        digit_filter: Callable[[str], list[int]] = lambda x: [int(y) for y in x.split()]
         ids: list[int] = prompt_text(
             "Input IDs that you would like to add (separate them with spaces)",
             validator=validator,

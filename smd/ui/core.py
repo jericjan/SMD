@@ -3,8 +3,9 @@ import shutil
 import sys
 import time
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from colorama import Fore, Style
 
@@ -25,7 +26,6 @@ from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
     get_setting,
-    load_all_settings,
     set_setting,
 )
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load

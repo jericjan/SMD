@@ -2,8 +2,9 @@ import logging
 import shutil
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from colorama import Fore, Style
 

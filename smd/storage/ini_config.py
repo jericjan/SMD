@@ -1,7 +1,7 @@
-from typing import Callable
-from configupdater import ConfigUpdater
-
+from collections.abc import Callable
 from pathlib import Path
+
+from configupdater import ConfigUpdater
 
 
 def edit_ini_option(

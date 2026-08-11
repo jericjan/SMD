@@ -1,6 +1,7 @@
-from pathlib import Path
 import json
+from pathlib import Path
 from typing import Any
+
 import httpx
 
 from smd.prompts import prompt_text
@@ -42,7 +43,7 @@ def gen_achievements(app_id: str, steam_settings_dir: Path):
             with client.stream("GET", url) as response:
                 if response.status_code == 200:
                     with open(filepath, "wb") as f:
-                        for chunk in response.iter_bytes(chunk_size=1024):
+                        for chunk in response.iter_bytes(chunk_size=1024):  # noqa: FURB122
                             f.write(chunk)
                     return relative_path
         except Exception as e:
