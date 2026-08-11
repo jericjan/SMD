@@ -189,7 +189,8 @@ def download_to_tempfile(
     chunk_size: int = (1024**2) // 2,
 ) -> Generator[Union["_TemporaryFileWrapper[bytes]", None], None, None]:
     """Downloads and yields a tempfile, Defaults to 0.5MiB for chunk size"""
-    temp_f = TemporaryFile()
+    temp_f = TemporaryFile()  # noqa: SIM115
+    success = True
     try:
         with httpx.stream(
             "GET",
@@ -218,9 +219,11 @@ def download_to_tempfile(
                     temp_f.write(chunk)
                     pbar.update(len(chunk))
         temp_f.seek(0)
-        yield temp_f
     except httpx.HTTPError as e:
         print(f"Network error: {e!r}")
-        yield None
+        success = False
+
+    try:
+        yield temp_f if success else None
     finally:
         temp_f.close()
