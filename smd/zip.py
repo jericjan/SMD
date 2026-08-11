@@ -77,3 +77,42 @@ def zip_folder(folder_path: Path, output_path: Path):
     tmp.seek(0)
     with output_path.open("wb") as f:
         f.write(tmp.read())
+
+class BytesIOZip:
+    """Used for creating a ZIP file that exists in a BytesIO object"""
+    def __init__(self):
+        self.file = BytesIO()
+        self.to_be_added: list[tuple[str | Path | bytes, str]] = []
+        """List of (Path to local file / raw contents, path inside ZIP)"""
+
+    def prepare_local_file(self, paths: Path | list[Path]):
+        """Adds a local existing file to the ZIP"""
+        if isinstance(paths, Path):
+            paths = [paths]
+        self.to_be_added.extend([(x, x.name) for x in paths])
+
+    def prepare_str_file(self, name: str, contents: str | bytes):
+        """Adds an in-memory file to the ZIP
+
+        Args:
+            name (str): Name of your file in the ZIP
+            contents (str | bytes): The contents of that file
+        """
+        self.to_be_added.append((contents, name))
+
+    def write(self):
+        "Writes all the prepared files to the ZIP"
+        with zipfile.ZipFile(self.file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file, arcname in self.to_be_added:
+                if isinstance(file, Path):
+                    if file.is_file():
+                        zipf.write(file, arcname=arcname)
+                else:
+                    zipf.writestr(arcname, file)
+        self.file.seek(0)
+        return self.file
+
+    def save_to_file(self, out: Path):
+        """Saves the ZIP to a local file. For testing."""
+        self.file.seek(0)
+        out.write_bytes(self.file.getvalue())
