@@ -84,7 +84,10 @@ def search_game(os_type: OSType) -> str | None:
     all_games_file = root_folder(True) / "all_games.txt"
     if all_games_file.exists():
         mtime = all_games_file.stat().st_mtime
-        mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %I:%M %p")
+        local_tz = datetime.now().astimezone().tzinfo
+        mtime_str = datetime.fromtimestamp(mtime, tz=local_tz).strftime(
+            "%Y-%m-%d %I:%M %p"
+        )
         download = prompt_confirm(
             "Do you want to update the list of every Game ID? "
             f"(Last Modified: {mtime_str})",
