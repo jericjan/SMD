@@ -1,3 +1,4 @@
+import logging
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +10,6 @@ from smd.prompts import prompt_confirm
 from smd.storage.vdf import VDFLoadAndDumper, vdf_dump, vdf_load
 from smd.structs import LuaParsedInfo
 from smd.utils import enter_path
-import logging
 
 logger = logging.getLogger(__name__)
 

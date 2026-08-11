@@ -37,7 +37,7 @@ def set_setting(key: Settings, value: str | bool):
     ):  # pyright: ignore[reportUnnecessaryIsInstance]
         raise ValueError("Invalid type used for set_setting")
 
-    logger.debug(f"set_setting: {key.clean_name} -> {str(value)}")
+    logger.debug(f"set_setting: {key.clean_name} -> {value!s}")
     settings = load_all_settings()
     settings[key.key_name] = (
         keyring_encrypt(value) if key.hidden and isinstance(value, str) else value

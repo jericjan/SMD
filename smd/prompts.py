@@ -1,7 +1,8 @@
 import gc
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 from InquirerPy import inquirer
 from InquirerPy.base import BaseComplexPrompt, BaseListPrompt
@@ -14,7 +15,7 @@ def convert_to_path(x: str):
     return Path(x.strip("\"' "))
 
 
-def _clean_prompt(prompt: Union[BaseComplexPrompt, InputPrompt]):
+def _clean_prompt(prompt: BaseComplexPrompt | InputPrompt):
     """Dark voodoo I cooked that actually works??? `prompt_select` leaks way less now"""
     if isinstance(prompt, BaseComplexPrompt):
         prompt.application.reset()  # pyright: ignore[reportUnknownMemberType]
@@ -83,8 +84,8 @@ def prompt_select(
 
 def prompt_dir(
     msg: str,
-    custom_check: Optional[Callable[[Path], bool]] = None,
-    custom_msg: Optional[str] = None,
+    custom_check: Callable[[Path], bool] | None = None,
+    custom_msg: str | None = None,
 ) -> Path:
     def validator(raw_input: str) -> bool:
         path = convert_to_path(raw_input)
@@ -118,11 +119,11 @@ def prompt_file(msg: str, allow_blank: bool = False) -> Path:
 
 def prompt_text(
     msg: str,
-    validator: Optional[InquirerPyValidate] = None,
+    validator: InquirerPyValidate | None = None,
     invalid_msg: str = "Invalid input",
     instruction: str = "",
     long_instruction: str = "",
-    filter: Optional[Callable[[str], Any]] = None,
+    filter: Callable[[str], Any] | None = None,
 ):
     obj = inquirer.text(
         msg,
@@ -139,7 +140,7 @@ def prompt_text(
 
 def prompt_secret(
     msg: str,
-    validator: Optional[InquirerPyValidate] = None,
+    validator: InquirerPyValidate | None = None,
     invalid_msg: str = "Invalid input",
     instruction: str = "",
     long_instruction: str = "",
@@ -159,8 +160,8 @@ def prompt_secret(
 
 def prompt_confirm(
     msg: str,
-    true_msg: Optional[str] = None,
-    false_msg: Optional[str] = None,
+    true_msg: str | None = None,
+    false_msg: str | None = None,
     default: bool = True,
 ) -> bool:
     # inquirer.confirm exists but I prefer this

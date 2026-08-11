@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
 import yaml
 
 
@@ -19,7 +20,7 @@ class YAMLParser:
     def ensure_list(key: str, data: dict[str, Any]) -> list[Any]:
         """Grabs the value of a key in a dict,
         and if it's not a list, make it an empty list"""
-        val: Optional[list[Any]] = data.setdefault(key, [])
+        val: list[Any] | None = data.setdefault(key, [])
         if not isinstance(val, list):
             val = []
             data[key] = val

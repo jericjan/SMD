@@ -1,13 +1,14 @@
 import asyncio
+import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
-from typing import Any, Optional
 import zipfile
-from colorama import Fore, Style
+from pathlib import Path
+from typing import Any
+
 import httpx
-import json
+from colorama import Fore, Style
 
 from smd.http_utils import get_request
 from smd.strings import GITHUB_USERNAME, REPO_NAME, VERSION
@@ -29,7 +30,7 @@ class Updater:
         return resp
 
     @staticmethod
-    def get_latest_prerelease() -> Optional[dict[str, Any]]:
+    def get_latest_prerelease() -> dict[str, Any] | None:
         """Returns none of prerelease newer than current version can't be found"""
         url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/releases"
         while True:

@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List, Optional, Union
+from typing import Any, Union
 
 import gevent
 from steam.client import SteamClient  # type: ignore
@@ -40,10 +40,9 @@ class IUgcIdStrategy(ABC):
     @abstractmethod
     def name(self) -> str:
         """Clean name of the strategy"""
-        pass
 
     @abstractmethod
-    def get_content(self, ctx: WorkshopItemContext) -> Optional[WorkshopContent]:
+    def get_content(self, ctx: WorkshopItemContext) -> WorkshopContent | None:
         pass
 
 
@@ -103,7 +102,7 @@ class StandardUgcIdStrategy(IUgcIdStrategy):
                 continue
             break
 
-    def get_content(self, ctx: WorkshopItemContext) -> Optional[WorkshopContent]:
+    def get_content(self, ctx: WorkshopItemContext) -> WorkshopContent | None:
         details = self._get_workshop_items_details(ctx)
         if details:
             if details.file_url:
@@ -114,7 +113,7 @@ class StandardUgcIdStrategy(IUgcIdStrategy):
 
 
 class UgcIDResolver:
-    def __init__(self, strategies: List[IUgcIdStrategy]):
+    def __init__(self, strategies: list[IUgcIdStrategy]):
         self.strategies = strategies
 
     def resolve(self, ctx: WorkshopItemContext) -> tuple[WorkshopContent, str]:

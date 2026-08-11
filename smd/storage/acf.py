@@ -1,6 +1,5 @@
 from enum import IntFlag
 from pathlib import Path
-from typing import Optional
 
 from smd.storage.vdf import vdf_load
 from smd.utils import enter_path
@@ -34,14 +33,14 @@ class AppState(IntFlag):
 class ACFParser:
     def __init__(self, acf: Path):
         self.data = vdf_load(acf)
-        self._name: Optional[str] = None
-        self._id: Optional[int] = None
-        self._state: Optional[AppState] = None
+        self._name: str | None = None
+        self._id: int | None = None
+        self._state: AppState | None = None
 
     @property
     def name(self):
         if self._name is None:
-            raw_name: Optional[str] = enter_path(
+            raw_name: str | None = enter_path(
                 self.data, "AppState", "name", default=None
             )
             self._name = raw_name
@@ -50,7 +49,7 @@ class ACFParser:
     @property
     def id(self):
         if self._id is None:
-            raw_id: Optional[str] = enter_path(
+            raw_id: str | None = enter_path(
                 self.data, "AppState", "appid", default=None
             )
             if raw_id and raw_id.isdigit():
@@ -60,7 +59,7 @@ class ACFParser:
     @property
     def state(self):
         if self._state is None:
-            raw_state: Optional[str] = enter_path(
+            raw_state: str | None = enter_path(
                 self.data, "AppState", "StateFlags", default=None
             )
             if raw_state and raw_state.isdigit():

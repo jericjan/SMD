@@ -3,7 +3,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import vdf  # type: ignore
 
@@ -31,11 +31,11 @@ def root_folder(outside_internal: bool = False):
 
 
 def enter_path(
-    obj: Union[vdf.VDFDict, dict[Any, Any]],
-    *paths: Union[int, str],
+    obj: vdf.VDFDict | dict[Any, Any],
+    *paths: int | str,
     mutate: bool = False,
     ignore_case: bool = False,
-    default: Optional[Any] = None,
+    default: Any | None = None,
 ) -> Any:
     """
     Walks or creates nested dicts in a VDFDict/dict.

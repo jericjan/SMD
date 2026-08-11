@@ -1,6 +1,6 @@
 import ctypes
-from enum import Enum
 import logging
+from enum import Enum
 from pathlib import Path
 
 from smd.utils import root_folder

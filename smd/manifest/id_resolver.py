@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List, Optional, Union
+from typing import Any
 
 from colorama import Fore, Style
 
@@ -18,7 +18,7 @@ class ManifestContext:
     provider: SteamInfoProvider
     auto: bool = True
     "whether the user chose to automatically get IDs or not"
-    _dlc_data: Optional[dict[int, Any]] = None
+    _dlc_data: dict[int, Any] | None = None
     "Lazy-loaded DLC data"
 
     @property
@@ -34,10 +34,9 @@ class IManifestStrategy(ABC):
     @abstractmethod
     def name(self) -> str:
         """Clean name of the strategy"""
-        pass
 
     @abstractmethod
-    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> Optional[str]:
+    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> str | None:
         pass
 
 
@@ -49,8 +48,8 @@ class StandardManifestStrategy(IManifestStrategy):
         return "Direct"
 
     def get_manifest_id(
-        self, ctx: ManifestContext, depot_id: Union[str, int]
-    ) -> Optional[str]:
+        self, ctx: ManifestContext, depot_id: str | int
+    ) -> str | None:
         return enter_path(
             ctx.app_data, "depots", str(depot_id), "manifests", "public"
         ).get("gid")
@@ -64,8 +63,8 @@ class SharedDepotManifestStrategy(IManifestStrategy):
         return "Shared Install"
 
     def get_manifest_id(
-        self, ctx: ManifestContext, depot_id: Union[str, int]
-    ) -> Optional[str]:
+        self, ctx: ManifestContext, depot_id: str | int
+    ) -> str | None:
         target_app_id = enter_path(ctx.app_data, "depots", str(depot_id)).get(
             "depotfromapp"
         )
@@ -87,7 +86,7 @@ class InnerDepotManifestStrategy(IManifestStrategy):
     def name(self):
         return "Inner Depot From DLC"
 
-    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> Optional[str]:
+    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> str | None:
         for dlc_data in ctx.dlc_data.values():
             depots = dlc_data.get("depots", {})
             if depot_id in depots:
@@ -100,7 +99,7 @@ class ManualManifestStrategy(IManifestStrategy):
     def name(self):
         return "Manual"
 
-    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> Optional[str]:
+    def get_manifest_id(self, ctx: ManifestContext, depot_id: str) -> str | None:
         if ctx.app_id == int(depot_id):
             print(
                 Fore.YELLOW
@@ -118,7 +117,7 @@ class ManualManifestStrategy(IManifestStrategy):
 
 
 class ManifestIDResolver:
-    def __init__(self, strategies: List[IManifestStrategy]):
+    def __init__(self, strategies: list[IManifestStrategy]):
         self.strategies = strategies
 
     def resolve(self, ctx: ManifestContext, depot_id: str) -> tuple[str, str]:

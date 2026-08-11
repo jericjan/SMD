@@ -8,7 +8,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Literal, NamedTuple, Optional, overload
+from typing import Literal, NamedTuple, overload
 
 from colorama import Fore, Style
 
@@ -68,7 +68,7 @@ class GameHandler:
         self.provider = provider
         self.injection_manager = injection_manager
 
-    def get_game(self) -> Optional[ACFInfo]:
+    def get_game(self) -> ACFInfo | None:
         games: list[tuple[AppName, ACFInfo]] = []
         for path in self.steamapps_path.glob("*.acf"):
             app_acf = vdf_load(path)
@@ -87,7 +87,7 @@ class GameHandler:
             cancellable=True,
         )
 
-    def find_steam_dll(self, game_path: Path) -> Optional[Path]:
+    def find_steam_dll(self, game_path: Path) -> Path | None:
         files = list(game_path.rglob("steam_api*.dll"))
         if len(files) > 1:
             return prompt_select(
@@ -115,7 +115,7 @@ class GameHandler:
         self,
         app_id: str,
         mode: GenEmuMode,
-        dst_steam_settings_folder: Optional[Path] = None,
+        dst_steam_settings_folder: Path | None = None,
     ):
         if mode in (GenEmuMode.STEAM_SETTINGS, GenEmuMode.ALL):
             if dst_steam_settings_folder is None:
@@ -172,7 +172,7 @@ class GameHandler:
             for bin_file in bin_files:
                 bin_file_count += 1
                 shutil.copy(bin_file, steam_stats_folder)
-                print(f"{bin_file.name} copied to {str(steam_stats_folder)}")
+                print(f"{bin_file.name} copied to {steam_stats_folder!s}")
 
             if bin_file_count == 0:
                 id_64 = prompt_text(
@@ -199,7 +199,7 @@ class GameHandler:
             if not dst_user_stats.exists():
                 shutil.copy(src_user_stats, dst_user_stats)
                 print(
-                    f"{str(src_user_stats.relative_to(root_folder()))} copied to "
+                    f"{src_user_stats.relative_to(root_folder())!s} copied to "
                     + str(dst_user_stats)
                 )
             else:
@@ -211,7 +211,7 @@ class GameHandler:
                 src_steam_settings, dst_steam_settings_folder, dirs_exist_ok=True
             )
             print(
-                f"{str(src_steam_settings.relative_to(root_folder()))} copied to "
+                f"{src_steam_settings.relative_to(root_folder())!s} copied to "
                 + str(dst_steam_settings_folder)
             )
 
@@ -294,7 +294,7 @@ class GameHandler:
         exes = [
             (str(x.relative_to(app_info.path)), x) for x in app_info.path.rglob("*.exe")
         ] + [("(It's still not here)", None)]
-        game_exe: Optional[Path] = prompt_select(
+        game_exe: Path | None = prompt_select(
             "Select the .exe:", exes, default=exes[0]
         )
         if game_exe is None:
@@ -322,7 +322,7 @@ class GameHandler:
 
         windows_exes = list(set(windows_exes))
 
-        chosen: Optional[str] = prompt_select(
+        chosen: str | None = prompt_select(
             "Choose the exe:",
             windows_exes + [("(The .exe I want isn't listed here)", None)],
             default=windows_exes[0],

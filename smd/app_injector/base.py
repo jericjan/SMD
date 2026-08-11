@@ -37,7 +37,7 @@ class AppInjectionManager(ABC):
 
     def prompt_add_ids(self):
         validator: Callable[[str], bool] = lambda x: all(
-            [y.isdigit() for y in x.split()]
+            y.isdigit() for y in x.split()
         )
         digit_filter: Callable[[str], list[int]] = lambda x: [int(y) for y in x.split()]
         ids: list[int] = prompt_text(

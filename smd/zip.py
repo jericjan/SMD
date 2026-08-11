@@ -1,28 +1,28 @@
-from io import BytesIO
-from typing import Literal, Union, overload
 import zipfile
+from io import BytesIO
 from pathlib import Path
+from typing import Literal, overload
 
 from colorama import Fore, Style
 
 
 @overload
-def read_lua_from_zip(path: Union[Path, BytesIO]) -> Union[str, None]: ...
+def read_lua_from_zip(path: Path | BytesIO) -> str | None: ...
 
 
 @overload
 def read_lua_from_zip(
-    path: Union[Path, BytesIO], decode: Literal[True]
-) -> Union[str, None]: ...
+    path: Path | BytesIO, decode: Literal[True]
+) -> str | None: ...
 
 
 @overload
 def read_lua_from_zip(
-    path: Union[Path, BytesIO], decode: Literal[False]
-) -> Union[bytes, None]: ...
+    path: Path | BytesIO, decode: Literal[False]
+) -> bytes | None: ...
 
 
-def read_lua_from_zip(path: Union[Path, BytesIO], decode: bool = True):
+def read_lua_from_zip(path: Path | BytesIO, decode: bool = True):
     """Given a zip path, return the string contents,
     None if it can't be found"""
     lua_contents = None
@@ -49,7 +49,7 @@ def read_lua_from_zip(path: Union[Path, BytesIO], decode: bool = True):
     return lua_contents
 
 
-def read_file_from_zip_bytes(filename: Union[str, zipfile.ZipInfo], bytes: bytes):
+def read_file_from_zip_bytes(filename: str | zipfile.ZipInfo, bytes: bytes):
     """Returns none if it's an invalid ZIP file"""
     try:
         with zipfile.ZipFile(BytesIO(bytes)) as f:

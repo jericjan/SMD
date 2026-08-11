@@ -1,13 +1,12 @@
-from pathlib import Path
 import shutil
 import subprocess
-from typing import Union
+from pathlib import Path
 
 from smd.structs import OSType
 from smd.utils import root_folder
 
 
-def run_fzf(choices: Union[list[str], Path], os_type: OSType):
+def run_fzf(choices: list[str] | Path, os_type: OSType):
     if isinstance(choices, list):
         choices_str = "\n".join(choices)
     else:

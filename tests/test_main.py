@@ -1,5 +1,6 @@
-from smd.http_utils import get_gmrc
 import asyncio
+
+from smd.http_utils import get_gmrc
 
 
 def test_gmrc():

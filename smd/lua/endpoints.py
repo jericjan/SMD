@@ -6,7 +6,6 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urljoin
 
 from colorama import Fore, Style
@@ -119,7 +118,7 @@ def get_oureverday(dest: Path, app_id: str):
         return lua_path
 
 
-def get_morrenus(dest: Path, app_id: str) -> Optional[Path]:
+def get_morrenus(dest: Path, app_id: str) -> Path | None:
     url = urljoin(MORRENUS_BASE_URL, f"/api/v1/manifest/{app_id}")
 
     morrenus_key = resolve_morrenus_key()

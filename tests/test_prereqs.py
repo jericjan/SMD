@@ -10,7 +10,7 @@ def test_fzf():
         file = (root_folder() / "third_party/fzf/fzf.exe")
         assert (
             file.exists()
-        ), f"\"{str(file.relative_to(root_folder(True)))}\" does not exist. "
+        ), f"\"{file.relative_to(root_folder(True))!s}\" does not exist. "
         "Please install it to that location"
     elif sys.platform == "linux":
         assert shutil.which("fzf") is not None, "fzf is missing. Please install it"
@@ -26,7 +26,7 @@ def test_gbe_fork():
     for file in files:
         assert (
             file.exists()
-        ), f"\"{str(file.relative_to(root_folder(True)))}\" does not exist. "
+        ), f"\"{file.relative_to(root_folder(True))!s}\" does not exist. "
         "Please install it to that location"
 
 
@@ -36,11 +36,11 @@ def test_gbe_fork_tools():
         / "third_party/gbe_fork_tools/generate_emu_config"
         / ("generate_emu_config" + ".exe" if sys.platform == "win32" else "")
     )
-    assert exe.exists(), f'"{str(exe.relative_to(root_folder(True)))}" does not exist. '
+    assert exe.exists(), f'"{exe.relative_to(root_folder(True))!s}" does not exist. '
     "Please install it to that location"
     assert os.access(
         exe.absolute(), os.X_OK
-    ), f'"{str(exe.relative_to(root_folder(True)))}" is not executable.'
+    ), f'"{exe.relative_to(root_folder(True))!s}" is not executable.'
 
 
 # Bundled in repo
@@ -48,11 +48,11 @@ def test_steamless():
     file = (root_folder() / "third_party/steamless/Steamless.CLI.exe")
     assert (
         file.exists()
-    ), f'"{str(file.relative_to(root_folder(True)))}" does not exist. '
+    ), f'"{file.relative_to(root_folder(True))!s}" does not exist. '
     "Please install it to that location"
     assert os.access(
         file.absolute(), os.X_OK
-    ), f'"{str(file.relative_to(root_folder(True)))}" is not executable.'
+    ), f'"{file.relative_to(root_folder(True))!s}" is not executable.'
 
 
 def test_downloader():
@@ -60,7 +60,7 @@ def test_downloader():
         file = (root_folder() / "third_party/aria2c/aria2c.exe")
         assert (
             file.exists()
-        ), f'"{str(file.relative_to(root_folder(True)))}" does not exist. '
+        ), f'"{file.relative_to(root_folder(True))!s}" does not exist. '
         'Please install it to that location'
     elif sys.platform == "linux":
         assert shutil.which("axel") is not None, "axel is missing. Please install it"
@@ -73,4 +73,4 @@ def test_midi():
     for file in files:
         assert (
             file.exists()
-        ), f'"{str(file.relative_to(root_folder(True)))}" does not exist'
+        ), f'"{file.relative_to(root_folder(True))!s}" does not exist'

@@ -3,7 +3,7 @@ import logging
 import shutil
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 from urllib.parse import urljoin
 
 import gevent
@@ -138,8 +138,8 @@ class ManifestDownloader:
         return get_request_raw(url)
 
     def download_single_manifest(
-        self, depot_id: str, manifest_id: str, cdn_client: Optional[CDNClient] = None
-    ) -> tuple[Union[bytes, None], bool]:
+        self, depot_id: str, manifest_id: str, cdn_client: CDNClient | None = None
+    ) -> tuple[bytes | None, bool]:
         """Returns (encrypted manifest file as bytes, is_zipped (direct from Steam) )"""
         if cdn_client is None:
             cdn_client = self.get_cdn_client()

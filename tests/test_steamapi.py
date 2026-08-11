@@ -1,5 +1,7 @@
-from smd.steam_client import SteamInfoProvider
 import json
+
+from smd.steam_client import SteamInfoProvider
+
 
 def test_steam():
     prov = SteamInfoProvider()

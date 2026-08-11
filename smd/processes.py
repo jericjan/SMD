@@ -1,7 +1,7 @@
-from functools import partial
 import subprocess
 import threading
 import time
+from functools import partial
 from pathlib import Path
 
 import psutil

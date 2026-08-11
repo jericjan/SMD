@@ -1,7 +1,6 @@
 import sys
 import winreg
 from pathlib import Path
-from typing import Optional
 
 from colorama import Fore, Style
 
@@ -77,7 +76,7 @@ def set_stats_and_achievements(app_id: int):
         selected_version = get_greenluma_key()
         set_setting(Settings.GL_VERSION, selected_version)
 
-    curr: Optional[int] = read_subkey(
+    curr: int | None = read_subkey(
         winreg.HKEY_CURRENT_USER,
         rf"SOFTWARE\{selected_version}\AppID\{app_id}",
         "SkipStatsAndAchievements",

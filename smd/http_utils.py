@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import sys
+from collections.abc import Generator
 from contextlib import contextmanager
 from tempfile import TemporaryFile
-from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
 from urllib.parse import urlparse
 
 import httpx
@@ -35,8 +36,8 @@ async def get_request(
     url: str,
     type: Literal["text"] = "text",
     timeout: int = 10,
-    headers: Optional[dict[str, str]] = None,
-) -> Union[str, None]: ...
+    headers: dict[str, str] | None = None,
+) -> str | None: ...
 
 
 @overload
@@ -44,16 +45,16 @@ async def get_request(
     url: str,
     type: Literal["json"],
     timeout: int = 10,
-    headers: Optional[dict[str, str]] = None,
-) -> Union[dict[Any, Any], None]: ...
+    headers: dict[str, str] | None = None,
+) -> dict[Any, Any] | None: ...
 
 
 async def get_request(
     url: str,
     type: Literal["text", "json"] = "text",
     timeout: int = 10,
-    headers: Optional[dict[str, str]] = None,
-) -> Union[str, dict[Any, Any], None]:
+    headers: dict[str, str] | None = None,
+) -> str | dict[Any, Any] | None:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             logger.debug(f"Making request to {url}")
@@ -70,7 +71,7 @@ async def get_request(
             print(f"Response: {response.text}")
 
     except httpx.RequestError as e:
-        print(f"An error occurred: {repr(e)}")
+        print(f"An error occurred: {e!r}")
 
 
 def get_request_raw(url: str):
@@ -79,7 +80,7 @@ def get_request_raw(url: str):
         try:
             resp = httpx.get(url, timeout=None)
         except httpx.HTTPError as e:
-            print(f"Network error: {repr(e)}")
+            print(f"Network error: {e!r}")
             if prompt_confirm("Try again?"):
                 continue
         break
@@ -106,7 +107,7 @@ def get_base_domain(url: str):
 
 # Lowkey don't remember why i wrote it like this.
 # It uses a default timeout of 10s but i think it still got stuck?
-async def get_gmrc(manifest_id: Union[str, int]) -> Union[str, None]:
+async def get_gmrc(manifest_id: str | int) -> str | None:
     """Gets a manifest request code, given a manifest ID
 
     Args:
@@ -183,8 +184,8 @@ def get_game_name(app_id: str) -> str:
 @contextmanager
 def download_to_tempfile(
     url: str,
-    headers: Optional[dict[str, str]] = None,
-    params: Optional[dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
+    params: dict[str, str] | None = None,
     chunk_size: int = (1024**2) // 2,
 ) -> Generator[Union["_TemporaryFileWrapper[bytes]", None], None, None]:
     """Downloads and yields a tempfile, Defaults to 0.5MiB for chunk size"""
@@ -219,7 +220,7 @@ def download_to_tempfile(
         temp_f.seek(0)
         yield temp_f
     except httpx.HTTPError as e:
-        print(f"Network error: {repr(e)}")
+        print(f"Network error: {e!r}")
         yield None
     finally:
         temp_f.close()

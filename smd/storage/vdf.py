@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Optional, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 import vdf  # type: ignore
 
@@ -47,9 +47,9 @@ class VDFLoadAndDumper:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        exc_traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_traceback: TracebackType | None,
     ):
         if exc_type is None:
             vdf_dump(self.path, self.data)

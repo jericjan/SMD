@@ -1,14 +1,13 @@
-from dataclasses import dataclass
 import json
+import logging
 import time
-from typing import Any, ClassVar, Optional, Union
+from dataclasses import dataclass
+from typing import Any, ClassVar
 
 import gevent
 from steam.client import SteamClient  # type: ignore
 
 from smd.structs import DLCTypes, ProductInfo  # type: ignore
-import logging
-
 from smd.utils import enter_path
 
 logger = logging.getLogger(__name__)
@@ -55,7 +54,7 @@ class SteamInfoProvider:
     Meant to be initialized at any point in code since
     ClassVars will keep share the same data"""
 
-    _client: ClassVar[Optional[SteamClient]] = None
+    _client: ClassVar[SteamClient | None] = None
     _cache: ClassVar[dict[int, Any]] = {}
     """A cache of app IDs and their data taken
     from the `apps` key of `get_product_info`.
@@ -117,7 +116,7 @@ class ParsedDLC:
         self.id = depot_id
         self.name: str = enter_path(dlc_data, "common", "name")
         depots = enter_path(dlc_data, "depots")
-        parent_depots: dict[str, Union[dict[str, Any], str]] = enter_path(
+        parent_depots: dict[str, dict[str, Any] | str] = enter_path(
             parent_data, "depots"
         )
 

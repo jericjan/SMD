@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, NewType, Optional, Union
+from typing import Any, Literal, NamedTuple, NewType, Union
 
 
 class LuaChoice(Enum):
@@ -88,9 +88,9 @@ class LoggedInUser(NamedTuple):
 
 
 class LuaResult(NamedTuple):
-    path: Optional[Path]
+    path: Path | None
     "The lua file's path if it exists"
-    contents: Optional[str]
+    contents: str | None
     "The string contents of the lua file"
     switch_choice: Union["LuaChoice", "LuaChoiceReturnCode"]
     "A LuaChoice to switch to."
@@ -107,7 +107,7 @@ class DepotOrAppID(NamedTuple):
     "Name of the app"
     id: int
     "The App/Depot ID"
-    parent_id: Optional[int]
+    parent_id: int | None
     "The parent App ID (if it's a depot)"
 
 

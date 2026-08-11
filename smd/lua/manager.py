@@ -2,7 +2,6 @@ import logging
 import re
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from colorama import Fore, Style
 
@@ -31,8 +30,8 @@ class LuaManager:
         self.os_type = os_type
 
     def get_raw_lua(
-        self, choice: LuaChoice, override: Optional[Path] = None
-    ) -> Optional[RawLua]:
+        self, choice: LuaChoice, override: Path | None = None
+    ) -> RawLua | None:
         """Return the lua path and contents"""
         while True:
             if choice == LuaChoice.SELECT_SAVED_LUA:
@@ -66,9 +65,9 @@ class LuaManager:
 
     def fetch_lua(
         self,
-        override_choice: Optional[LuaChoice] = None,
-        override_path: Optional[Path] = None,
-    ) -> Optional[LuaParsedInfo]:
+        override_choice: LuaChoice | None = None,
+        override_path: Path | None = None,
+    ) -> LuaParsedInfo | None:
         """Depending on the choice, fetch a lua file then parse the contents"""
         depot_no_key_regex = re.compile(
             r"^\s*addappid\s*\(\s*(\d+)\s*\)", flags=re.MULTILINE
@@ -84,7 +83,7 @@ class LuaManager:
 
         while True:
             ids_with_no_key: list[str] = []
-            choice: Optional[LuaChoice] = (
+            choice: LuaChoice | None = (
                 override_choice
                 if override_choice
                 else prompt_select("Choose:", list(LuaChoice), cancellable=True)
@@ -122,4 +121,3 @@ class LuaManager:
                 shutil.copyfile(lua.path, target)
             except shutil.SameFileError:
                 logger.debug("Skipped backup because it's the same file")
-                pass

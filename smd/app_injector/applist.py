@@ -236,8 +236,7 @@ class AppListManager(AppInjectionManager):
             dlc_info = get_product_info(provider, dlcs)
             config = ConfigVDFWriter(self.steam_path)
             manifest = ManifestDownloader(self.provider, self.steam_path)
-            if dlc_info:
-                if apps := dlc_info.get("apps"):
+            if dlc_info and (apps := dlc_info.get("apps")):
                     unowned_non_depot_dlcs: list[int] = []
                     local_ids = [x.app_id for x in self.get_local_ids()]
                     parsed_dlcs: list[ParsedDLC] = [
