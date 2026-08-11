@@ -10,7 +10,7 @@ from smd.fzf import run_fzf
 from smd.http_utils import download_to_tempfile
 from smd.lua.endpoints import get_morrenus, get_oureverday
 from smd.prompts import prompt_confirm, prompt_file, prompt_select, prompt_text
-from smd.storage.settings import get_setting, set_setting
+from smd.storage.settings import get_or_compute_setting
 from smd.structs import (
     LuaChoice,
     LuaChoiceReturnCode,
@@ -81,6 +81,14 @@ def add_new_lua(file: Path | None = None) -> LuaResult:
 
 def search_game(os_type: OSType) -> str | None:
     """Using fzf, lets a user search for a game, then returns game ID"""
+
+    def prompt_web_api_key():
+        print(
+            "You don't have a Steam Web API Key yet. "
+            "Steam needs this in order to browse through all the games.\n\n"
+        )
+        return prompt_text("Paste your Steam Web API Key:")
+
     all_games_file = root_folder(True) / "all_games.txt"
     if all_games_file.exists():
         mtime = all_games_file.stat().st_mtime
@@ -96,13 +104,7 @@ def search_game(os_type: OSType) -> str | None:
     else:
         download = True
     if download:
-        if (api_key := get_setting(Settings.STEAM_WEB_API_KEY)) is None:
-            print(
-                "You don't have a Steam Web API Key yet. "
-                "Steam needs this in order to browse through all the games.\n\n"
-            )
-            api_key = prompt_text("Paste your Steam Web API Key:")
-            set_setting(Settings.STEAM_WEB_API_KEY, api_key)
+        api_key = get_or_compute_setting(Settings.STEAM_WEB_API_KEY, prompt_web_api_key)
         params: dict[str, str] = {"key": api_key, "max_results": "50000"}
         games: list[dict[str, Any]] = []
         print(

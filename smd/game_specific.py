@@ -30,7 +30,7 @@ from smd.prompts import (
     prompt_text,
 )
 from smd.steam_client import SteamInfoProvider, get_product_info
-from smd.storage.settings import get_setting, set_setting
+from smd.storage.settings import get_or_default_setting, get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
     GameSpecificChoices,
@@ -158,12 +158,7 @@ class GameHandler:
             extra_args.extend(["-skip_con", "-skip_inv"])
         cmds = [str(config_exe.absolute()), "-clean", *extra_args, app_id]
         logger.debug(f"Running {shlex.join(cmds)}")
-        subprocess.run(
-            cmds,
-            env=env,
-            cwd=str(tools_folder.absolute()),
-            check=True
-        )
+        subprocess.run(cmds, env=env, cwd=str(tools_folder.absolute()), check=True)
         backup_folder = tools_folder / f"backup/{app_id}"
         src_steam_settings = tools_folder / f"output/{app_id}/steam_settings"
 
@@ -261,9 +256,9 @@ class GameHandler:
             "(Contains achievement data)"
         )
         if do_gen_achievements:
-            if (gen_mode := get_setting(Settings.ACHIEVE_GEN_MODE)) is None:
-                gen_mode = AchievementGenMode.STABLE.value
-                set_setting(Settings.ACHIEVE_GEN_MODE, gen_mode)
+            gen_mode = get_or_default_setting(
+                Settings.ACHIEVE_GEN_MODE, AchievementGenMode.STABLE.value
+            )
             if AchievementGenMode(gen_mode) == AchievementGenMode.STABLE:
                 self.run_gen_emu(
                     app_id,
@@ -282,7 +277,7 @@ class GameHandler:
             [str(steamless_exe.absolute()), str(game_exe.absolute())],
             encoding="utf-8",
             capture_output=True,
-            check=True
+            check=True,
         )
         if "Successfully unpacked file!" in output.stdout:
             print("Steamless applied!")

@@ -5,20 +5,23 @@ from typing import Any
 import httpx
 
 from smd.prompts import prompt_text
-from smd.storage.settings import get_setting, set_setting
+from smd.storage.settings import get_or_compute_setting
 from smd.ui.settings.types import Settings
 
 
 def gen_achievements(app_id: str, steam_settings_dir: Path):
     """Experimental method of generating achievement data for gbe_fork.
     Uses Steam Web API Key instead of a user login."""
-    if (api_key := get_setting(Settings.STEAM_WEB_API_KEY)) is None:
+
+    def prompt_web_api_key():
         print(
             "You don't have a Steam Web API Key yet. "
-            "Steam needs this in order to browse through all the games.\n\n"
+            "Steam needs this in order to generate achievements in experimental mode.\n\n"
         )
-        api_key = prompt_text("Paste your Steam Web API Key:")
-        set_setting(Settings.STEAM_WEB_API_KEY, api_key)
+        return prompt_text("Paste your Steam Web API Key:")
+
+    api_key = get_or_compute_setting(Settings.STEAM_WEB_API_KEY, prompt_web_api_key)
+
     lang = "english"
 
     img_dir = steam_settings_dir / "img"

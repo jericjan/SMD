@@ -24,8 +24,7 @@ from smd.prompts import (
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
 from smd.storage.settings import (
-    get_setting,
-    set_setting,
+    get_or_default_setting,
 )
 from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import LINUX_RELEASE_PREFIX, VERSION, WINDOWS_RELEASE_PREFIX
@@ -93,9 +92,7 @@ class UI:
         self.init_midi_player()
 
     def init_midi_player(self):
-        if (play_music := get_setting(Settings.PLAY_MUSIC)) is None:
-            set_setting(Settings.PLAY_MUSIC, False)
-            play_music = False
+        play_music = get_or_default_setting(Settings.PLAY_MUSIC, False)
 
         if any(not x.value.exists() for x in list(MidiFiles)) or not play_music:
             self.midi_player = None

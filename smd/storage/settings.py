@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from typing import Any, cast
 
 import msgpack  # type: ignore
@@ -22,6 +23,23 @@ def load_all_settings() -> dict[Any, Any]:
         except ValueError:
             settings: dict[Any, Any] = {}
     return settings
+
+
+def get_or_default_setting(setting: Settings, default: Any) -> Any:
+    """Returns the setting if it exists, otherwise saves and returns the default."""
+    if (val := get_setting(setting)) is not None:
+        return val
+    set_setting(setting, default)
+    return default
+
+
+def get_or_compute_setting(setting: Settings, callable: Callable[[], Any]) -> Any:
+    """Returns the setting if it exists, otherwise runs callable to get it, saves it, and returns it."""
+    if (val := get_setting(setting)) is not None:
+        return val
+    val = callable()
+    set_setting(setting, val)
+    return val
 
 
 def get_setting(key: Settings):

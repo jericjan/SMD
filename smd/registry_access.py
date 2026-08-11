@@ -5,7 +5,7 @@ from pathlib import Path
 from colorama import Fore, Style
 
 from smd.prompts import prompt_confirm, prompt_select
-from smd.storage.settings import get_setting, set_setting
+from smd.storage.settings import get_or_compute_setting, get_setting, set_setting
 from smd.ui.settings.types import GreenLumaVersions, Settings
 from smd.utils import root_folder
 
@@ -72,10 +72,7 @@ def read_subkey(hive: int, key_path: str, sub_key_name: str):
 def set_stats_and_achievements(app_id: int):
     """Sets the SkipStatsAndAchievements key (GreenLuma) for a game.
     Returns success status"""
-    if (selected_version := get_setting(Settings.GL_VERSION)) is None:
-        selected_version = get_greenluma_key()
-        set_setting(Settings.GL_VERSION, selected_version)
-
+    selected_version = get_or_compute_setting(Settings.GL_VERSION, get_greenluma_key)
     curr: int | None = read_subkey(
         winreg.HKEY_CURRENT_USER,
         rf"SOFTWARE\{selected_version}\AppID\{app_id}",
@@ -150,7 +147,7 @@ def install_context_menu():
 def uninstall_context_menu():
     keys_to_delete = [
         r"SOFTWARE\Classes\*\shell\SMD\command",
-        r"SOFTWARE\Classes\*\shell\SMD"
+        r"SOFTWARE\Classes\*\shell\SMD",
     ]
 
     try:
