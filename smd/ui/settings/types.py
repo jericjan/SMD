@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 
 class SettingOperations(Enum):
@@ -187,3 +188,6 @@ class Settings(Enum):
     @property
     def description(self) -> str | list[tuple[str, str]]:
         return self.value.description
+
+type SettingChangeCallback = Callable[[Settings, Any, Any], None]
+"""(Settings, old_val, new_val) -> None."""

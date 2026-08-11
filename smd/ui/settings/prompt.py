@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import TYPE_CHECKING, cast
 
 from prompt_toolkit import Application
 from prompt_toolkit.data_structures import Point
@@ -23,23 +22,26 @@ from smd.prompts import (
     prompt_text,
 )
 from smd.storage.settings import clear_setting, set_setting
-from smd.structs import OSType
-from smd.ui.settings.types import SettingCustomTypes, SettingOperations, Settings
-from smd.utils import get_os_type
-
-if TYPE_CHECKING:
-    from smd.app_injector.applist import AppListManager
-    from smd.ui.core import UI
+from smd.ui.settings.types import (
+    SettingChangeCallback,
+    SettingCustomTypes,
+    SettingOperations,
+    Settings,
+)
 
 
 class SettingsMenuPrompt:
-    def __init__(self, ui: "UI", ignore_list=None):
+    def __init__(
+        self,
+        ignore_list=None,
+        on_setting_changed: SettingChangeCallback | None = None,
+    ):
         self.ignore = ignore_list or []
         self.settings_list = [s for s in Settings if s not in self.ignore]
         self.current_index = 0
         self.cursor_offset = 0
         self.saved_settings = {}
-        self.ui = ui
+        self.on_setting_changed = on_setting_changed
 
     def _setting_to_fmt_txt(self, setting: Settings, newline=True):
         """Takes a Setting and turns its value into formatted text"""
@@ -240,19 +242,10 @@ class SettingsMenuPrompt:
                         set_setting(selected_key, new_settings_value)
                         self.saved_settings[selected_key.key_name] = new_settings_value
 
-                        if selected_key == Settings.PLAY_MUSIC:
-                            if old_value is True and new_settings_value is False:
-                                self.ui.kill_midi_player()
-                            elif old_value is False and new_settings_value is True:
-                                self.ui.init_midi_player()
-
-                        if (
-                            selected_key == Settings.APPLIST_FOLDER
-                            and get_os_type() == OSType.WINDOWS
-                        ):
-                            self.ui.app_list_man = cast(
-                                "type[AppListManager]", type(self.ui.app_list_man)
-                            )(self.ui.steam_path, self.ui.provider)
+                        if self.on_setting_changed:
+                            self.on_setting_changed(
+                                selected_key, old_value, new_settings_value
+                            )
 
                 except KeyboardInterrupt:
                     continue

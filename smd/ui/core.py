@@ -122,11 +122,23 @@ class UI:
             ignore = []
 
         saved_settings = load_all_settings()
-        menu = SettingsMenuPrompt(self, ignore_list=ignore)
+        menu = SettingsMenuPrompt(
+            ignore_list=ignore, on_setting_changed=self._handle_setting_change
+        )
         menu.saved_settings = saved_settings
         menu.execute()
 
         return MainReturnCode.LOOP_NO_PROMPT
+
+    def _handle_setting_change(self, key: Settings, old_val, new_val):
+        if key == Settings.PLAY_MUSIC:
+            if old_val is True and new_val is False:
+                self.kill_midi_player()
+            elif old_val is False and new_val is True:
+                self.init_midi_player()
+
+        elif key == Settings.APPLIST_FOLDER and self.os_type == OSType.WINDOWS:
+            self.app_list_man = AppListManager(self.steam_path, self.provider)
 
     @music_toggle_decorator
     def offline_fix_menu(self) -> MainReturnCode:
