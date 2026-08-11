@@ -177,11 +177,8 @@ class AppListManager(AppInjectionManager):
         # app id mapped to files that have that ID
         for x in path_and_ids:
             file_map[x.app_id].append(x.path)
-        paths_to_delete: list[Path] = []
-        for app_id in app_ids:
-            for path in file_map[app_id]:
-                paths_to_delete.append(path)
-        return paths_to_delete
+        paths: list[Path] = [path for app_id in app_ids for path in file_map[app_id]]
+        return paths
 
     def prompt_id_deletion(self):
         """Show all AppList IDs and let the user delete them"""
