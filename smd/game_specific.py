@@ -117,11 +117,13 @@ class GameHandler:
         mode: GenEmuMode,
         dst_steam_settings_folder: Path | None = None,
     ):
-        if mode in (GenEmuMode.STEAM_SETTINGS, GenEmuMode.ALL):
-            if dst_steam_settings_folder is None:
-                raise ValueError(
-                    "dst_steam_settings_folder is required for STEAM_SETTINGS or ALL."
-                )
+        if (
+            mode in (GenEmuMode.STEAM_SETTINGS, GenEmuMode.ALL)
+            and dst_steam_settings_folder is None
+        ):
+            raise ValueError(
+                "dst_steam_settings_folder is required for STEAM_SETTINGS or ALL."
+            )
 
         tools_folder = root_folder() / "third_party/gbe_fork_tools/generate_emu_config/"
         config_exe = tools_folder / (
@@ -160,6 +162,7 @@ class GameHandler:
             cmds,
             env=env,
             cwd=str(tools_folder.absolute()),
+            check=True
         )
         backup_folder = tools_folder / f"backup/{app_id}"
         src_steam_settings = tools_folder / f"output/{app_id}/steam_settings"
@@ -279,6 +282,7 @@ class GameHandler:
             [str(steamless_exe.absolute()), str(game_exe.absolute())],
             encoding="utf-8",
             capture_output=True,
+            check=True
         )
         if "Successfully unpacked file!" in output.stdout:
             print("Steamless applied!")
@@ -294,9 +298,7 @@ class GameHandler:
         exes = [
             (str(x.relative_to(app_info.path)), x) for x in app_info.path.rglob("*.exe")
         ] + [("(It's still not here)", None)]
-        game_exe: Path | None = prompt_select(
-            "Select the .exe:", exes, default=exes[0]
-        )
+        game_exe: Path | None = prompt_select("Select the .exe:", exes, default=exes[0])
         if game_exe is None:
             return prompt_file("Paste the path of the .exe:")
         return game_exe

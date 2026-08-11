@@ -36,7 +36,7 @@ def archive():
         tar = shutil.which("tar")
         if not tar:
             print("tar not found. can't archive build into tar.xz file.")
-        subprocess.run([tar, "-cJvf", str(zip_file.resolve()), "-C", main_folder, "."])
+        subprocess.run([tar, "-cJvf", str(zip_file.resolve()), "-C", main_folder, "."], check=True)
 
 if __name__ == "__main__":
     archive()

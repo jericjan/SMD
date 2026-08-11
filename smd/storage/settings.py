@@ -35,7 +35,7 @@ def set_setting(key: Settings, value: str | bool):
     if not isinstance(value, str) and not isinstance(
         value, bool
     ):  # pyright: ignore[reportUnnecessaryIsInstance]
-        raise ValueError("Invalid type used for set_setting")
+        raise TypeError("Invalid type used for set_setting")
 
     logger.debug(f"set_setting: {key.clean_name} -> {value!s}")
     settings = load_all_settings()

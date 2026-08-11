@@ -1,11 +1,12 @@
+import logging
 from collections import OrderedDict
 from pathlib import Path
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import Any, overload
 
 import vdf  # type: ignore
 
-_DictType = TypeVar("_DictType", bound=dict[Any, Any])
+logger = logging.getLogger(__name__)
 
 
 def vdf_dump(vdf_file: Path, obj: dict[str, Any]):
@@ -20,16 +21,20 @@ def vdf_load(
 
 
 @overload
-def vdf_load(vdf_file: Path, mapper: type[_DictType]) -> _DictType: ...
+def vdf_load[DictType: dict[Any, Any]](
+    vdf_file: Path, mapper: type[DictType]
+) -> DictType: ...
 
 
 @overload
 def vdf_load(vdf_file: Path) -> dict[Any, Any]: ...
 
 
-def vdf_load(vdf_file: Path, mapper: type[_DictType] = dict) -> _DictType:
+def vdf_load[DictType: dict[Any, Any]](
+    vdf_file: Path, mapper: type[DictType] = dict
+) -> DictType:
     with vdf_file.open(encoding="utf-8") as f:
-        data: _DictType = vdf.load(f, mapper=mapper)  # type: ignore
+        data: DictType = vdf.load(f, mapper=mapper)  # type: ignore
     return data
 
 
@@ -68,10 +73,10 @@ def get_steam_libs(steam_path: Path):
 
     vdf_data = vdf_load(lib_folders)
     paths: list[Path] = []
-    for library in vdf_data["libraryfolders"].values():
+    for idx, library in vdf_data["libraryfolders"].items():
         try:
             if (path := Path(library["path"])).exists():
                 paths.append(path)
-        except Exception:
-            pass
+        except KeyError:
+            logger.debug(f"Could not find path for library folder at index {idx}")
     return paths

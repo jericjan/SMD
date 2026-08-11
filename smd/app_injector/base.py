@@ -76,7 +76,7 @@ class AppInjectionManager(ABC):
 
             self.id_map[app_id] = DepotOrAppID(app_name, app_id, None)
 
-            for depot_id in depots.keys():
+            for depot_id in depots:
                 if depot_id.isdigit():
                     depot_id = int(depot_id)
                     parent_id = app_id if app_id != depot_id else None

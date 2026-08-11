@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Union
+from typing import Any
 
 import gevent
 from steam.client import SteamClient  # type: ignore
@@ -32,7 +32,7 @@ class DirectDownloadUrl:
     url: str
 
 
-WorkshopContent = Union[HContentFile, DirectDownloadUrl]
+WorkshopContent = HContentFile | DirectDownloadUrl
 
 
 class IUgcIdStrategy(ABC):

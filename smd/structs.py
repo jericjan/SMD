@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, NewType, Union
+from typing import Any, Literal, NamedTuple, NewType
 
 
 class LuaChoice(Enum):
@@ -92,7 +92,7 @@ class LuaResult(NamedTuple):
     "The lua file's path if it exists"
     contents: str | None
     "The string contents of the lua file"
-    switch_choice: Union["LuaChoice", "LuaChoiceReturnCode"]
+    switch_choice: LuaChoice | LuaChoiceReturnCode
     "A LuaChoice to switch to."
 
 

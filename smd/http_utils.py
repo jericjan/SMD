@@ -4,7 +4,7 @@ import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from tempfile import TemporaryFile
-from typing import TYPE_CHECKING, Any, Literal, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlparse
 
 import httpx
@@ -143,8 +143,7 @@ async def get_gmrc(manifest_id: str | int) -> str | None:
     if request_task in done:
         result = request_task.result()
 
-    if cancel_task in done:
-        if not request_task.done():
+    if cancel_task in done and not request_task.done():
             print("Cancelling request...", end="")
             request_task.cancel()
 
@@ -187,7 +186,7 @@ def download_to_tempfile(
     headers: dict[str, str] | None = None,
     params: dict[str, str] | None = None,
     chunk_size: int = (1024**2) // 2,
-) -> Generator[Union["_TemporaryFileWrapper[bytes]", None], None, None]:
+) -> Generator["_TemporaryFileWrapper[bytes] | None", None, None]:
     """Downloads and yields a tempfile, Defaults to 0.5MiB for chunk size"""
     temp_f = TemporaryFile()  # noqa: SIM115
     success = True

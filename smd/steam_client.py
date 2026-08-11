@@ -134,4 +134,4 @@ class ParsedDLC:
             if self.release_state == "released"
             else DLCTypes.UNRELEASED
         )
-        self.in_applist = True if depot_id in local_ids else False
+        self.in_applist = depot_id in local_ids

@@ -62,7 +62,8 @@ class Updater:
                 "-d",
                 str(Path.cwd().resolve()),
                 download_url,
-            ]
+            ],
+            check=True,
         )
         zip_name = Path(download_url).name
         print(
@@ -99,7 +100,9 @@ class Updater:
             )
         command = convert(["cmd", "/k", str(updater.resolve())])
         subprocess.Popen(
-            command, creationflags=subprocess.DETACHED_PROCESS, shell=True  # type:ignore
+            command,
+            creationflags=subprocess.DETACHED_PROCESS,
+            shell=True,  # type:ignore
         )
 
     @staticmethod
@@ -109,7 +112,7 @@ class Updater:
             print("axel is not installed. Can't download update.")
             return
         cwd = root_folder(True)
-        subprocess.run([axel, "-n", "64", download_url], cwd=cwd)
+        subprocess.run([axel, "-n", "64", download_url], cwd=cwd, check=True)
         zip_name = Path(download_url).name
         tmp_dir = cwd / "tmp"
         tmp_dir.mkdir(exist_ok=True)
@@ -118,7 +121,7 @@ class Updater:
         if not tar:
             print("tar is not installed. Can't extract this archive.")
             return
-        subprocess.run([tar, "-xJf", zip_path, "-C", tmp_dir])
+        subprocess.run([tar, "-xJf", zip_path, "-C", tmp_dir], check=True)
         zip_path.unlink(missing_ok=True)
         shutil.rmtree(cwd / "_internal")
         (cwd / "SMD").unlink()

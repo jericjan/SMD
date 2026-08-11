@@ -68,6 +68,4 @@ class ACFParser:
 
     def needs_update(self):
         state = self.state
-        if state and AppState.StateUpdateRequired in state:
-            return True
-        return False
+        return bool(state and AppState.StateUpdateRequired in state)

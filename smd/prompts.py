@@ -74,7 +74,7 @@ def prompt_select(
         message=msg,
         choices=new_choices,
         default=default,
-        vi_mode=False if fuzzy else True,
+        vi_mode=not fuzzy,
         **kwargs,
     )
     result = obj.execute()
@@ -92,11 +92,7 @@ def prompt_dir(
 
         if not (path.exists() and path.is_dir()):
             return False
-
-        if custom_check and not custom_check(path):
-            return False
-
-        return True
+        return (not custom_check) or custom_check(path)
     return prompt_text(
         msg,
         validator=validator,
@@ -108,7 +104,7 @@ def prompt_dir(
 def prompt_file(msg: str, allow_blank: bool = False) -> Path:
     is_file: Callable[[str], bool] = lambda x: (
         convert_to_path(x).exists() and convert_to_path(x).is_file()
-    ) or (True if allow_blank and x == "" else False)
+    ) or (bool(allow_blank and x == ""))
     return prompt_text(
         msg,
         validator=is_file,

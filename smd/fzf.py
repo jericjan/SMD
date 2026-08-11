@@ -29,5 +29,6 @@ def run_fzf(choices: list[str] | Path, os_type: OSType):
         input=choices_str,
         capture_output=True,
         encoding="utf-8",
+        check=True
     )
     return proc.stdout.strip("\n")

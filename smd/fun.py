@@ -50,7 +50,7 @@ class Konami:
         self.buffer: deque[str] = deque(maxlen=len(self.code))
         "Track last 10 key presses"
 
-        self.key_states = {k: False for k in self.vk_map.keys()}
+        self.key_states = {k: False for k in self.vk_map}
         "Track previous key state"
 
     def listen(self):

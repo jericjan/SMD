@@ -39,6 +39,8 @@ profile = "black"
 [tool.uv.sources]
 inquirerpy = { git = "https://github.com/kazhala/InquirerPy" }
 
+[tool.ruff.lint]
+ignore = ["TRY002", "BLE001"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"

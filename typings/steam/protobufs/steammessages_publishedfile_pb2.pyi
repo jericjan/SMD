@@ -1,3 +1,5 @@
+# ruff: noqa
+
 import steammessages_base_pb2 as _steammessages_base_pb2
 import steammessages_unified_base_pb2 as _steammessages_unified_base_pb2
 from google.protobuf.internal import containers as _containers

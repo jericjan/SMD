@@ -97,7 +97,7 @@ class UI:
             set_setting(Settings.PLAY_MUSIC, False)
             play_music = False
 
-        if any([not x.value.exists() for x in list(MidiFiles)]) or not play_music:
+        if any(not x.value.exists() for x in list(MidiFiles)) or not play_music:
             self.midi_player = None
         else:
             self.midi_player = MidiPlayer(MidiFiles.MIDI_PLAYER_DLL.value)
@@ -301,7 +301,7 @@ class UI:
                 else:
                     target_zip = dst / f"{unique_name}.zip"
                     zip_folder(dst, target_zip)
-                    for file in map(lambda x: dst / x.name, manifests):
+                    for file in ((dst / x.name) for x in manifests):
                         file.unlink(missing_ok=True)
         if steam_proc:
             auto_launch = steam_proc.prompt_launch_or_restart()
@@ -373,8 +373,8 @@ class UI:
             # TODO: this tmp dir really isnt needed
             dst = Path.home() / f"Downloads/{unique_name}"
             dst.mkdir(parents=True, exist_ok=True)
-            for file in manifests:
-                shutil.move(file, dst / file.name)
+            for m_file in manifests:
+                shutil.move(m_file, dst / m_file.name)
             with (dst / f"{parsed_lua.app_id}.lua").open("w", encoding="utf-8") as f:
                 f.write(parsed_lua.contents)
             target_zip = dst.parent / f"{unique_name}.zip"
