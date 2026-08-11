@@ -13,7 +13,7 @@ def gen_achievements(app_id: str, steam_settings_dir: Path):
     """Experimental method of generating achievement data for gbe_fork.
     Uses Steam Web API Key instead of a user login."""
 
-    def prompt_web_api_key():
+    def prompt_web_api_key() -> str:
         print(
             "You don't have a Steam Web API Key yet. "
             "Steam needs this in order to generate achievements in experimental mode.\n\n"

@@ -82,7 +82,7 @@ def add_new_lua(file: Path | None = None) -> LuaResult:
 def search_game(os_type: OSType) -> str | None:
     """Using fzf, lets a user search for a game, then returns game ID"""
 
-    def prompt_web_api_key():
+    def prompt_web_api_key() -> str:
         print(
             "You don't have a Steam Web API Key yet. "
             "Steam needs this in order to browse through all the games.\n\n"

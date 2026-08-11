@@ -40,7 +40,7 @@ def key_exists(hive: int, key_path: str):
         return False
 
 
-def get_greenluma_key():
+def get_greenluma_key() -> str:
     greenluma_keynames = [x.value for x in GreenLumaVersions]
     existing_keys = [
         x

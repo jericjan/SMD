@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, cast
 
 import msgpack  # type: ignore
@@ -25,19 +26,21 @@ def load_all_settings() -> dict[Any, Any]:
     return settings
 
 
-def get_or_default_setting(setting: Settings, default: Any) -> Any:
+def get_or_default_setting[T: str | bool](setting: Settings, default: T) -> T:
     """Returns the setting if it exists, otherwise saves and returns the default."""
     if (val := get_setting(setting)) is not None:
-        return val
+        return cast(T, val)
     set_setting(setting, default)
     return default
 
 
-def get_or_compute_setting(setting: Settings, callable: Callable[[], Any]) -> Any:
+def get_or_compute_setting[T: str | bool | Path](setting: Settings, callable: Callable[[], T]) -> T:
     """Returns the setting if it exists, otherwise runs callable to get it, saves it, and returns it."""
     if (val := get_setting(setting)) is not None:
-        return val
+        return cast(T, val)
     val = callable()
+    if isinstance(val, Path):
+        val = str(val.resolve())
     set_setting(setting, val)
     return val
 
