@@ -19,6 +19,7 @@ dependencies = [
     "pathvalidate>=3.3.1",
     "protobuf>=3.20.3",
     "psutil>=7.1.3",
+    "ptpython>=3.0.32",
     "pycryptodome>=3.23.0",
     "pyinstaller>=6.16.0",
     "pynacl>=1.6.0",
