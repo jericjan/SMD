@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from colorama import Fore, Style
 
@@ -104,7 +104,7 @@ def search_game(os_type: OSType) -> str | None:
     else:
         download = True
     if download:
-        api_key = get_or_compute_setting(Settings.STEAM_WEB_API_KEY, prompt_web_api_key)
+        api_key = cast(str, get_or_compute_setting(Settings.STEAM_WEB_API_KEY, prompt_web_api_key))
         params: dict[str, str] = {"key": api_key, "max_results": "50000"}
         games: list[dict[str, Any]] = []
         print(

@@ -204,7 +204,7 @@ class ManifestDownloader:
     def download_manifests(
         self, lua: LuaParsedInfo, decrypt: bool = False, auto_manifest: bool = False
     ):
-        """Gets latest manifest IDs and downloads respective manifests"""
+        """Gets latest manifest IDs and downloads respective manifests to depotcache folder"""
         cdn = self.get_cdn_client()
         manifest_ids = self.get_manifest_ids(lua, auto_manifest)
 

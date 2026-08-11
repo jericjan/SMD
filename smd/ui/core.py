@@ -11,6 +11,7 @@ from colorama import Fore, Style
 from smd.app_injector.applist import AppListManager
 from smd.app_injector.sls import SLSManager
 from smd.game_specific import GameHandler
+from smd.helpers.ddm import run_ddm_helper
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
@@ -41,7 +42,7 @@ from smd.ui.settings.prompt import SettingsMenuPrompt
 from smd.ui.settings.types import Settings
 from smd.updater import Updater
 from smd.utils import enter_path
-from smd.zip import zip_folder
+from smd.zip import BytesIOZip, zip_folder
 
 if sys.platform == "win32":
     from smd.registry_access import (
@@ -260,6 +261,20 @@ class UI:
             default=False,
         )
         manifests = downloader.download_manifests(parsed_lua, decrypt=decrypt)
+        # TODO: add ddm func here
+        # lua file is parsed_lua.contents (str) - use writestr
+        # manifests are in manifests (list(Path))
+
+        use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
+        if use_ddm:
+            b_zip = BytesIOZip()
+            b_zip.prepare_local_file(manifests)
+            b_zip.prepare_str_file(f"{parsed_lua.app_id}.lua", parsed_lua.contents)
+            b_zip.write()
+            run_ddm_helper(b_zip.file, parsed_lua.app_id)
+            print(Fore.GREEN + "\nSuccess! Game has been downloaded!" + Style.RESET_ALL)
+            return MainReturnCode.LOOP
+
         move_files = prompt_confirm(
             "Manifests are now in the depotcache folder. "
             "Would you like to transfer these files to another folder?",

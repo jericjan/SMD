@@ -34,15 +34,15 @@ def get_or_default_setting[T: str | bool](setting: Settings, default: T) -> T:
     return default
 
 
-def get_or_compute_setting[T: str | bool | Path](setting: Settings, callable: Callable[[], T]) -> T:
+def get_or_compute_setting(setting: Settings, callable: Callable[[], str | bool | Path]):
     """Returns the setting if it exists, otherwise runs callable to get it, saves it, and returns it."""
     if (val := get_setting(setting)) is not None:
-        return cast(T, val)
+        return val
     val = callable()
     if isinstance(val, Path):
         val = str(val.resolve())
     set_setting(setting, val)
-    return val
+    return val  
 
 
 def get_setting(key: Settings):
