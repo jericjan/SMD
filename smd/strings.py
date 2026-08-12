@@ -1,5 +1,5 @@
 # flake8: noqa: B950
-VERSION = "4.4.0"
+VERSION = "4.5.0-beta.0"
 GITHUB_USERNAME = "jericjan"
 REPO_NAME = "smd"
 WINDOWS_RELEASE_PREFIX = "0_windows_x86-64"

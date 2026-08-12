@@ -1,3 +1,36 @@
+## 4.5.0-beta.0 (2026-08-12)
+
+### Feat
+
+- add ddm support for workshop downloads
+- modify gbe_fork and steamless functionality to support custom user-provided paths
+- add ddm support for "Process a .lua file" mode
+- add ddm support for "Download manifests ONLY" mode
+- rewrite settings TUI to include descriptions, might do the same thing for the main menu
+- add experimental mode for generating achievement data for gbe_fork
+
+### Fix
+
+- add local timezone to search_game()
+- remove default steam web api key
+
+### Refactor
+
+- add typevar to get_or_default_setting and get_or_compute_setting
+- add get_or_default_setting and get_or_compute_setting for initializing unset setting logic
+- apply manual ruff fixes
+- yield download_to_tempfile data outside of try-except block
+- replace all instances of Optional and Union with the "|" variant
+- use max to update self.last_idx
+- move load_all_settings call into SettingsMenuPrompt
+- replace UI parameter with on_setting_changed parameter
+- support (style, text) format for setting descriptions
+- move ui.py to ui/core.py
+
+### Perf
+
+- use list comprehension in AppListManager._get_paths_from_ids
+
 ## 4.4.0 (2026-04-28)
 
 ### Fix
