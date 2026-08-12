@@ -5,6 +5,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from colorama import Fore, Style
 
@@ -31,7 +32,6 @@ from smd.storage.vdf import get_steam_libs, vdf_dump, vdf_load
 from smd.strings import LINUX_RELEASE_PREFIX, VERSION, WINDOWS_RELEASE_PREFIX
 from smd.structs import (
     ContextMenuOptions,
-    GameSpecificChoices,
     LoggedInUser,
     LuaChoice,
     LuaParsedInfo,
@@ -55,6 +55,9 @@ else:
     install_context_menu = lambda: None
     set_stats_and_achievements = lambda *args: False
     uninstall_context_menu = lambda: None
+
+if TYPE_CHECKING:
+    from smd.ui.main_menu import GameSpecificMenuItem
 
 
 def music_toggle_decorator(func):  # type: ignore
@@ -215,20 +218,39 @@ class UI:
         return steam_lib_path
 
     @music_toggle_decorator
-    def handle_game_specific(self, choice: GameSpecificChoices) -> MainReturnCode:
+    def handle_game_specific(self, choice: "GameSpecificMenuItem") -> MainReturnCode:
         injection_manager = self.app_list_man or self.sls_man
         if injection_manager is None:
             print("Unsupported OS for this action.")
             return MainReturnCode.LOOP_NO_PROMPT
 
-        if (lib_path := self.select_steam_library()) is None:
-            return MainReturnCode.LOOP_NO_PROMPT
+        steam_or_not = prompt_select(
+            "Game selection method:", [("Steam Library", 0), ("Custom Folder", 1)]
+        )
+        lib_path = None
+        custom_game_path = None
+        match steam_or_not:
+            case 0:
+                if (lib_path := self.select_steam_library()) is None:
+                    return MainReturnCode.LOOP_NO_PROMPT
+            case 1:
+                custom_game_path = prompt_dir("Paste game directory:")
+
         handler = GameHandler(
-            self.steam_path, lib_path, self.provider, injection_manager
+            self.steam_path,
+            lib_path,
+            custom_game_path,
+            self.provider,
+            injection_manager,
         )
         return handler.execute_choice(choice)
 
-    def run_ddm(self, parsed_lua: LuaParsedInfo, manifests: list[Path], lib_path: Path | None = None):
+    def run_ddm(
+        self,
+        parsed_lua: LuaParsedInfo,
+        manifests: list[Path],
+        lib_path: Path | None = None,
+    ):
         print(Fore.YELLOW + "\nDownloading game via DDM:" + Style.RESET_ALL)
         b_zip = BytesIOZip()
         b_zip.prepare_local_file(manifests)
@@ -384,7 +406,6 @@ class UI:
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         manifests = downloader.download_manifests(parsed_lua)
 
-
         use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
         if use_ddm:
             self.run_ddm(parsed_lua, manifests, lib_path)
@@ -444,7 +465,7 @@ class UI:
             uninstall_context_menu()
         return MainReturnCode.LOOP_NO_PROMPT
 
-    def check_updates(self, os_type: OSType, test: bool = False) -> MainReturnCode:
+    def check_updates(self, test: bool = False) -> MainReturnCode:
         if not getattr(sys, "frozen", False):
             print("Program isn't frozen. You can't update.")
             return MainReturnCode.LOOP_NO_PROMPT
@@ -481,9 +502,9 @@ class UI:
             return MainReturnCode.LOOP_NO_PROMPT
         download_url = None
         for asset in assets:
-            if os_type == OSType.WINDOWS:
+            if self.os_type == OSType.WINDOWS:
                 target_prefix = WINDOWS_RELEASE_PREFIX
-            elif os_type == OSType.LINUX:
+            elif self.os_type == OSType.LINUX:
                 target_prefix = LINUX_RELEASE_PREFIX
             else:
                 print("Unsupported OS. Cannot update.")
@@ -496,9 +517,9 @@ class UI:
             print("Couldn't find the download URL :(")
             return MainReturnCode.LOOP_NO_PROMPT
         print(f"Download URL: {download_url}")
-        if os_type == OSType.WINDOWS:
+        if self.os_type == OSType.WINDOWS:
             Updater.download_for_windows(download_url)
-        elif os_type == OSType.LINUX:
+        elif self.os_type == OSType.LINUX:
             Updater.download_for_linux(download_url)
         return MainReturnCode.LOOP_NO_PROMPT
 

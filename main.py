@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import cast
 
 from colorama import Fore, Style
 from colorama import init as color_init
@@ -16,8 +16,9 @@ from smd.steam_client import SteamInfoProvider
 from smd.steam_path import init_steam_path
 from smd.storage.settings import resolve_advanced_mode
 from smd.strings import VERSION
-from smd.structs import GAME_SPECIFIC_CHOICES, MainMenu, MainReturnCode, OSType
+from smd.structs import MainReturnCode, OSType
 from smd.ui.core import UI
+from smd.ui.main_menu import GameSpecificMenuItem, MainMenu, StandardMenuItem
 from smd.utils import get_os_type, root_folder
 
 logger = logging.getLogger("smd")
@@ -73,49 +74,21 @@ def main(ui: UI, args: argparse.Namespace) -> MainReturnCode:
     if first_launch:
         logger.debug(f"Took {time.time() - start_time}s to start")
     if args.file and first_launch:
-        menu_choice = MainMenu.MANAGE_LUA
-    else:
-        menu_choice: MainMenu = prompt_select(
-            "Choose:", list(MainMenu), exclude=exclude
-        )
-
-    if menu_choice == MainMenu.EXIT:
-        return MainReturnCode.EXIT
-
-    if menu_choice == MainMenu.SETTINGS:
-        return ui.edit_settings_menu()
-
-    if menu_choice == MainMenu.OFFLINE_FIX:
-        return ui.offline_fix_menu()
-
-    if menu_choice == MainMenu.MANAGE_APPLIST:
-        return ui.applist_menu()
-
-    if menu_choice in GAME_SPECIFIC_CHOICES:
-        return ui.handle_game_specific(menu_choice)
-
-    if menu_choice == MainMenu.CHECK_UPDATES:
-        return ui.check_updates(ui.os_type)
-
-    if menu_choice == MainMenu.DL_MANIFEST_ONLY:
-        return ui.process_lua_minimal()
-
-    if menu_choice == MainMenu.INSTALL_MENU:
-        return ui.manage_context_menu()
-
-    if menu_choice == MainMenu.UPDATE_ALL_MANIFESTS:
-        return ui.update_all_manifests()
-
-    if TYPE_CHECKING:  # For pyright to complain when i add shit to MainMenu
-        _x: Literal[MainMenu.MANAGE_LUA] = menu_choice
-
-    if args.file:
         path = Path(args.file)
         print(
             f"You have provided: {Fore.YELLOW + str(path.resolve()) + Style.RESET_ALL}"
         )
         return ui.process_lua_full(path)
-    return ui.process_lua_full()
+    else:
+        menu_choice: MainMenu = prompt_select(
+            "Choose:", [(x.value.title, x) for x in MainMenu], exclude=exclude
+        )
+    if type(menu_choice.value) == GameSpecificMenuItem:
+        return ui.handle_game_specific(menu_choice.value)
+
+    basic_item = cast(StandardMenuItem, menu_choice.value)
+
+    return basic_item.action(ui)
 
 
 if __name__ == "__main__":

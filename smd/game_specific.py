@@ -8,7 +8,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Literal, NamedTuple, overload
 
 from colorama import Fore, Style
 
@@ -33,15 +33,16 @@ from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import get_or_default_setting, get_setting, set_setting
 from smd.storage.vdf import vdf_load
 from smd.structs import (
-    GameSpecificChoices,
     GenEmuMode,
-    MainMenu,
     MainReturnCode,
     OSType,
     ProductInfo,
 )
 from smd.ui.settings.types import AchievementGenMode, Settings
 from smd.utils import enter_path, get_os_type, root_folder
+
+if TYPE_CHECKING:
+    from smd.ui.main_menu import GameSpecificMenuItem
 
 logger = logging.getLogger(__name__)
 
@@ -59,33 +60,48 @@ class GameHandler:
     def __init__(
         self,
         steam_root: Path,
-        library_path: Path,
+        library_path: Path | None,
+        custom_game_path: Path | None,
         provider: SteamInfoProvider,
         injection_manager: AppInjectionManager,
     ):
         self.steam_root = steam_root
-        self.steamapps_path = library_path / "steamapps"
+        self.steamapps_path = library_path / "steamapps" if library_path else None
+        self.custom_game_path = custom_game_path
         self.provider = provider
         self.injection_manager = injection_manager
 
     def get_game(self) -> ACFInfo | None:
-        games: list[tuple[AppName, ACFInfo]] = []
-        for path in self.steamapps_path.glob("*.acf"):
-            app_acf = vdf_load(path)
-            app_state = app_acf.get("AppState", {})
-            name = app_state.get("name")
-            installdir = app_state.get("installdir")
-            app_id = app_state.get("appid") or app_state.get("AppID")
-            games.append(
-                (name, ACFInfo(app_id, self.steamapps_path / "common" / installdir))
+        """Lets user select a game from a steam libraruy
+
+        Returns:
+            ACFInfo | None: (app_id, path to install dir)
+        """
+        if self.steamapps_path is None and self.custom_game_path is None:
+            raise ValueError(
+                "At least one of steamapps_path and custom_game_path should be not None"
             )
-        return prompt_select(
-            "Select a game (You can type btw)",
-            games,
-            fuzzy=True,
-            max_height=10,
-            cancellable=True,
-        )
+        if self.steamapps_path:
+            games: list[tuple[AppName, ACFInfo]] = []
+            for path in self.steamapps_path.glob("*.acf"):
+                app_acf = vdf_load(path)
+                app_state = app_acf.get("AppState", {})
+                name = app_state.get("name")
+                installdir = app_state.get("installdir")
+                app_id = app_state.get("appid") or app_state.get("AppID")
+                games.append(
+                    (name, ACFInfo(app_id, self.steamapps_path / "common" / installdir))
+                )
+            return prompt_select(
+                "Select a game (You can type btw)",
+                games,
+                fuzzy=True,
+                max_height=10,
+                cancellable=True,
+            )
+        elif self.custom_game_path:
+            app_id = prompt_text("What is your App ID?")
+            return ACFInfo(app_id, self.custom_game_path)
 
     def find_steam_dll(self, game_path: Path) -> Path | None:
         files = list(game_path.rglob("steam_api*.dll"))
@@ -365,25 +381,28 @@ class GameHandler:
                 + Style.RESET_ALL
             )
 
-    def execute_choice(self, choice: GameSpecificChoices) -> MainReturnCode:
+    def _find_and_crack_dll(self, app_info: ACFInfo):
+        dll = self.find_steam_dll(app_info.path)
+        if dll is None:
+            print(
+                "Could not find steam_api DLL. "
+                "Maybe you haven't downloaded the game yet..."
+            )
+        else:
+            self.crack_dll(app_info.app_id, dll)
+
+    def _gen_usr_game_stats(self, app_info: ACFInfo):
+        self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
+
+    def _check_dlc(self, app_info: ACFInfo):
+        self.injection_manager.dlc_check(self.provider, int(app_info.app_id))
+
+    def _dl_workshop_manifest(self, app_info: ACFInfo):
+        self.download_workshop_manifest(app_info.app_id)
+
+    def execute_choice(self, choice: "GameSpecificMenuItem") -> MainReturnCode:
         app_info = self.get_game()
         if app_info is None:
             return MainReturnCode.LOOP_NO_PROMPT
-        if choice == MainMenu.CRACK_GAME:
-            dll = self.find_steam_dll(app_info.path)
-            if dll is None:
-                print(
-                    "Could not find steam_api DLL. "
-                    "Maybe you haven't downloaded the game yet..."
-                )
-            else:
-                self.crack_dll(app_info.app_id, dll)
-        elif choice == MainMenu.REMOVE_DRM:
-            self.apply_steamless(app_info)
-        elif choice == MainMenu.DL_USER_GAME_STATS:
-            self.run_gen_emu(app_info.app_id, GenEmuMode.USER_GAME_STATS)
-        elif choice == MainMenu.DLC_CHECK:
-            self.injection_manager.dlc_check(self.provider, int(app_info.app_id))
-        elif choice == MainMenu.DL_WORKSHOP_ITEM:
-            self.download_workshop_manifest(app_info.app_id)
+        choice.action(self, app_info)
         return MainReturnCode.LOOP

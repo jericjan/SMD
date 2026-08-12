@@ -1,10 +1,9 @@
 """Aliases, Enums, NamedTuples, etc go here"""
 
-import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, NewType
+from typing import Any, NamedTuple, NewType
 
 
 class LuaChoice(Enum):
@@ -19,44 +18,6 @@ class LuaChoiceReturnCode(Enum):
     LOOP = auto()
     "Doesn't actually get read, but basically retry if chosen lua method fails"
 
-
-class MainMenu(Enum):
-    MANAGE_LUA = "Process a .lua file"
-    UPDATE_ALL_MANIFESTS = "Update manifests for all outdated games"
-    DL_MANIFEST_ONLY = "Download manifests ONLY from a .lua file"
-    DL_WORKSHOP_ITEM = "Download workshop item manifest"
-    DLC_CHECK = "Check DLC status of a game"
-    CRACK_GAME = "Crack a game (gbe_fork)"
-    REMOVE_DRM = "Remove SteamStub DRM (Steamless)"
-    DL_USER_GAME_STATS = "Download UserGameStatsSchema (achievements w/o gbe_fork)"
-    OFFLINE_FIX = "Offline Mode Fix"
-    if sys.platform == "win32":
-        MANAGE_APPLIST = "Manage AppList IDs"
-    elif sys.platform == "linux":
-        MANAGE_APPLIST = "Manage SLSSteam IDs"
-    else:
-        MANAGE_APPLIST = "Manage injected IDs"
-    CHECK_UPDATES = "Check for updates"
-    INSTALL_MENU = "Install/Uninstall Context Menu"
-    SETTINGS = "Settings"
-    EXIT = "Exit"
-
-
-GameSpecificChoices = Literal[
-    MainMenu.CRACK_GAME,
-    MainMenu.REMOVE_DRM,
-    MainMenu.DL_USER_GAME_STATS,
-    MainMenu.DLC_CHECK,
-    MainMenu.DL_WORKSHOP_ITEM,
-]
-
-GAME_SPECIFIC_CHOICES = (
-    MainMenu.CRACK_GAME,
-    MainMenu.REMOVE_DRM,
-    MainMenu.DL_USER_GAME_STATS,
-    MainMenu.DLC_CHECK,
-    MainMenu.DL_WORKSHOP_ITEM,
-)
 
 
 class AppListChoice(Enum):
