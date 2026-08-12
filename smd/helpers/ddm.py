@@ -6,8 +6,11 @@ from pathlib import Path
 from typing import cast
 from zipfile import ZipFile
 
+from colorama import Fore, Style
 from InquirerPy.base.control import Choice
+from pathvalidate import sanitize_filename
 
+from smd.http_utils import get_game_name
 from smd.prompts import prompt_dir, prompt_file, prompt_select
 from smd.storage.settings import get_or_compute_setting
 from smd.ui.settings.types import Settings
@@ -57,17 +60,22 @@ class DepotDownloaderMod:
             "-dir",
             str(target_dir),
         ]
+        print(Fore.CYAN)
         subprocess.run(cmd, check=True)
+        print(Style.RESET_ALL)
 
 
 def is_not_file(path: str):
     return not Path(path).is_file()
 
 
-def process_zip(zip_path: Path | BytesIO, exe_path: Path, base_id: str) -> None:
+def process_zip(
+    zip_path: Path | BytesIO, exe_path: Path, base_id: str, lib_path: Path | None = None
+) -> None:
     lua_pattern = (
         r"^\s*addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|')\s*(\S+)\s*(?:\"|')"
     )
+    game_name = sanitize_filename(get_game_name(base_id)).replace("'", "")
     extractor = KeyExtractor(lua_pattern)
 
     with tempfile.TemporaryDirectory() as temp_dir_str:
@@ -100,13 +108,16 @@ def process_zip(zip_path: Path | BytesIO, exe_path: Path, base_id: str) -> None:
             [Choice(x, x.name, enabled=True) for x in manifest_files],
             multiselect=True,
         )
-        out_dir = get_or_compute_setting(
-            Settings.DDM_OUTPUT_DIR,
-            lambda: prompt_dir(
-                "Enter master path to download the game to. This will be used for future downloads for various games."
-            ),
-        )
-        out_dir = Path(cast(str, out_dir))
+        if lib_path:
+            out_dir = lib_path / "steamapps/common"
+        else:
+            out_dir = get_or_compute_setting(
+                Settings.DDM_OUTPUT_DIR,
+                lambda: prompt_dir(
+                    "Enter master path to download the game to. This will be used for future downloads for various games."
+                ),
+            )
+            out_dir = Path(cast(str, out_dir))
         for manifest in manifest_files:
             match = re.search(r"\d+", manifest.name)
             if not match:
@@ -125,11 +136,16 @@ def process_zip(zip_path: Path | BytesIO, exe_path: Path, base_id: str) -> None:
             execution_queue.append((manifest, depot_id, app_id))
 
         downloader = DepotDownloaderMod(exe_path, keys_path)
+        folder_name = game_name if lib_path else f"{base_id} - {game_name}"
+        target_dir = out_dir / folder_name
         for manifest, depot_id, app_id in execution_queue:
-            downloader.run(manifest, depot_id, app_id, out_dir / base_id)
+            downloader.run(manifest, depot_id, app_id, target_dir)
+        print(Fore.GREEN + f"Game downloaded to {target_dir} !" + Style.RESET_ALL)
 
 
-def run_ddm_helper(zip_path: Path | BytesIO, app_id: str) -> None:
+def run_ddm_helper(
+    zip_path: Path | BytesIO, app_id: str, lib_path: Path | None = None
+) -> None:
 
     exe_path = get_or_compute_setting(
         Settings.DDM_PATH,
@@ -141,7 +157,6 @@ def run_ddm_helper(zip_path: Path | BytesIO, app_id: str) -> None:
         return
 
     try:
-        process_zip(zip_path, exe_path, app_id)
-        print("\nProcessing completed successfully.")
+        process_zip(zip_path, exe_path, app_id, lib_path)
     except Exception as e:
         print(f"An error occurred: {e}")

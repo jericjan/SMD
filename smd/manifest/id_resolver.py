@@ -111,9 +111,9 @@ class ManualManifestStrategy(IManifestStrategy):
         if ctx.auto:
             print(
                 "All auto methods failed. Type the manifest ID manually here, "
-                "enter a blank to skip downloading it."
+                f"enter a blank to skip downloading it.\nYou can find the ID here: https://steamdb.info/depot/{depot_id}/manifests/"
             )
-        return prompt_text(f"Depot {depot_id}: ")
+        return prompt_text(f"Depot {depot_id}: ").strip()
 
 
 class ManifestIDResolver:

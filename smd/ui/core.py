@@ -34,6 +34,7 @@ from smd.structs import (
     GameSpecificChoices,
     LoggedInUser,
     LuaChoice,
+    LuaParsedInfo,
     MainReturnCode,
     OSType,
     ReleaseType,
@@ -227,6 +228,17 @@ class UI:
         )
         return handler.execute_choice(choice)
 
+    def run_ddm(self, parsed_lua: LuaParsedInfo, manifests: list[Path], lib_path: Path | None = None):
+        print(Fore.YELLOW + "\nDownloading game via DDM:" + Style.RESET_ALL)
+        b_zip = BytesIOZip()
+        b_zip.prepare_local_file(manifests)
+        b_zip.prepare_str_file(f"{parsed_lua.app_id}.lua", parsed_lua.contents)
+        b_zip.write()
+        if lib_path:
+            run_ddm_helper(b_zip.file, parsed_lua.app_id, lib_path)
+        else:
+            run_ddm_helper(b_zip.file, parsed_lua.app_id)
+
     @music_toggle_decorator
     def process_lua_minimal(self) -> MainReturnCode:
         """Processes a .lua file but only does the lua input, lua backup, and manifest
@@ -261,18 +273,10 @@ class UI:
             default=False,
         )
         manifests = downloader.download_manifests(parsed_lua, decrypt=decrypt)
-        # TODO: add ddm func here
-        # lua file is parsed_lua.contents (str) - use writestr
-        # manifests are in manifests (list(Path))
 
         use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
         if use_ddm:
-            b_zip = BytesIOZip()
-            b_zip.prepare_local_file(manifests)
-            b_zip.prepare_str_file(f"{parsed_lua.app_id}.lua", parsed_lua.contents)
-            b_zip.write()
-            run_ddm_helper(b_zip.file, parsed_lua.app_id)
-            print(Fore.GREEN + "\nSuccess! Game has been downloaded!" + Style.RESET_ALL)
+            self.run_ddm(parsed_lua, manifests)
             return MainReturnCode.LOOP
 
         move_files = prompt_confirm(
@@ -379,6 +383,11 @@ class UI:
             acf.write_acf(parsed_lua)
         print(Fore.YELLOW + "\nDownloading Manifests:" + Style.RESET_ALL)
         manifests = downloader.download_manifests(parsed_lua)
+
+
+        use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
+        if use_ddm:
+            self.run_ddm(parsed_lua, manifests, lib_path)
 
         if self.sls_man:
             unique_name = f"{parsed_lua.app_id}_{time.time()}"
