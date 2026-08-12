@@ -8,12 +8,15 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Literal, NamedTuple, overload
 
 from colorama import Fore, Style
 
 from smd.ach_gen import gen_achievements
 from smd.app_injector.base import AppInjectionManager
+from smd.helpers.ddm import run_ddm
+from smd.lua.manager import LuaManager
 from smd.manifest.downloader import ManifestDownloader
 from smd.manifest.ugc_resolver import (
     DirectDownloadUrl,
@@ -62,12 +65,14 @@ class GameHandler:
         steam_root: Path,
         library_path: Path | None,
         custom_game_path: Path | None,
+        force_app_id: str | None,
         provider: SteamInfoProvider,
         injection_manager: AppInjectionManager,
     ):
         self.steam_root = steam_root
         self.steamapps_path = library_path / "steamapps" if library_path else None
         self.custom_game_path = custom_game_path
+        self.force_app_id = force_app_id
         self.provider = provider
         self.injection_manager = injection_manager
 
@@ -77,9 +82,9 @@ class GameHandler:
         Returns:
             ACFInfo | None: (app_id, path to install dir)
         """
-        if self.steamapps_path is None and self.custom_game_path is None:
+        if self.steamapps_path is None and self.custom_game_path is None and self.force_app_id is None:
             raise ValueError(
-                "At least one of steamapps_path and custom_game_path should be not None"
+                "At least one of (steamapps_path, custom_game_path and self.force_app_id) should be not None"
             )
         if self.steamapps_path:
             games: list[tuple[AppName, ACFInfo]] = []
@@ -102,7 +107,8 @@ class GameHandler:
         elif self.custom_game_path:
             app_id = prompt_text("What is your App ID?")
             return ACFInfo(app_id, self.custom_game_path)
-
+        elif self.force_app_id:
+            return ACFInfo(self.force_app_id, Path.cwd())  # TODO: unused 2nd parameter, see `GameSpecificMenuItem.require_only_app_id`
     def find_steam_dll(self, game_path: Path) -> Path | None:
         files = list(game_path.rglob("steam_api*.dll"))
         if len(files) > 1:
@@ -373,13 +379,41 @@ class GameHandler:
             )
         else:  # HContentFile type
             print(f"Found UGC ID via {method} method: {content.ugc_id}")
+
             downloader = ManifestDownloader(self.provider, self.steam_root)
-            downloader.download_workshop_item(app_id, str(content.ugc_id))
-            print(
-                Fore.GREEN
-                + "Workshop item manifest downloaded! Try downloading it now."
-                + Style.RESET_ALL
-            )
+            use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
+            if use_ddm:
+                with TemporaryDirectory() as temp_dir:
+                    manifest_path = downloader.download_workshop_item(
+                        app_id, str(content.ugc_id), Path(temp_dir)
+                    )
+                    if manifest_path is None:
+                        print("Failed to download workshop item.")
+                        return
+                    print("We're gonna need a decryption key from a lua file...")
+                    lua_manager = LuaManager(get_os_type())
+                    parsed_lua = lua_manager.fetch_lua_strict()
+                    lua_manager.backup_lua(parsed_lua)
+
+                    def dir_transformer(path: Path) -> Path:
+                        return (
+                            path.parent
+                            / (path.name.strip() + " (Workshop)")
+                            / str(workshop_id)
+                        )
+
+                    run_ddm(
+                        parsed_lua,
+                        [manifest_path],
+                        target_dir_transformer=dir_transformer,
+                    )
+            else:
+                downloader.download_workshop_item(app_id, str(content.ugc_id))
+                print(
+                    Fore.GREEN
+                    + "Workshop item manifest downloaded! Try downloading it now."
+                    + Style.RESET_ALL
+                )
 
     def _find_and_crack_dll(self, app_info: ACFInfo):
         dll = self.find_steam_dll(app_info.path)

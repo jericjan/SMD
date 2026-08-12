@@ -12,7 +12,7 @@ from colorama import Fore, Style
 from smd.app_injector.applist import AppListManager
 from smd.app_injector.sls import SLSManager
 from smd.game_specific import GameHandler
-from smd.helpers.ddm import run_ddm_helper
+from smd.helpers.ddm import run_ddm
 from smd.lua.manager import LuaManager
 from smd.lua.writer import ACFWriter, ConfigVDFWriter
 from smd.manifest.downloader import ManifestDownloader
@@ -22,6 +22,7 @@ from smd.prompts import (
     prompt_confirm,
     prompt_dir,
     prompt_select,
+    prompt_text,
 )
 from smd.steam_client import SteamInfoProvider
 from smd.storage.acf import ACFParser
@@ -34,7 +35,6 @@ from smd.structs import (
     ContextMenuOptions,
     LoggedInUser,
     LuaChoice,
-    LuaParsedInfo,
     MainReturnCode,
     OSType,
     ReleaseType,
@@ -43,7 +43,7 @@ from smd.ui.settings.prompt import SettingsMenuPrompt
 from smd.ui.settings.types import Settings
 from smd.updater import Updater
 from smd.utils import enter_path
-from smd.zip import BytesIOZip, zip_folder
+from smd.zip import zip_folder
 
 if sys.platform == "win32":
     from smd.registry_access import (
@@ -224,42 +224,41 @@ class UI:
             print("Unsupported OS for this action.")
             return MainReturnCode.LOOP_NO_PROMPT
 
-        steam_or_not = prompt_select(
-            "Game selection method:", [("Steam Library", 0), ("Custom Folder", 1)]
+        steam_or_not = (
+            prompt_select(
+                "Game selection method:", [("Steam Library", 0), ("Custom Folder", 1)]
+            )
+            if choice.can_select_external
+            else (
+                prompt_select(
+                    "This operation requires an App ID:",
+                    [("Obtain automatically via Steam Library", 0), ("Specify App ID Manually", 2)],
+                )
+                if choice.require_only_app_id
+                else 0
+            )
         )
         lib_path = None
         custom_game_path = None
+        force_app_id = None
         match steam_or_not:
             case 0:
                 if (lib_path := self.select_steam_library()) is None:
                     return MainReturnCode.LOOP_NO_PROMPT
             case 1:
                 custom_game_path = prompt_dir("Paste game directory:")
+            case 2:
+                force_app_id = prompt_text("Input App ID:").strip()
 
         handler = GameHandler(
             self.steam_path,
             lib_path,
             custom_game_path,
+            force_app_id,
             self.provider,
             injection_manager,
         )
         return handler.execute_choice(choice)
-
-    def run_ddm(
-        self,
-        parsed_lua: LuaParsedInfo,
-        manifests: list[Path],
-        lib_path: Path | None = None,
-    ):
-        print(Fore.YELLOW + "\nDownloading game via DDM:" + Style.RESET_ALL)
-        b_zip = BytesIOZip()
-        b_zip.prepare_local_file(manifests)
-        b_zip.prepare_str_file(f"{parsed_lua.app_id}.lua", parsed_lua.contents)
-        b_zip.write()
-        if lib_path:
-            run_ddm_helper(b_zip.file, parsed_lua.app_id, lib_path)
-        else:
-            run_ddm_helper(b_zip.file, parsed_lua.app_id)
 
     @music_toggle_decorator
     def process_lua_minimal(self) -> MainReturnCode:
@@ -298,7 +297,7 @@ class UI:
 
         use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
         if use_ddm:
-            self.run_ddm(parsed_lua, manifests)
+            run_ddm(parsed_lua, manifests)
             return MainReturnCode.LOOP
 
         move_files = prompt_confirm(
@@ -408,7 +407,7 @@ class UI:
 
         use_ddm = get_or_default_setting(Settings.SEND_TO_DDM, False)
         if use_ddm:
-            self.run_ddm(parsed_lua, manifests, lib_path)
+            run_ddm(parsed_lua, manifests, lib_path)
 
         if self.sls_man:
             unique_name = f"{parsed_lua.app_id}_{time.time()}"

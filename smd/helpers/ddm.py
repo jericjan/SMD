@@ -1,6 +1,7 @@
 import re
 import subprocess
 import tempfile
+from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
 from typing import cast
@@ -13,7 +14,9 @@ from pathvalidate import sanitize_filename
 from smd.http_utils import get_game_name
 from smd.prompts import prompt_dir, prompt_file, prompt_select
 from smd.storage.settings import get_or_compute_setting
+from smd.structs import LuaParsedInfo
 from smd.ui.settings.types import Settings
+from smd.zip import BytesIOZip
 
 
 class KeyExtractor:
@@ -70,7 +73,11 @@ def is_not_file(path: str):
 
 
 def process_zip(
-    zip_path: Path | BytesIO, exe_path: Path, base_id: str, lib_path: Path | None = None
+    zip_path: Path | BytesIO,
+    exe_path: Path,
+    base_id: str,
+    lib_path: Path | None = None,
+    target_dir_transformer: Callable[[Path], Path] | None = None,
 ) -> None:
     lua_pattern = (
         r"^\s*addappid\s*\(\s*(\d+)\s*,\s*\d\s*,\s*(?:\"|')\s*(\S+)\s*(?:\"|')"
@@ -103,10 +110,15 @@ def process_zip(
 
         execution_queue: list[tuple[Path, str, str]] = []
         # TODO: manifest selection should have been before the user started to download manifests, not here
-        manifest_files = prompt_select(
-            "Pick manifests to download from (Space = Select, Enter = Confirm)",
-            [Choice(x, x.name, enabled=True) for x in manifest_files],
-            multiselect=True,
+
+        manifest_files = (
+            prompt_select(
+                "Pick manifests to download from (Space = Select, Enter = Confirm)",
+                [Choice(x, x.name, enabled=True) for x in manifest_files],
+                multiselect=True,
+            )
+            if len(manifest_files) > 1
+            else manifest_files
         )
         if lib_path:
             out_dir = lib_path / "steamapps/common"
@@ -114,7 +126,7 @@ def process_zip(
             out_dir = get_or_compute_setting(
                 Settings.DDM_OUTPUT_DIR,
                 lambda: prompt_dir(
-                    "Enter master path to download the game to. This will be used for future downloads for various games."
+                    "Enter master path to download the game (or workshop item) to. This will be used for future downloads for various games."
                 ),
             )
             out_dir = Path(cast(str, out_dir))
@@ -138,14 +150,24 @@ def process_zip(
         downloader = DepotDownloaderMod(exe_path, keys_path)
         folder_name = game_name if lib_path else f"{base_id} - {game_name}"
         target_dir = out_dir / folder_name
+        if target_dir_transformer:
+            target_dir = target_dir_transformer(target_dir)
         for manifest, depot_id, app_id in execution_queue:
             downloader.run(manifest, depot_id, app_id, target_dir)
         print(Fore.GREEN + f"Game downloaded to {target_dir} !" + Style.RESET_ALL)
 
 
-def run_ddm_helper(
-    zip_path: Path | BytesIO, app_id: str, lib_path: Path | None = None
-) -> None:
+def run_ddm(
+    parsed_lua: LuaParsedInfo,
+    manifests: list[Path],
+    lib_path: Path | None = None,
+    target_dir_transformer: Callable[[Path], Path] | None = None,
+):
+    print(Fore.YELLOW + "\nDownloading game via DDM:" + Style.RESET_ALL)
+    b_zip = BytesIOZip()
+    b_zip.prepare_local_file(manifests)
+    b_zip.prepare_str_file(f"{parsed_lua.app_id}.lua", parsed_lua.contents)
+    b_zip.write()
 
     exe_path = get_or_compute_setting(
         Settings.DDM_PATH,
@@ -157,6 +179,8 @@ def run_ddm_helper(
         return
 
     try:
-        process_zip(zip_path, exe_path, app_id, lib_path)
+        process_zip(
+            b_zip.file, exe_path, parsed_lua.app_id, lib_path, target_dir_transformer
+        )
     except Exception as e:
         print(f"An error occurred: {e}")

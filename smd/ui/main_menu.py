@@ -30,6 +30,9 @@ class GameSpecificMenuItem(StandardMenuItem):
     """Unbound method expecting `(self, runtime generated var)`"""
     can_select_external: bool = False
     """This item can select outside of just Steam libraries"""
+    require_only_app_id: bool = False
+    """This operation only requires the app id, and has no use for the path of the game.
+    Refer to ACFInfo"""
 
     @property
     def is_game_specific(self) -> bool:
@@ -47,7 +50,8 @@ class MainMenu(Enum):
     DL_WORKSHOP_ITEM = GameSpecificMenuItem(
         "Download workshop item manifest",
         GameHandler._dl_workshop_manifest,
-        False,  # TODO: should be True and implement the stuff
+        False,
+        True
     )
     DLC_CHECK = GameSpecificMenuItem(
         "Check DLC status of a game", GameHandler._check_dlc, False

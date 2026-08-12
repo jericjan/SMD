@@ -2,6 +2,7 @@ import logging
 import re
 import shutil
 from pathlib import Path
+from typing import cast
 
 from colorama import Fore, Style
 
@@ -21,9 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class LuaManager:
-    def __init__(
-        self, os_type: OSType
-    ):
+    def __init__(self, os_type: OSType):
         """Might need refactor. Does I/O on init"""
         self.saved_lua = Path().cwd() / "saved_lua"
         self.named_ids = get_named_ids(self.saved_lua)
@@ -63,10 +62,14 @@ class LuaManager:
                 break
         return RawLua(lua_path, lua_contents)
 
+    def fetch_lua_strict(self) -> LuaParsedInfo:
+        return cast(LuaParsedInfo, self.fetch_lua(strict=True))
+
     def fetch_lua(
         self,
         override_choice: LuaChoice | None = None,
         override_path: Path | None = None,
+        strict: bool = False,
     ) -> LuaParsedInfo | None:
         """Depending on the choice, fetch a lua file then parse the contents"""
         depot_no_key_regex = re.compile(
@@ -86,7 +89,9 @@ class LuaManager:
             choice: LuaChoice | None = (
                 override_choice
                 if override_choice
-                else prompt_select("Choose:", list(LuaChoice), cancellable=True)
+                else prompt_select(
+                    "Choose:", list(LuaChoice), cancellable=not strict
+                )
             )
             if choice is None:
                 return None
