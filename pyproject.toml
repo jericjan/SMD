@@ -20,7 +20,7 @@ dependencies = [
     "pynacl>=1.6.0",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
-    "steam[client]>=1.4.4",
+    "steam[client]",
     "tqdm>=4.67.1",
     "vdf>=3.4",
 ]
@@ -30,6 +30,7 @@ profile = "black"
 
 [tool.uv.sources]
 inquirerpy = { git = "https://github.com/kazhala/InquirerPy" }
+steam = { git = "https://github.com/detiam/steam_websocket", rev = "b8239912e6a190f490aede529c08b5049096bdc8" }
 
 [tool.ruff.lint]
 ignore = ["TRY002", "BLE001"]
