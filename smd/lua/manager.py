@@ -7,7 +7,7 @@ from typing import cast
 from colorama import Fore, Style
 
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
-from smd.prompts import prompt_select
+from smd.prompts import prompt_select, prompt_text
 from smd.storage.named_ids import get_named_ids
 from smd.structs import (
     DepotKeyPair,
@@ -89,22 +89,32 @@ class LuaManager:
             choice: LuaChoice | None = (
                 override_choice
                 if override_choice
-                else prompt_select(
-                    "Choose:", list(LuaChoice), cancellable=not strict
-                )
+                else prompt_select("Choose:", list(LuaChoice), cancellable=not strict)
             )
             if choice is None:
                 return None
             lua = self.get_raw_lua(choice, override_path)
             if lua is None:
                 continue
-            if not (any_addappid := general_regex.search(lua.contents)):
-                print("App ID not found. Try again.")
-                continue
 
-            app_id = any_addappid.group(1)
-            print(f"App ID is {app_id}")
+            def get_main_id(lua: RawLua):
+                filename = lua.path.stem
+                if filename.isdecimal():
+                    print(
+                        f"Filename {filename} contains numbers only. Assuming that as App ID."
+                    )
+                    return filename
+                if (any_addappid := general_regex.search(lua.contents)):
+                    app_id = any_addappid.group(1)
+                    if app_id.endswith("0"):
+                        print(f"App ID is {app_id}")
+                        return app_id
+                return prompt_text(
+                    "Couldn't find the App ID automatically. Enter it here (ends with 0): ",
+                    validator=lambda x: x.isdecimal(),
+                )
 
+            app_id = get_main_id(lua)
             ids_with_no_key = depot_no_key_regex.findall(lua.contents)
 
             if not (depot_dec_key := depot_dec_key_regex.findall(lua.contents)):
