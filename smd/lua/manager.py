@@ -7,7 +7,7 @@ from typing import cast
 from colorama import Fore, Style
 
 from smd.lua.choices import add_new_lua, download_lua, select_from_saved_luas
-from smd.prompts import prompt_select, prompt_text
+from smd.prompts import prompt_confirm, prompt_select, prompt_text
 from smd.storage.named_ids import get_named_ids
 from smd.structs import (
     DepotKeyPair,
@@ -108,10 +108,12 @@ class LuaManager:
                     app_id = any_addappid.group(1)
                     if app_id.endswith("0"):
                         print(f"App ID is {app_id}")
-                        return app_id
+                        if prompt_confirm("Confirm?"):
+                            return app_id
                 return prompt_text(
-                    "Couldn't find the App ID automatically. Enter it here (ends with 0): ",
+                    "Couldn't find the App ID automatically. Enter it here (ends with 0):",
                     validator=lambda x: x.isdecimal(),
+                    default=lua.path.stem
                 )
 
             app_id = get_main_id(lua)

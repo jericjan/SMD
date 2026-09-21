@@ -120,6 +120,7 @@ def prompt_text(
     instruction: str = "",
     long_instruction: str = "",
     filter: Callable[[str], Any] | None = None,
+    default = "",
 ):
     obj = inquirer.text(
         msg,
@@ -128,6 +129,7 @@ def prompt_text(
         instruction=instruction,
         long_instruction=long_instruction,
         filter=filter,
+        default=default
     )
     res = obj.execute()
     _clean_prompt(obj)
