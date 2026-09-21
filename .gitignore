@@ -25,3 +25,4 @@ third_party/aria2c/*
 manifests/
 .vscode/launch.json
 oureveryday_*.json
+.aider*
