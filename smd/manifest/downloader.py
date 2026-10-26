@@ -172,7 +172,7 @@ class ManifestDownloader:
                 [
                     ("Yes", 0),
                     ("No (Manually input request code)", 1),
-                    ("Try something else.", 2),
+                    ("I don't have any request codes. Try something else.", 2),
                 ],
             )
             if choice == 0:
