@@ -186,7 +186,9 @@ class ManifestDownloader:
             break
         return req_code
 
-    def download_workshop_item(self, app_id: str, ugc_id: str, out_dir: Path | None = None):
+    def download_workshop_item(
+        self, app_id: str, ugc_id: str, out_dir: Path | None = None
+    ):
         manifest, is_zipped = self.download_single_manifest(app_id, ugc_id)
         if manifest:
             if is_zipped:
@@ -197,7 +199,9 @@ class ManifestDownloader:
                 extracted = BytesIO(manifest)
             depotcache = self.steam_path / "depotcache"
             depotcache.mkdir(exist_ok=True)
-            final_manifest_loc = (out_dir if out_dir else depotcache) / f"{app_id}_{ugc_id}.manifest"
+            final_manifest_loc = (
+                out_dir if out_dir else depotcache
+            ) / f"{app_id}_{ugc_id}.manifest"
             with final_manifest_loc.open("wb") as f:
                 f.write(extracted.read())
             return final_manifest_loc
