@@ -72,7 +72,10 @@ async def get_request(
         elif print_on_err:
             print(f"Error {response.status_code}")
             print(f"Response: {response.text}")
-
+        else:
+            logger.debug(
+                f"URL request to '{url}' failed with Error {response.status_code}. Response: {response.text}"
+            )
     except httpx.RequestError as e:
         print(f"An error occurred: {e!r}")
 
