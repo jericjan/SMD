@@ -1,3 +1,13 @@
+## 4.5.0-beta.2 (2026-10-26)
+
+### Feat
+
+- add manifestdex as fallback for MRCs (+refactor)
+
+### Fix
+
+- clarify request code fallback option
+
 ## 4.5.0-beta.1 (2026-09-21)
 
 ### Fix
