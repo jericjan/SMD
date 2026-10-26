@@ -37,6 +37,7 @@ async def get_request(
     type: Literal["text"] = "text",
     timeout: int = 10,
     headers: dict[str, str] | None = None,
+    print_on_err: bool = True,
 ) -> str | None: ...
 
 
@@ -46,6 +47,7 @@ async def get_request(
     type: Literal["json"],
     timeout: int = 10,
     headers: dict[str, str] | None = None,
+    print_on_err: bool = True,
 ) -> dict[Any, Any] | None: ...
 
 
@@ -54,6 +56,7 @@ async def get_request(
     type: Literal["text", "json"] = "text",
     timeout: int = 10,
     headers: dict[str, str] | None = None,
+    print_on_err: bool = True,
 ) -> str | dict[Any, Any] | None:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -66,7 +69,7 @@ async def get_request(
                 return response.text if type == "text" else response.json()
             except ValueError:
                 return
-        else:
+        elif print_on_err:
             print(f"Error {response.status_code}")
             print(f"Response: {response.text}")
 
