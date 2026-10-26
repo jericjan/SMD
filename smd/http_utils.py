@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from tempfile import TemporaryFile
@@ -11,19 +10,6 @@ import httpx
 from tqdm import tqdm  # type: ignore
 
 from smd.prompts import prompt_confirm, prompt_text
-from smd.secret_store import b64_decrypt
-
-if sys.platform == "win32":
-    import msvcrt
-else:
-    class msvcrt:
-        @staticmethod
-        def kbhit():
-            return False
-
-        @staticmethod
-        def getch():
-            return None
 
 if TYPE_CHECKING:
     from tempfile import _TemporaryFileWrapper  # pyright: ignore[reportPrivateUsage]
@@ -94,76 +80,10 @@ def get_request_raw(url: str):
         return resp.content
 
 
-async def _wait_for_enter():
-    print(
-        "If it takes too long, press Enter to cancel the request "
-        "and input manually..."
-    )
-    while True:
-        if msvcrt.kbhit() and msvcrt.getch() == b"\r":
-            return
-        await asyncio.sleep(0.05)
-
-
 def get_base_domain(url: str):
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
     return base_url
-
-
-# Lowkey don't remember why i wrote it like this.
-# It uses a default timeout of 10s but i think it still got stuck?
-async def get_gmrc(manifest_id: str | int) -> str | None:
-    """Gets a manifest request code, given a manifest ID
-
-    Args:
-        manifest_id (Union[str, int]): The manifest ID
-
-    Returns:
-        str: The request code
-    """
-    # Yes, I'm aware it's not actually "encrypted" since I included the password
-    # Shut up.
-    template_url = b64_decrypt(
-        b'gzTYiUdY7dR2oFPM+cUEUpSnLYn17uq09F8PATpFKT8=',
-        b'rok2PaPQ2T0CF3RZXe+AfytF7i+Yo/kEykq4hnPSSrhRDeESOARdQD4+SzqZqeG5C5U4fAiuEUuPpr1CaXl9V/Xv9EcZdWk1BbyUqCXP8FHkqdGm',
-    )
-    url = template_url.format(manifest_id=manifest_id)
-    print("Getting request code...")
-
-    headers = {
-        "Referer": get_base_domain(url),
-    }
-
-    if sys.platform != "win32":
-        return await get_request(url, headers=headers)
-
-    request_task = asyncio.create_task(get_request(url, headers=headers))
-    cancel_task = asyncio.create_task(_wait_for_enter())
-
-    done, pending = await asyncio.wait(
-        {request_task, cancel_task}, return_when=asyncio.FIRST_COMPLETED
-    )
-
-    result = None
-    if request_task in done:
-        result = request_task.result()
-
-    if cancel_task in done and not request_task.done():
-            print("Cancelling request...", end="")
-            request_task.cancel()
-
-    for t in pending:
-        t.cancel()
-
-    try:
-        if result is None:
-            result = await request_task
-    except asyncio.CancelledError:
-        print("✅")
-        result = prompt_text("Please provide the manifest request code:")
-
-    return result
 
 
 def get_game_name(app_id: str) -> str:
