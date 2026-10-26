@@ -10,7 +10,7 @@ import gevent
 from colorama import Fore, Style
 from steam.client.cdn import CDNClient, ContentServer  # type: ignore
 
-from smd.http_utils import get_gmrc, get_request_raw
+from smd.http_utils import get_request_raw
 from smd.manifest.crypto import decrypt_and_save_manifest
 from smd.manifest.id_resolver import (
     IManifestStrategy,
@@ -21,6 +21,7 @@ from smd.manifest.id_resolver import (
     SharedDepotManifestStrategy,
     StandardManifestStrategy,
 )
+from smd.mrc import get_gmrc
 from smd.prompts import prompt_select, prompt_text
 from smd.steam_client import SteamInfoProvider, get_product_info
 from smd.storage.settings import resolve_morrenus_key
